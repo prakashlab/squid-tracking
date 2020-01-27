@@ -1,3 +1,11 @@
+'''
+core objects that run the back-end of the GUI.
+Key objects:
+
+    1. StreamHandler
+    2. TrackingController
+'''
+
 # set QT_API environment variable
 import os 
 os.environ["QT_API"] = "pyqt5"
@@ -11,6 +19,9 @@ from qtpy.QtGui import *
 import control.utils as utils
 from control._def import *
 import control.tracking as tracking
+
+import utils.image_processing as image_processing
+
 
 from queue import Queue
 from threading import Thread, Lock
@@ -429,7 +440,7 @@ class NavigationController(QObject):
         self.z_pos = self.z_pos + delta
         self.zPos.emit(self.z_pos*1000)
 
-class AutoFocusController(QObject):
+#class AutoFocusController(QObject):
 
     z_pos = Signal(float)
     autofocusFinished = Signal()
@@ -516,7 +527,7 @@ class AutoFocusController(QObject):
         print('autofocus finished')
         self.autofocusFinished.emit()
 
-class MultiPointController(QObject):
+#class MultiPointController(QObject):
 
     acquisitionFinished = Signal()
     image_to_display = Signal(np.ndarray)
@@ -848,8 +859,39 @@ class TrackingController(QObject):
         QObject.__init__(self)
         self.microcontroller = microcontroller
         self.navigationController = navigationController
-        self.tracker_xy = tracking.Tracker_XY()
-        self.tracker_z = tracking.Tracker_Z()
+        
+
+        # Define list of trackers being used(maybe do this as a definition?)
+        # OpenCV tracking suite
+        OPENCV_OBJECT_TRACKERS = {
+        "csrt": cv2.TrackerCSRT_create,
+        "kcf": cv2.TrackerKCF_create,
+        "boosting": cv2.TrackerBoosting_create,
+        "mil": cv2.TrackerMIL_create,
+        "tld": cv2.TrackerTLD_create,
+        "medianflow": cv2.TrackerMedianFlow_create,
+        "mosse": cv2.TrackerMOSSE_create
+        }
+        # Neural Net based trackers
+        NEURALNETTRACKERS = {"daSiamRPN":[]}
+
+        # Image Tracker type
+        self.tracker_type = "csrt"
+
+        # Focus Tracker type
+        self.focus_tracker = "autocorr"
+
+
+        self.create_tracker()
+
+        start_flag = True
+
+        # Create a tracking object that does the image-based tracking
+        # Pass it the list of trackers
+        self.tracker_xy = tracking.Tracker_Image(OPENCV_OBJECT_TRACKERS, NEURALNETTRACKERS)
+        # Create a tracking object that does the focus-based tracking
+        self.tracker_z = tracking.Tracker_Focus()
+
         self.pid_controller_x = tracking.PID_Controller()
         self.pid_controller_y = tracking.PID_Controller()
         self.pid_controller_z = tracking.PID_Controller()
@@ -858,16 +900,34 @@ class TrackingController(QObject):
     def on_new_frame(self,image,frame_ID,timestamp):
         # initialize the tracker when a new track is started
         if self.tracking_frame_counter == 0:
-            # initialize the tracker
-            # initialize the PID controller
-            pass
+            ''' 
+            First frame
+            Get centroid using thresholding and initialize tracker based on this object.
+            initialize the tracker
+            initialize the PID controller
+            
+            '''
+            start_flag = True
 
+            # Threshold the image based on the set thresholding parameters
+            thresh_image = image_processing.threshold_image(img_resized,self.lower_HSV,self.upper_HSV)  #The threshold image as one channel
+
+            [x,y] = self.tracker_xy.track(thresh_image, self.tracker, self.tracker_type, 
+                start_flag = start_flag)
+
+        else:
+            start_flag = False
+            [x,y] = self.tracker_xy.track(image, self.tracker, self.tracker_type, 
+                start_flag = start_flag)
+
+        # @@@ Deepak: Good to avoid core image processing here. 
         # crop the image, resize the image 
         # [to fill]
 
-        # get the location
-        [x,y] = self.tracker_xy.track(image)
-        z = self.track_z.track(image)
+        # get the object location
+        
+
+        z = self.track_z.track(image, self.focus_tracker)
 
         # get motion commands
         dx = self.pid_controller_x.get_actuation(x)
@@ -888,6 +948,27 @@ class TrackingController(QObject):
 
     def start_a_new_track(self):
         self.tracking_frame_counter = 0
+
+    def create_tracker(self):
+        if(self.tracker_type in self.OPENCV_OBJECT_TRACKERS.keys()):
+            self.tracker = self.OPENCV_OBJECT_TRACKERS[self.tracker_type]()
+
+        elif(self.tracker_type in self.NeuralNetTrackers.keys()):
+            
+            
+            print('Using {} tracker'.format(self.tracker_type))
+
+    def update_tracker(self, tracker_type):
+        self.tracker_type = tracker_type
+
+        # Update the actual tracker
+        self.create_tracker()
+
+
+class DataSaver(QObject):
+
+
+
 
 # from gravity machine
 class ImageDisplayWindow(QMainWindow):
