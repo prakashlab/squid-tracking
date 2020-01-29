@@ -102,6 +102,11 @@ class StreamHandler(QObject):
             self.counter = 0
             print('real camera fps is ' + str(self.fps_real))
 
+        # save a copy of full-res image for saving (make sure to do a deep copy)
+        # @@@@@@@@@
+
+
+
         # crop image
         image_cropped = utils.crop_image(camera.current_frame,self.crop_width,self.crop_height)
 
@@ -119,7 +124,10 @@ class StreamHandler(QObject):
             self.timestamp_last_save = time_now
 
         # send image to track
-        if self.track_flag and time_now-self.timestamp_last_track >= 1/self.fps_track:
+        # if self.track_flag and time_now-self.timestamp_last_track >= 1/self.fps_track:
+
+        # Deepak: For now tracking with every image from camera 
+        if self.track_flag:
             # track is a blocking operation - it needs to be
             # @@@ will cropping before emitting the signal lead to speedup?
             self.packet_image_for_tracking.emit(image_cropped,camera.frame_ID,camera.timestamp)
@@ -440,7 +448,7 @@ class NavigationController(QObject):
         self.z_pos = self.z_pos + delta
         self.zPos.emit(self.z_pos*1000)
 
-#class AutoFocusController(QObject):
+class AutoFocusController(QObject):
 
     z_pos = Signal(float)
     autofocusFinished = Signal()
@@ -527,7 +535,7 @@ class NavigationController(QObject):
         print('autofocus finished')
         self.autofocusFinished.emit()
 
-#class MultiPointController(QObject):
+class MultiPointController(QObject):
 
     acquisitionFinished = Signal()
     image_to_display = Signal(np.ndarray)
@@ -854,118 +862,14 @@ class NavigationController(QObject):
 
         self.single_acquisition_in_progress = False
 
-class TrackingController(QObject):
-    def __init__(self,microcontroller,navigationController):
-        QObject.__init__(self)
-        self.microcontroller = microcontroller
-        self.navigationController = navigationController
-        
-
-        # Define list of trackers being used(maybe do this as a definition?)
-        # OpenCV tracking suite
-        OPENCV_OBJECT_TRACKERS = {
-        "csrt": cv2.TrackerCSRT_create,
-        "kcf": cv2.TrackerKCF_create,
-        "boosting": cv2.TrackerBoosting_create,
-        "mil": cv2.TrackerMIL_create,
-        "tld": cv2.TrackerTLD_create,
-        "medianflow": cv2.TrackerMedianFlow_create,
-        "mosse": cv2.TrackerMOSSE_create
-        }
-        # Neural Net based trackers
-        NEURALNETTRACKERS = {"daSiamRPN":[]}
-
-        # Image Tracker type
-        self.tracker_type = "csrt"
-
-        # Focus Tracker type
-        self.focus_tracker = "autocorr"
-
-
-        self.create_tracker()
-
-        start_flag = True
-
-        # Create a tracking object that does the image-based tracking
-        # Pass it the list of trackers
-        self.tracker_xy = tracking.Tracker_Image(OPENCV_OBJECT_TRACKERS, NEURALNETTRACKERS)
-        # Create a tracking object that does the focus-based tracking
-        self.tracker_z = tracking.Tracker_Focus()
-
-        self.pid_controller_x = tracking.PID_Controller()
-        self.pid_controller_y = tracking.PID_Controller()
-        self.pid_controller_z = tracking.PID_Controller()
-        self.tracking_frame_counter = 0
-
-    def on_new_frame(self,image,frame_ID,timestamp):
-        # initialize the tracker when a new track is started
-        if self.tracking_frame_counter == 0:
-            ''' 
-            First frame
-            Get centroid using thresholding and initialize tracker based on this object.
-            initialize the tracker
-            initialize the PID controller
-            
-            '''
-            start_flag = True
-
-            # Threshold the image based on the set thresholding parameters
-            thresh_image = image_processing.threshold_image(img_resized,self.lower_HSV,self.upper_HSV)  #The threshold image as one channel
-
-            [x,y] = self.tracker_xy.track(thresh_image, self.tracker, self.tracker_type, 
-                start_flag = start_flag)
-
-        else:
-            start_flag = False
-            [x,y] = self.tracker_xy.track(image, self.tracker, self.tracker_type, 
-                start_flag = start_flag)
-
-        # @@@ Deepak: Good to avoid core image processing here. 
-        # crop the image, resize the image 
-        # [to fill]
-
-        # get the object location
-        
-
-        z = self.track_z.track(image, self.focus_tracker)
-
-        # get motion commands
-        dx = self.pid_controller_x.get_actuation(x)
-        dy = self.pid_controller_y.get_actuation(y)
-        dz = self.pid_controller_z.get_actuation(z)
-
-        # read current location from the microcontroller
-        current_stage_position = self.microcontroller.read_received_packet()
-
-        # save the coordinate information (possibly enqueue image for saving here to if a separate ImageSaver object is being used) before the next movement
-        # [to fill]
-
-        # generate motion commands
-        motion_commands = self.generate_motion_commands(self,dx,dy,dz)
-
-        # send motion commands
-        self.microcontroller.send_command(motion_commands)
-
-    def start_a_new_track(self):
-        self.tracking_frame_counter = 0
-
-    def create_tracker(self):
-        if(self.tracker_type in self.OPENCV_OBJECT_TRACKERS.keys()):
-            self.tracker = self.OPENCV_OBJECT_TRACKERS[self.tracker_type]()
-
-        elif(self.tracker_type in self.NeuralNetTrackers.keys()):
-            
-            
-            print('Using {} tracker'.format(self.tracker_type))
-
-    def update_tracker(self, tracker_type):
-        self.tracker_type = tracker_type
-
-        # Update the actual tracker
-        self.create_tracker()
 
 
 class DataSaver(QObject):
+    '''
+    Handles the data-stream from the microcontroller and saves it, 
+    along with time-stamped images
+    '''
+
 
 
 

@@ -167,9 +167,10 @@ def find_centroid_basic_Rect(image):
             ymin = max(0,ymin)
             width = min(width, imW - xmin)
             height = min(height, imH - ymin)
-            rect = (xmin, ymin, width, height)
+            
+            bbox = (xmin, ymin, width, height)
 
-    return isCentroidFound,centroid, rect
+    return isCentroidFound,centroid, bbox
 
 def get_image_center_width(image):
     ImShape=image.shape
