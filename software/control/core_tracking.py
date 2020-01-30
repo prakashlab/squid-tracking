@@ -8,15 +8,14 @@ from qtpy.QtCore import *
 from qtpy.QtWidgets import *
 from qtpy.QtGui import *
 
-import control.utils as utils
 from control._def import *
 import control.tracking as tracking
 import control.FocusTracking_LiquidLens as tracking_focus
-import utils.image_processing as image_processing
+import control.utils.image_processing as image_processing
 
 
-import utils.PID as PID
-import utils.units_converter as units_converter
+import control.utils.PID as PID
+import control.utils.units_converter as units_converter
 
 from queue import Queue
 from collections import deque
@@ -65,7 +64,7 @@ class TrackingController(QObject):
 
         # Define list of trackers being used(maybe do this as a definition?)
         # OpenCV tracking suite
-        OPENCV_OBJECT_TRACKERS = {
+        self.OPENCV_OBJECT_TRACKERS = {
         "csrt": cv2.TrackerCSRT_create,
         "kcf": cv2.TrackerKCF_create,
         "boosting": cv2.TrackerBoosting_create,
@@ -75,7 +74,7 @@ class TrackingController(QObject):
         "mosse": cv2.TrackerMOSSE_create
         }
         # Neural Net based trackers
-        NEURALNETTRACKERS = {"daSiamRPN":[]}
+        self.NEURALNETTRACKERS = {"daSiamRPN":[]}
 
         # Image Tracker type
         self.tracker_type = "csrt"
@@ -113,7 +112,7 @@ class TrackingController(QObject):
 
         # Create a tracking object that does the image-based tracking
         # Pass it the list of trackers
-        self.tracker_xz = tracking.Tracker_Image(OPENCV_OBJECT_TRACKERS, NEURALNETTRACKERS)
+        self.tracker_xz = tracking.Tracker_Image(self.OPENCV_OBJECT_TRACKERS, self.NEURALNETTRACKERS)
         # Create a tracking object that does the focus-based tracking
         self.tracker_y = tracking_focus.Tracker_Focus()
 
@@ -133,23 +132,9 @@ class TrackingController(QObject):
         # Deque data length
         self.dequeLen = 20
 
-        #Time
-        self.begining_Time = 0           #Time begin the first time we click on the start_tracking button
-        self.Time = deque(maxlen=self.dequeLen)
+        self.initialise_track()
 
-        # Stage position
-        self.X_stage = deque(maxlen=self.dequeLen)
-        self.Y_stage = deque(maxlen=self.dequeLen)
-        self.Theta_stage = deque(maxlen=self.dequeLen)
-
-        self.X_image = deque(maxlen=self.dequeLen)
-        self.Z_image = deque(maxlen=self.dequeLen)
-
-        # Object position relative to the stage. 
-        # This is what is recorded as the measured object position
-        self.X_objStage = deque(maxlen=self.dequeLen)
-        self.Y_objStage = deque(maxlen=self.dequeLen)
-        self.Z_objStage = deque(maxlen=self.dequeLen)
+        
 
 
 
@@ -174,7 +159,7 @@ class TrackingController(QObject):
             
         self.tracking_triggered_prev = tracking_triggered
 
-        if self.track_image == True:
+        if self.track_obj_image == True:
             # Update geometric parameters of image
             self.update_image_center_width(image)
 
@@ -206,9 +191,7 @@ class TrackingController(QObject):
                 self.resetPID = False
 
                 
-            self.objectFound, self.centroid, self.rect_pts 
-                    = self.tracker_xz.track(image, thresh_image, self.tracker, self.tracker_type, 
-                    start_flag = start_flag)
+            self.objectFound, self.centroid, self.rect_pts = self.tracker_xz.track(image, thresh_image, self.tracker, self.tracker_type, start_flag = start_flag)
             
 
             # Deepak: Good to avoid core image processing here. 
@@ -231,8 +214,7 @@ class TrackingController(QObject):
                 self.posError_image = self.centroid - self.setPoint_image
 
                 # Get the error and convert it to mm
-                x_error, z_error = units_converter.px_to_mm(self.posError_image[0], self.image_width), 
-                                    units_converter.px_to_mm(self.posError_image[1], self.image_width), 
+                x_error, z_error = units_converter.px_to_mm(self.posError_image[0], self.image_width), units_converter.px_to_mm(self.posError_image[1], self.image_width), 
 
 
                 # get the object location along the optical axis. 
@@ -287,16 +269,34 @@ class TrackingController(QObject):
         # save the coordinate information (possibly enqueue image for saving here to if a separate ImageSaver object is being used) before the next movement
         # [to fill]
 
+    # Triggered when you hit track_obj_image
+    def initialise_track(self):
 
-    def start_a_new_track(self):
         self.tracking_frame_counter = 0
+
+        #Time
+        self.begining_Time = time.time()           #Time begin the first time we click on the start_tracking button
+        self.Time = deque(maxlen=self.dequeLen)
+
+        # Stage position
+        self.X_stage = deque(maxlen=self.dequeLen)
+        self.Y_stage = deque(maxlen=self.dequeLen)
+        self.Theta_stage = deque(maxlen=self.dequeLen)
+
+        self.X_image = deque(maxlen=self.dequeLen)
+        self.Z_image = deque(maxlen=self.dequeLen)
+
+        # Object position relative to the stage. 
+        # This is what is recorded as the measured object position
+        self.X_objStage = deque(maxlen=self.dequeLen)
+        self.Y_objStage = deque(maxlen=self.dequeLen)
+        self.Z_objStage = deque(maxlen=self.dequeLen)
 
     def create_tracker(self):
         if(self.tracker_type in self.OPENCV_OBJECT_TRACKERS.keys()):
             self.tracker = self.OPENCV_OBJECT_TRACKERS[self.tracker_type]()
 
-        elif(self.tracker_type in self.NeuralNetTrackers.keys()):
-            
+        elif(self.tracker_type in self.NEURALNETTRACKERS.keys()):
             
             print('Using {} tracker'.format(self.tracker_type))
 
@@ -373,7 +373,7 @@ class TrackingController(QObject):
 
     def set_image_props(self, image):
         try:
-            imW, imH, channels = np.shape(image):
+            imW, imH, channels = np.shape(image)
 
             if(channels>2):
                 self.color = True
@@ -404,7 +404,7 @@ class TrackingController(QObject):
 
 
 
-class microcontroller_MultiplexSend(Qobject):
+class microcontroller_MultiplexSend(QObject):
 
     def __init__(self, microcontroller, tracking_widget, focus_tracking_widget):
         QObject.__init__(self)
@@ -414,7 +414,7 @@ class microcontroller_MultiplexSend(Qobject):
         self.focus_tracking_widget = focus_tracking_widget
 
         self.X_error, self.Y_error, self.Z_error = 0,0,0
-        self.track_image = 0
+        self.track_obj_image = 0
         self.track_focus = 0
         self.liquidLensFreq = 0
         self.liquidLensAmp = 0
@@ -433,13 +433,13 @@ class microcontroller_MultiplexSend(Qobject):
         self.set_NonMotionCommands()
         
         # Send command to the microcontroller
-        self.microcontroller.send_command([self.X_error, self.Y_error, self.Z_error, self.track_image, 
+        self.microcontroller.send_command([self.X_error, self.Y_error, self.Z_error, self.track_obj_image, 
                 self.track_focus, self.homing_state, self.liquidLensFreq, 
                 self.liquidLensAmp])
             
 
     def set_NonMotionCommands(self):
-        self.track_image = self.tracking_widget.track_image
+        self.track_obj_image = self.tracking_widget.track_obj_image
         self.homing_state = self.tracking_widget.homing_state
 
         self.track_focus = self.focus_tracking_widget.track_focus

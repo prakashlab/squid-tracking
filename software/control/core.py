@@ -3,7 +3,7 @@ core objects that run the back-end of the GUI.
 Key objects:
 
     1. StreamHandler
-    2. TrackingController
+
 '''
 
 # set QT_API environment variable
@@ -16,11 +16,10 @@ from qtpy.QtCore import *
 from qtpy.QtWidgets import *
 from qtpy.QtGui import *
 
-import control.utils as utils
 from control._def import *
 import control.tracking as tracking
 
-import utils.image_processing as image_processing
+import control.utils.image_processing as image_processing
 
 
 from queue import Queue
@@ -108,7 +107,7 @@ class StreamHandler(QObject):
 
 
         # crop image
-        image_cropped = utils.crop_image(camera.current_frame,self.crop_width,self.crop_height)
+        image_cropped = image_processing.crop_image(camera.current_frame,self.crop_width,self.crop_height)
 
         # send image to display
         time_now = time.time()
@@ -143,7 +142,7 @@ class StreamHandler(QObject):
         self.handler_busy = True
 
         # crop image
-        image_cropped = utils.crop_image(image,self.crop_width,self.crop_height)
+        image_cropped = image_processing.crop_image(image,self.crop_width,self.crop_height)
 
         # send image to display
         time_now = time.time()
@@ -502,11 +501,11 @@ class AutoFocusController(QObject):
             steps_moved = steps_moved + 1
             self.camera.send_trigger()
             image = self.camera.read_frame()
-            image = utils.crop_image(image,self.crop_width,self.crop_height)
+            image = image_processing.crop_image(image,self.crop_width,self.crop_height)
             self.image_to_display.emit(image)
             QApplication.processEvents()
             timestamp_0 = time.time() # @@@ to remove
-            focus_measure = utils.calculate_focus_measure(image)
+            focus_measure = image_processing.calculate_focus_measure(image)
             timestamp_1 = time.time() # @@@ to remove
             print('             calculating focus measure took ' + str(timestamp_1-timestamp_0) + ' second')
             focus_measure_vs_z[i] = focus_measure
@@ -681,7 +680,7 @@ class MultiPointController(QObject):
                                 self.camera.send_trigger()
                                 image = self.camera.read_frame()
                                 self.liveController.turn_off_illumination()
-                                image = utils.crop_image(image,self.crop_width,self.crop_height)
+                                image = image_processing.crop_image(image,self.crop_width,self.crop_height)
                                 saving_path = os.path.join(current_path, file_ID + '_bf' + '.' + Acquisition.IMAGE_FORMAT)
                                 cv2.imwrite(saving_path,image)
                                 self.image_to_display.emit(cv2.resize(image,(round(self.crop_width*self.display_resolution_scaling), round(self.crop_height*self.display_resolution_scaling)),cv2.INTER_LINEAR))
@@ -693,7 +692,7 @@ class MultiPointController(QObject):
                                 self.camera.send_trigger()
                                 image = self.camera.read_frame()
                                 self.liveController.turn_off_illumination()
-                                image = utils.crop_image(image,self.crop_width,self.crop_height)
+                                image = image_processing.crop_image(image,self.crop_width,self.crop_height)
                                 saving_path = os.path.join(current_path, file_ID + '_fluorescence' + '.' + Acquisition.IMAGE_FORMAT)
                                 cv2.imwrite(saving_path,image)
                                 self.image_to_display.emit(cv2.resize(image,(round(self.crop_width*self.display_resolution_scaling), round(self.crop_height*self.display_resolution_scaling)),cv2.INTER_LINEAR))
@@ -795,7 +794,7 @@ class MultiPointController(QObject):
                         self.camera.send_trigger() 
                         image = self.camera.read_frame()
                         self.liveController.turn_off_illumination()
-                        image = utils.crop_image(image,self.crop_width,self.crop_height)
+                        image = image_processing.crop_image(image,self.crop_width,self.crop_height)
                         saving_path = os.path.join(current_path, file_ID + '_bf' + '.' + Acquisition.IMAGE_FORMAT)
                         cv2.imwrite(saving_path,image)
                         self.image_to_display.emit(cv2.resize(image,(round(self.crop_width*self.display_resolution_scaling), round(self.crop_height*self.display_resolution_scaling)),cv2.INTER_LINEAR))
@@ -809,7 +808,7 @@ class MultiPointController(QObject):
                         image = self.camera.read_frame()
                         print('take fluorescence image')
                         self.liveController.turn_off_illumination()
-                        image = utils.crop_image(image,self.crop_width,self.crop_height)
+                        image = image_processing.crop_image(image,self.crop_width,self.crop_height)
                         saving_path = os.path.join(current_path, file_ID + '_fluorescence' + '.' + Acquisition.IMAGE_FORMAT)
                         cv2.imwrite(saving_path,image)
                         self.image_to_display.emit(cv2.resize(image,(round(self.crop_width*self.display_resolution_scaling), round(self.crop_height*self.display_resolution_scaling)),cv2.INTER_LINEAR))
@@ -861,16 +860,6 @@ class MultiPointController(QObject):
             self.acquisitionFinished.emit()
 
         self.single_acquisition_in_progress = False
-
-
-
-class DataSaver(QObject):
-    '''
-    Handles the data-stream from the microcontroller and saves it, 
-    along with time-stamped images
-    '''
-
-
 
 
 
