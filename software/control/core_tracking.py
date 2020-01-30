@@ -11,6 +11,7 @@ from qtpy.QtGui import *
 import control.utils as utils
 from control._def import *
 import control.tracking as tracking
+import control.FocusTracking_LiquidLens as tracking_focus
 import utils.image_processing as image_processing
 
 
@@ -31,13 +32,29 @@ from datetime import datetime
 class TrackingController(QObject):
 
     # Signals
-    centroid_image = Signal(np.ndarray)
+    centroid_image = Signal(np.ndarray) 
     Rect_pt1_pt2 = Signal(np.ndarray)
     plot_data = Signal(np.ndarray)
     set_trackBusy = Signal(int)
     clear_trackBusy = Signal(int)
 
-    motion_command_signal = Signal(np.ndarray)
+    start_tracking_signal = Signal()
+
+    save_command_signal = Signal(np.ndarray)
+
+    multiplex_send_signal = Signal(int, int, int)
+
+    ''' 
+    Connection map
+
+    centroid_image -> ImageDisplayer.draw_object
+    Rect_pt1_pt2 -> ImageDisplayer.draw_bbox
+    plot_data -> PlotWidget
+    save_command_signal ->  DataSaver
+    multiplex_send_signal -> multiplex_Send
+
+    '''
+
 
     def __init__(self,microcontroller, image_axis = ['X', 'Z'], focus_axis = ['Y'], focus_tracker = 'liq-lens'):
         QObject.__init__(self)
@@ -76,6 +93,9 @@ class TrackingController(QObject):
 
         self.tracking_triggered_prev = False
 
+        # Image type of the tracking image stream
+        self.color = False
+
         self.centroid = None
         self.rect_pts = None
 
@@ -95,7 +115,7 @@ class TrackingController(QObject):
         # Pass it the list of trackers
         self.tracker_xz = tracking.Tracker_Image(OPENCV_OBJECT_TRACKERS, NEURALNETTRACKERS)
         # Create a tracking object that does the focus-based tracking
-        self.tracker_y = tracking.Tracker_Focus()
+        self.tracker_y = tracking_focus.Tracker_Focus()
 
         # PID controller for each axis
 
@@ -134,14 +154,14 @@ class TrackingController(QObject):
 
 
 
-
+    # Triggered by signal from StreamHandler
     def on_new_frame(self,image, thresh_image = None, setPoint_image = None, frame_ID = None,timestamp = None ):
         
         # read current location from the microcontroller
         microcontroller_data, manualMode = self.microcontroller.read_received_packet()
 
         # Parse microcontroller data
-        [YfocusPhase,Xpos_microController,Ypos_microController,Thetapos_microController, 
+        [YfocusPhase, Xpos_microController, Ypos_microController,Thetapos_microController, 
         tracking_triggered] = arduino_data
 
         if tracking_triggered and tracking_triggered != self.tracking_triggered_prev:
@@ -149,102 +169,123 @@ class TrackingController(QObject):
             state of the Tracking Widget.
              EMIT (tracking_triggered)
             '''
-            pass
+            # This is Toggles the state of the Tracking Controller Widget
+            start_tracking_signal.emit()
+            
         self.tracking_triggered_prev = tracking_triggered
 
-        # Update geometric parameters of image
-        self.update_image_center(image)
+        if self.track_image == True:
+            # Update geometric parameters of image
+            self.update_image_center_width(image)
 
-        self.update_image_offset()
+            self.update_image_offset()
 
-        self.update_tracking_setpoint()
+            self.update_tracking_setpoint()
 
-        # initialize the tracker when a new track is started
-        if self.tracking_frame_counter == 0 or self.objectFound == False:
-            ''' 
-            First frame
-            Get centroid using thresholding and initialize tracker based on this object.
-            initialize the tracker
-            '''
-            start_flag = True
+            # Set the search area for nearest-nbr search
+            self.set_searchArea()
 
-            # initialize the PID controller
-            self.resetPID = True
-        
-        else:
+            # initialize the tracker when a new track is started
+            if self.tracking_frame_counter == 0 or self.objectFound == False:
+                ''' 
+                First frame
+                Get centroid using thresholding and initialize tracker based on this object.
+                initialize the tracker
+                '''
+                start_flag = True
 
-            start_flag = False
-            self.resetPID = False
-
-            
-        self.objectFound, self.centroid, self.rect_pts 
-                = self.tracker_xz.track(image, thresh_image, self.tracker, self.tracker_type, 
-                start_flag = start_flag)
-        
-
-        # Deepak: Good to avoid core image processing here. 
-        # This belongs in streamHandler, or a separate object.
-        # crop the image, resize the image 
-        # [to fill]
-
-    
-
-        # Things to do if an object is detected.
-        if(self.objectFound):
-
-            if ((self.manualMode_prev == 1 and self.manualMode == 0)):
-                # If we switched from manual to auto stage control.
+                # initialize the PID controller
                 self.resetPID = True
 
-            self.manualMode_prev = self.manualMode
+                # Get initial parameters of the tracking image stream that are immutable
+                self.set_image_props(image)
+            
+            else:
 
-            # Find the object's position relative to the tracking set point on the image
-            self.posError_image = self.centroid - self.setPoint_image
+                start_flag = False
+                self.resetPID = False
 
-            # Get the error and convert it to mm
-            x_error, z_error = units_converter.px_to_mm(self.posError_image[0], self.image_width), 
-                                units_converter.px_to_mm(self.posError_image[1], self.image_width), 
-
-
-            # get the object location along the optical axis. 
-            # Is the object position necessary for this? Alternatively we can pass the centroid
-            # and handle this downstream
-            y_error = self.tracker_y.track(image, self.focus_tracker)
-
+                
+            self.objectFound, self.centroid, self.rect_pts 
+                    = self.tracker_xz.track(image, thresh_image, self.tracker, self.tracker_type, 
+                    start_flag = start_flag)
             
 
-            # Emit the detected centroid position so other widgets can access it.
-            self.centroid_image.emit(self.centroid)
-            self.rect_pts.emit(self.rect_pts)
-
-            self.update_stage_position(Xpos_microController, Ypos_microController, 
-                                        Thetapos_microController)
-
-            self.update_image_position()
-
-            self.update_obj_position()  
-
-            # get motion commands
-
-
-            dx = self.pid_controller_x.get_actuation(x)
-            dy = self.pid_controller_y.get_actuation(y)
-            dz = self.pid_controller_z.get_actuation(z)
-
-            X_order, Y_order, Z_order = self.generate_motion_commands(x_error,y_error,z_error)
-
-            
-            # Send the motion commands so they are available for the DataSaver
-            motion_command_signal.emit(np.array([X_order, Y_order, Z_order]))
-
-
-            # save the coordinate information (possibly enqueue image for saving here to if a separate ImageSaver object is being used) before the next movement
+            # Deepak: Good to avoid core image processing here. 
+            # This belongs in streamHandler, or a separate object.
+            # crop the image, resize the image 
             # [to fill]
 
+        
 
-            # send order to the microcontroller (Emit a signal that triggers this action 
-            # in the microcontroller write queue object)
-            
+            # Things to do if an object is detected.
+            if(self.objectFound):
+
+                if ((self.manualMode_prev == 1 and self.manualMode == 0)):
+                    # If we switched from manual to auto stage control.
+                    self.resetPID = True
+
+                self.manualMode_prev = self.manualMode
+
+                # Find the object's position relative to the tracking set point on the image
+                self.posError_image = self.centroid - self.setPoint_image
+
+                # Get the error and convert it to mm
+                x_error, z_error = units_converter.px_to_mm(self.posError_image[0], self.image_width), 
+                                    units_converter.px_to_mm(self.posError_image[1], self.image_width), 
+
+
+                # get the object location along the optical axis. 
+                # Is the object position necessary for this? Alternatively we can pass the centroid
+                # and handle this downstream
+
+                # Update the focus phase
+                self.tracke_y.update_data(YfocusPhase)
+
+                if self.focus_tracking:
+                    y_error = self.tracker_y.get_error(image, self.focus_tracker)
+
+                
+
+                # Emit the detected centroid position so other widgets can access it.
+                self.centroid_image.emit(self.centroid)
+                self.rect_pts.emit(self.rect_pts)
+
+                self.update_stage_position(Xpos_microController, Ypos_microController, 
+                                            Thetapos_microController)
+
+                self.update_image_position()
+
+                self.update_obj_position()  
+
+                # get motion commands
+
+
+                dx = self.pid_controller_x.get_actuation(x)
+                dy = self.pid_controller_y.get_actuation(y)
+                dz = self.pid_controller_z.get_actuation(z)
+
+                X_order, Y_order, Z_order = self.get_motion_commands(x_error,y_error,z_error)
+
+            else:
+                X_order, Y_order, Z_order = 0,0,0            
+                # X_order, Y_order, Z_order is in stepper motor steps
+                
+            # We want to send to the microcontroller at a constant rate, even if an object is not found
+
+            # Send the motion commands and instruct the multiplex send object to send data 
+            # to the microcontroller
+            multiplex_send_signal.emit(X_order, Y_order, Z_order)
+
+
+            # Send the motion commands so they are available for the DataSaver
+            save_command_signal.emit(np.array([self.Time[-1], self.X_objStage[-1], 
+                    self.Y_objStage[-1], self.Z_objStage[-1], self.Theta_stage[-1], self.X_image[-1], self.Z_image[-1]]))
+
+
+
+        # save the coordinate information (possibly enqueue image for saving here to if a separate ImageSaver object is being used) before the next movement
+        # [to fill]
 
 
     def start_a_new_track(self):
@@ -264,21 +305,6 @@ class TrackingController(QObject):
 
         # Update the actual tracker
         self.create_tracker()
-
-
-    def update_thresh_image(self, thresh_image_data):
-        # Take thresh_image from the thresh_image stream and set it as current image.
-        self.thresh_image = thresh_image_data
-
-    def update_image_center(self, image):
-        self.image_center, self.image_width = image_processing.get_image_center_width(image)
-
-    def update_tracking_setpoint(self):
-
-        self.setPoint_image = self.image_center + self.image_offset
-
-    def update_image_offset(self, image_offset):
-        self.image_offset = image_offset
 
     def update_elapsed_time(self):
 
@@ -306,16 +332,17 @@ class TrackingController(QObject):
         else:
             self.Z_objStage.append(0)
 
-    # def get_Yerror(self,cropped_image):
-    #     self.track_focalAxis=0
-    #     self.Yerror=0
-    #     if self.start_Y_tracking:
-    #         focusMeasure = image_processing.YTracking_Objective_Function(cropped_image, self.color)
-    #         self.Yerror,self.track_focalAxis = self.ytracker.get_error(focusMeasure)
-    #         # Disabling Y tracking for 3D PIV
-    #         # self.isYorder = 0
+    def get_focus_error(self,cropped_image):
+        self.isFocusOrder = 0
+        Y_order=0
+        if self.track_focus:
+            focusMeasure = image_processing.YTracking_Objective_Function(cropped_image, self.color)
+            Y_order,self.isFocusOrder = self.tracker_y.get_error(focusMeasure)
+            # Disabling Y tracking for 3D PIV
+            # self.isYorder = 0
+            return Y_order
 
-    def generate_motion_commands(self, x_error, y_error, z_error):
+    def get_motion_commands(self, x_error, y_error, z_error):
         # Take an error signal and pass it through a PID algorithm
         x_error_steps = units_converter.X_mm_to_step(x_error)
         y_error_steps = units_converter.Y_mm_to_step(y_error)
@@ -342,18 +369,121 @@ class TrackingController(QObject):
 
         return X_order, Y_order, Z_order
 
-    def get_nonMotion_commands(self, )
+    # Image related functions
+
+    def set_image_props(self, image):
+        try:
+            imW, imH, channels = np.shape(image):
+
+            if(channels>2):
+                self.color = True
+            else:
+                self.color = False
+        except:
+            self.color = False
+
+
+    def update_thresh_image(self, thresh_image_data):
+        # Take thresh_image from the thresh_image stream and set it as current image.
+        self.thresh_image = thresh_image_data
+
+    def update_image_center_width(self, image):
+        self.image_center, self.image_width = image_processing.get_image_center_width(image)
+
+    def update_tracking_setpoint(self):
+
+        self.setPoint_image = self.image_center + self.image_offset
+
+    def update_image_offset(self, image_offset):
+        self.image_offset = image_offset
+
+    def set_searchArea(self):
+
+        self.tracker_xz.searchArea = int(self.image_width/Tracking.SEARCH_AREA_RATIO)
+
+
+
+
+class microcontroller_MultiplexSend(Qobject):
+
+    def __init__(self, microcontroller, tracking_widget, focus_tracking_widget):
+        QObject.__init__(self)
+
+        self.microcontroller = microcontroller
+        self.tracking_widget = tracking_widget
+        self.focus_tracking_widget = focus_tracking_widget
+
+        self.X_error, self.Y_error, self.Z_error = 0,0,0
+        self.track_image = 0
+        self.track_focus = 0
+        self.liquidLensFreq = 0
+        self.liquidLensAmp = 0
+        self.homing_state = 0
+
+        
+
+    def multiplex_Send(self, X_error, Y_error, Z_error):
+
+        # X_error, Y_error, Z_error (in full steps)
+        self.X_error = X_error
+        self.Y_error = Y_error
+        self.Z_error = Z_error
+
+        # Update the local copy with the state of non-motion-related data to be sent to uController.
+        self.set_NonMotionCommands()
+        
+        # Send command to the microcontroller
+        self.microcontroller.send_command([self.X_error, self.Y_error, self.Z_error, self.track_image, 
+                self.track_focus, self.homing_state, self.liquidLensFreq, 
+                self.liquidLensAmp])
+            
+
+    def set_NonMotionCommands(self):
+        self.track_image = self.tracking_widget.track_image
+        self.homing_state = self.tracking_widget.homing_state
+
+        self.track_focus = self.focus_tracking_widget.track_focus
+        self.liquidLensFreq = self.focus_tracking_widget.liquidLensFreq
+        self.liquidLensAmp = self.focus_tracking_widget.liquidLensAmp
+
+    '''
+    Avoid using signals here. Instead just pass a reference to the appropriate widgets whose data
+    needs to be saved using dataSaver
+    '''
+    # def set_TrackingState(self, tracking_state):
+    #     self.tracking_state = tracking_state
+
+    # def set_FocusTrackingState(self, focus_tracking_state):
+    #     self.focus_tracking_state = focus_tracking_state
+
+    # def set_LiquidLensFreq(self, liquidLensFreq):
+    #     self.liquidLensFreq = liquidLensFreq
+
+    # def set_LiquidLensAmp(self, liquidLensAmp)
+    #     self.liquidLensAmp = liquidLensAmp
+
+    # def set_HomingState(self, homing_state):
+    #     self.homing_state = homing_state
 
 
 
 class trackingDataSaver(QObject):
 
-    def __init__(self):
+    def __init__(self, tracking_widget, focus_tracking_widget):
         QObject.__init__(self)
 
         self.queueLen = 10
 
         self.queue = Queue(self.queueLen) # max 10 items in the queue
+
+        # Whether an object is being tracked in the image stream
+        self.image_tracking_state = 0
+        # Whether stage control is through computer (auto) or user (manual)
+        self.stage_control_manual = 0
+        
+        self.focus_tracking_state = 0
+        self.liquidLensFreq = 0
+        self.liquidLensAmp = 0
         
         self.thread = Thread(target=self.process_queue)
         self.thread.start()
@@ -386,14 +516,26 @@ class trackingDataSaver(QObject):
 
     
 
-    # Define slots that set the current value of variables  based on signals from other objects/widgets
+    # Define slots that set the current value of variables based on signals from tracking Controller
+
+    # For other data which saves the states and values of different widgets, pass a reference to the widget
+
+    def setObjectPosition_image(self, Obj_position_image):
+        # [X_centroid, Z_centroid] or [X_centroid, Y_centroid]
+        self.Obj_position_image = Obj_position_image
+
+    def setObject_Time_Position(self, Obj_Time_Position):
+        # [Time, X_objStage, Y_objStage, Z_objStage]
+        # This is the actual position of the cell (3D track) (T,X,Y,Z)
+        self.Obj_Time_Position = Obj_Time_Position
+
     def setLiquidLensFreq(self, freq):
         self.LiquidLensFreq_curr = freq
 
     def set_StartFocusTracking(self, start_focus_tracking):
         self.start_focus_tracking_curr = start_focus_tracking
 
-    def setImageName(self, imageName):
+    def setImageName(self, imageName, imaging_channel):
         self.imageName_curr = imageName
 
 

@@ -10,7 +10,7 @@ import scipy.signal as signal
 import numpy as np
 
 
-class FocusTracker():
+class Tracker_Focus():
     
     def __init__(self,parent=None):
         

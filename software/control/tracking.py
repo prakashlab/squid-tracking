@@ -9,6 +9,7 @@ from DaSiamRPN.code.utils import get_axis_aligned_bbox, cxy_wh_2_rect
 
 
 
+
 class Tracker_Image(object):
 	
 	def __init__(self, OpenCVTrackers, NeuralNetTrackers):
@@ -30,6 +31,12 @@ class Tracker_Image(object):
 		self.isCentroidFound = False
 
 		self.trackerActive = False
+
+		self.searchArea = None
+
+
+
+
 
 
 
@@ -153,7 +160,7 @@ class Tracker_Image(object):
 			# Get the latest thresholded image from the queue
 			# thresh_image = 
 
-			pts,image_data = image_processing.crop(image, self.centroid_image,self.searchArea)
+			pts,image_data = image_processing.crop(image, self.centroid_image, self.searchArea)
 			
 			self.origLoc = pts[0]
 
@@ -186,12 +193,7 @@ class Tracker_Image(object):
 
 
 
-class Tracker_Focus(object):
-	def __init__(self):
-		pass
 
-	def track(self,image):
-		pass
 
 
 

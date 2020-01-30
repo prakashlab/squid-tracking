@@ -46,4 +46,10 @@ class Acquisition:
     def __init__(self):
         pass
 
+class Tracking:
+    SEACH_AREA_RATIO = 10
+    
+    def __init__(self):
+        pass
+
 
