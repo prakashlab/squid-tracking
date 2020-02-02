@@ -49,7 +49,65 @@ class Acquisition:
 class Tracking:
     SEACH_AREA_RATIO = 10
     
+    CROPPED_IMG_RATIO = 10
+
+    DEFAULT_TRACKER = "csrt"
+    
     def __init__(self):
         pass
 
+class FocusTracking:
+
+    # in Hz
+    LIQLENS_FREQ_MIN = 0.1
+    LIQLENS_FREQ_MAX = 20
+    LIQLENS_FREQ_STEP = 0.1
+    LIQLENS_FREQ_DEFAULT = 2
+
+    # in mm
+    LIQLENS_AMP_MIN = 0.01
+    LIQLENS_AMP_MAX = 0.5
+    LIQLENS_AMP_STEP = 0.01
+    LIQLENS_AMP_DEFAULT = 0.05
+
+
+    def __init__(self):
+        pass
+
+objectives = {'10x':{'magnification':10, 'NA':0.17, 'PixelPermm':1122}}    
+
+cameras = {'DF':{'serial':[], 'px_format':(4000,3000), 'color_format': 'RGBx', 'fps':120},
+            'FL':{'serial':[], 'px_format':(4000,3000), 'color_format': 'RGBx', 'fps':120}}
+
+liquidLens = {'liquidLens_Freq':{'default':2, 'min':0.1, 'max':20, 'step':0.1, 'units':'Hz'}, 
+    'liquidLens_Amp':{'default':0.05, 'min':0.1, 'max':20, 'step':0.1, 'units':'mm'} }
+
+
+
+OpticalPaths = {'DF single':['DF'], 'DF_FL':['DF', 'FL'], 'DF_BF':['DF', 'BF']}
+
+
+INTERNAL_STATE_VARIABLES = ['Time', 'X_objStage', 'Y_objStage', 'Z_objStage', 'X_stage', 'Y_stage',
+    'Theta_stage', 'X_image', 'Z_image', 'track_obj_image', 'track_focus', 'track_obj_stage', 
+    'homing_state','liquidLens_Freq', 'liquidLens_Amp', 'FocusPhase', 'Optical path', 'uScope mode', 
+    'Objective', 'basePath', 'experimentID']
+
+# Based on the number of imaging channels, there will also be 1 or more image names saved.
+SAVE_DATA = ['Time', 'X_objStage', 'Y_objStage', 'Z_objStage', 'Theta_stage', 'X_image', 
+    'Z_image', 'track_focus', 'track_obj_stage','liquidLens_Freq', 'liquidLens_Amp', 'FocusPhase']
+
+
+SEND_DATA = {'X_order', 'Y_order', 'Z_order', 'track_obj_image', 'track_focus', 'homing_state'}
+
+INITIAL_VALUES = {'Time':0, 'X_objStage':0, 'Y_objStage':0, 'Z_objStage':0, 'X_stage':0, 'Y_stage':0,
+    'Theta_stage':0, 'X_image':0, 'Z_image':0, 'track_obj_image':False, 'track_focus':False, 
+    'track_obj_stage':False, 'homing_state':False, 'liquidLens_Freq': liquidLens['liquidLens_Freq']['default'], 
+    'liquidLens_Amp': liquidLens['liquidLens_Amp']['default'] , 'FocusPhase':0, 'Optical path':'DF single', 
+    'uScope mode': 'Tracking', 'Objective':'10x', 'basePath':'/', 'experimentID':'track'}
+
+
+# 
+print(INTERNAL_STATE_VARIABLES)
+print(INITIAL_VALUES.keys())
+assert INTERNAL_STATE_VARIABLES == list(INITIAL_VALUES.keys()), "Variable mismatch: One or more state variables may not be initialized"
 

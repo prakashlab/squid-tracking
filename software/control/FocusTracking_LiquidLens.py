@@ -9,6 +9,10 @@ import scipy.interpolate as interpolate
 import scipy.signal as signal
 import numpy as np
 
+import control.utils.image_processing as image_processing
+
+from control._def import FocusTracking
+
 
 class Tracker_Focus():
     
@@ -26,8 +30,8 @@ class Tracker_Focus():
 
         self.error = 0
         
-        self.ampl=0.025
-        self.freq=2
+        self.liquidLensAmp = FocusTracking.LIQLENS_AMP_DEFAULT
+        self.liquidLensFreq = FocusTracking.LIQLENS_FREQ_DEFAULT
 
         self.window_size = 25
         
@@ -45,14 +49,36 @@ class Tracker_Focus():
         # kept for class compatibility
         self.FM_slope = 0 # measured decay rate of FM with distance (Delta FM/ Delta mm)
         
-        freq=[0,10]
+        freq_range=[0,10]
         phase_lag=[0,0]
-        self.phase_lag_funct=interpolate.interp1d(freq,phase_lag)
-        self.phase_lag=self.phase_lag_funct(self.freq)
+        self.phase_lag_funct=interpolate.interp1d(freq_range,phase_lag)
+        self.phase_lag=self.phase_lag_funct(self.liquidLensFreq)
+
+        self.cropped_imSize = None
+
+    def save_list(self):
+        # List of variables from this object that need to be saved
+        save_list = ['YfocusPhase', 'liquidLensFreq', 'liquidLensAmp']
+
+        return save_list
+
     
     def update_data(self,phase):
         self.YfocusPhase.append(phase)
-        self.YfocusPosition.append(self.ampl*np.sin(phase))
+        self.YfocusPosition.append(self.liquidLensAmp*np.sin(phase))
+
+    def get_focus_error(self,image, centroid):
+        self.isFocusOrder = 0
+        Y_order=0
+        # Crop the image:
+        cropped_image = image_processing.crop(image, centroid, self.cropped_imSize)
+
+        
+        focusMeasure = image_processing.YTracking_Objective_Function(cropped_image, self.color)
+        Y_order,self.isFocusOrder = self.tracker_y.get_error(focusMeasure)
+        # Disabling Y tracking for 3D PIV
+        # self.isYorder = 0
+        return Y_order
 
     def get_error(self, focusMeasure):
 
@@ -119,13 +145,13 @@ class Tracker_Focus():
         self.YfocusPhase=deque(self.YfocusPhase,maxlen = self.YdequeLen)
         self.YmaxFM=deque(self.YmaxFM,maxlen = self.YdequeLen)
         
-    def set_ampl(self,ampl):
-        self.ampl=ampl
+    def set_ampl(self,liquidLensAmp):
+        self.liquidLensAmp=liquidLensAmp
             
-    def set_freq(self,freq):
-        # print("Frequency: {}".format(freq))
-        self.freq=freq
-        self.phase_lag=self.phase_lag_funct(self.freq)
+    def set_freq(self,liquidLensFreq):
+        # print("Frequency: {}".format(liquidLensFreq))
+        self.liquidLensFreq=liquidLensFreq
+        self.phase_lag=self.phase_lag_funct(self.liquidLensFreq)
         
     def set_maxGain(self,gain):
         self.maxGain=gain

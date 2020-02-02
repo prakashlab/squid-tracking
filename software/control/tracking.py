@@ -6,32 +6,40 @@ from control.DaSiamRPN.code.net import SiamRPNvot
 from control.DaSiamRPN.code import vot 
 from control.DaSiamRPN.code.run_SiamRPN import SiamRPN_init, SiamRPN_track
 from control.DaSiamRPN.code.utils import get_axis_aligned_bbox, cxy_wh_2_rect
+from control._def import Tracking
+import cv2
 
 
 
 
 class Tracker_Image(object):
 	
+	'''
+	SLOTS: update_tracker_type, Connected to: Tracking Widget
+
+
+	'''
+
 	def __init__(self):
 		
 		 # Define list of trackers being used(maybe do this as a definition?)
-        # OpenCV tracking suite
-        self.OPENCV_OBJECT_TRACKERS = {
-        "csrt": cv2.TrackerCSRT_create,
-        "kcf": cv2.TrackerKCF_create,
-        "boosting": cv2.TrackerBoosting_create,
-        "mil": cv2.TrackerMIL_create,
-        "tld": cv2.TrackerTLD_create,
-        "medianflow": cv2.TrackerMedianFlow_create,
-        "mosse": cv2.TrackerMOSSE_create
-        }
-        # Neural Net based trackers
-        self.NEURALNETTRACKERS = {"daSiamRPN":[]}
+		# OpenCV tracking suite
+		self.OPENCV_OBJECT_TRACKERS = {
+		"csrt": cv2.TrackerCSRT_create,
+		"kcf": cv2.TrackerKCF_create,
+		"boosting": cv2.TrackerBoosting_create,
+		"mil": cv2.TrackerMIL_create,
+		"tld": cv2.TrackerTLD_create,
+		"medianflow": cv2.TrackerMedianFlow_create,
+		"mosse": cv2.TrackerMOSSE_create
+		}
+		# Neural Net based trackers
+		self.NEURALNETTRACKERS = {"daSiamRPN":[]}
 
-        # Image Tracker type
-        self.tracker_type = "csrt"
+		# Image Tracker type
+		self.tracker_type = Tracking.DEFAULT_TRACKER
 
-        self.create_tracker()
+		self.create_tracker()
 
 		# Centroid of object from the image
 		self.centroid_image = None # (2,1)
@@ -41,8 +49,7 @@ class Tracker_Image(object):
 
 		self.origLoc = np.array([0,0])
 
-		self.tracker_type = None
-		self.tracker = None
+		
 
 		self.isCentroidFound = False
 
@@ -61,7 +68,7 @@ class Tracker_Image(object):
 		except:
 			print('No neural net model found ...')
 			print('reverting to default OpenCV tracker')
-			self.tracker_type = "csrt"
+			self.tracker_type = Tracking.DEFAULT_TRACKER
 
 
 		# Create the tracker
@@ -81,7 +88,7 @@ class Tracker_Image(object):
 
 			# Threshold the image based on the set thresholding parameters
 			# Get the latest thresholded image from the relevant Queue
-            # thresh_image = image_processing.threshold_image(image, lower_HSV, upper_HSV)  #The threshold image as one channel
+			# thresh_image = image_processing.threshold_image(image, lower_HSV, upper_HSV)  #The threshold image as one channel
 
 			self.isCentroidFound, self.centroid_image, self.bbox = image_processing.find_centroid_basic_Rect(thresh_image)
 			
@@ -107,26 +114,24 @@ class Tracker_Image(object):
 				self.isCentroidFound = False
 				self.trackerActive = False
 
-
-
-
-		
-
 		return self.isCentroidFound, self.centroid_image, self.rect_pts
 
-  def create_tracker(self):
-        if(self.tracker_type in self.OPENCV_OBJECT_TRACKERS.keys()):
-            self.tracker = self.OPENCV_OBJECT_TRACKERS[self.tracker_type]()
+	def create_tracker(self):
 
-        elif(self.tracker_type in self.NEURALNETTRACKERS.keys()):
-            
-            print('Using {} tracker'.format(self.tracker_type))
+		if(self.tracker_type in self.OPENCV_OBJECT_TRACKERS.keys()):
+			self.tracker = self.OPENCV_OBJECT_TRACKERS[self.tracker_type]()
 
-    def update_tracker_type(self, tracker_type):
-        self.tracker_type = tracker_type
+		elif(self.tracker_type in self.NEURALNETTRACKERS.keys()):
+			
+			print('Using {} tracker'.format(self.tracker_type))
 
-        # Update the actual tracker
-        self.create_tracker()
+	# Signal from Tracking Widget connects to this Function
+
+	def update_tracker_type(self, tracker_type):
+		self.tracker_type = tracker_type
+
+		# Update the actual tracker
+		self.create_tracker()
 
 	def init_tracker(self, image, centroid, bbox):
 
@@ -210,6 +215,7 @@ class Tracker_Image(object):
 		pts = np.array([[bbox[0], bbox[1]],[bbox[0] + bbox[2], bbox[1] + bbox[3]]], dtype = 'int')
 
 		return pts
+
 
 
 
