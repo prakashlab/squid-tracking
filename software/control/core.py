@@ -28,16 +28,30 @@ import time
 import numpy as np
 import pyqtgraph as pg
 import cv2
+import imutils
 from datetime import datetime
 
 class StreamHandler(QObject):
-
-    image_to_display = Signal(np.ndarray)
+    ''' Signals 
+    '''
+    image_to_display = Signal(np.ndarray, bool)
     packet_image_to_write = Signal(np.ndarray, int, float)
-    packet_image_for_tracking = Signal(np.ndarray, int, float)
+    packet_image_for_tracking = Signal(np.ndarray, np.ndarray)
     signal_new_frame_received = Signal()
 
-    def __init__(self,crop_width=3000,crop_height=3000,display_resolution_scaling=0.5):
+    '''
+    Signals
+    image_to_display ->ImageDisplayer.enque
+    packet_image_to_write ->ImageSaver
+    packet_image_for_tracking -> Tracking_controller.on_new_frame
+    signal_new_frame_received -> microcontroller_Receiver.get_Data
+
+    Slots
+
+
+    '''
+
+    def __init__(self,crop_width=3000,crop_height=3000,working_resolution_scaling=0.5, image_width = 1920, trackingStream = True):
         QObject.__init__(self)
         self.fps_display = 1
         self.fps_save = 1
@@ -48,16 +62,27 @@ class StreamHandler(QObject):
 
         self.crop_width = crop_width
         self.crop_height = crop_height
-        self.display_resolution_scaling = display_resolution_scaling
+        self.working_resolution_scaling = working_resolution_scaling
+
+        self.image_width = image_width
 
         self.save_image_flag = False
-        self.track_flag = False
+
+        # If current image stream is used for tracking.
+        self.trackingStream = trackingStream
+
+        self.track_flag = True
+
         self.handler_busy = False
 
         # for fps measurement
         self.timestamp_last = 0
         self.counter = 0
         self.fps_real = 0
+
+        # Image thresholding parameters
+        self.lower_HSV = np.array([0, 0, 100],dtype='uint8') 
+        self.upper_HSV = np.array([255, 255, 255],dtype='uint8') 
 
     def start_recording(self):
         self.save_image_flag = True
@@ -81,15 +106,32 @@ class StreamHandler(QObject):
         self.crop_width = crop_width
         self.crop_height = crop_height
 
-    def set_display_resolution_scaling(self, display_resolution_scaling):
-        self.display_resolution_scaling = display_resolution_scaling/100
-        print(self.display_resolution_scaling)
+    def set_working_resolution_scaling(self, working_resolution_scaling):
+        self.working_resolution_scaling = working_resolution_scaling/100
+        print(self.working_resolution_scaling)
+
+    def set_image_thresholds(self, lower_HSV, upper_HSV):
+        self.lower_HSV = lowerHSV
+        self.upper_HSV = upperHSV
+
+    def threshold_image(self, image_resized, color):
+        if(color):
+            thresh_image = image_processing.threshold_image(image_resized,self.lower_HSV,self.upper_HSV)  #The threshold image as one channel
+
+        else:
+            # print(self.lower_HSV[2])
+            # print(self.upper_HSV[2])
+            # img_bgr = cv2.cvtColor(img, cv2.COLOR_GRAY2BGR)
+            thresh_image = image_processing.threshold_image_gray(image_resized, self.lower_HSV[2], self.upper_HSV[2])
+
+        return thresh_image
 
     def on_new_frame(self, camera):
 
         camera.image_locked = True
         self.handler_busy = True
         self.signal_new_frame_received.emit() # self.liveController.turn_off_illumination()
+        # This also triggers the microcontroller_Receiever
 
         # measure real fps
         timestamp_now = round(time.time())
@@ -101,64 +143,111 @@ class StreamHandler(QObject):
             self.counter = 0
             print('real camera fps is ' + str(self.fps_real))
 
+        # crop image
+        # image = image_processing.crop_image(camera.current_frame,self.crop_width,self.crop_height)
+        image = camera.current_frame
         # save a copy of full-res image for saving (make sure to do a deep copy)
         # @@@@@@@@@
 
+        # image_resized = cv2.resize(image,(round(self.crop_width*self.working_resolution_scaling), round(self.crop_height*self.working_resolution_scaling)),cv2.INTER_LINEAR)
+        image_resized = imutils.resize(image, round(self.image_width*self.working_resolution_scaling))
 
+        
+        
+        # Deepak: For now tracking with every image from camera 
+        if self.track_flag and self.trackingStream:
+            # track is a blocking operation - it needs to be
+            # @@@ will cropping before emitting the signal lead to speedup?
+            image_thresh = 255*np.array(self.threshold_image(image_resized, color = camera.is_color), dtype = 'uint8')
 
-        # crop image
-        image_cropped = image_processing.crop_image(camera.current_frame,self.crop_width,self.crop_height)
+            self.packet_image_for_tracking.emit(image_resized, image_thresh)
+            self.timestamp_last_track = time_now
 
         # send image to display
         time_now = time.time()
-        if time_now-self.timestamp_last_display >= 1/self.fps_display:
-            self.image_to_display.emit(cv2.resize(image_cropped,(round(self.crop_width*self.display_resolution_scaling), round(self.crop_height*self.display_resolution_scaling)),cv2.INTER_LINEAR))
+        if time_now - self.timestamp_last_display >= 1/self.fps_display:
+            if camera.is_color:
+                image_resized = cv2.cvtColor(image_resized,cv2.COLOR_RGB2BGR)
+
+            self.image_to_display.emit(image_resized, self.trackingStream)
+            
             self.timestamp_last_display = time_now
 
         # send image to write
         if self.save_image_flag and time_now-self.timestamp_last_save >= 1/self.fps_save:
             if camera.is_color:
-                image_cropped = cv2.cvtColor(image_cropped,cv2.COLOR_RGB2BGR)
-            self.packet_image_to_write.emit(image_cropped,camera.frame_ID,camera.timestamp)
+                image = cv2.cvtColor(image,cv2.COLOR_RGB2BGR)
+            self.packet_image_to_write.emit(image,camera.frame_ID,camera.timestamp)
             self.timestamp_last_save = time_now
 
-        # send image to track
-        # if self.track_flag and time_now-self.timestamp_last_track >= 1/self.fps_track:
 
-        # Deepak: For now tracking with every image from camera 
-        if self.track_flag:
-            # track is a blocking operation - it needs to be
-            # @@@ will cropping before emitting the signal lead to speedup?
-            self.packet_image_for_tracking.emit(image_cropped,camera.frame_ID,camera.timestamp)
-            self.timestamp_last_track = time_now
+        
 
         self.handler_busy = False
         camera.image_locked = False
 
 
-    def on_new_frame_from_simulation(self,image,frame_ID,timestamp):
+    def on_new_frame_from_simulation(self,image,frame_ID = None,timestamp = None):
         # check whether image is a local copy or pointer, if a pointer, needs to prevent the image being modified while this function is being executed
-        
+        color = False
+
         self.handler_busy = True
+        self.signal_new_frame_received.emit() # self.liveController.turn_off_illumination()
+        # This also triggers the microcontroller_Receiever
+
+        # measure real fps
+        timestamp_now = round(time.time())
+        if timestamp_now == self.timestamp_last:
+            self.counter = self.counter+1
+        else:
+            self.timestamp_last = timestamp_now
+            self.fps_real = self.counter
+            self.counter = 0
+            print('real camera fps is ' + str(self.fps_real))
 
         # crop image
-        image_cropped = image_processing.crop_image(image,self.crop_width,self.crop_height)
+        # image = image_processing.crop_image(camera.current_frame,self.crop_width,self.crop_height)
+        image = np.array(np.copy(image), dtype = 'uint8')
+        # save a copy of full-res image for saving (make sure to do a deep copy)
+        # @@@@@@@@@
+
+        # image_resized = cv2.resize(image,(round(self.crop_width*self.working_resolution_scaling), round(self.crop_height*self.working_resolution_scaling)),cv2.INTER_LINEAR)
+        image_resized = imutils.resize(image, round(self.image_width*self.working_resolution_scaling))
+
+        
+        
+        # Deepak: For now tracking with every image from camera 
+        if self.track_flag and self.trackingStream:
+            # track is a blocking operation - it needs to be
+            # @@@ will cropping before emitting the signal lead to speedup?
+            print('Sending image to tracking controller...')
+
+            image_thresh = 255*np.array(self.threshold_image(image_resized, color = False), dtype='uint8')
+
+            cv2.imshow('Thresh image',image_thresh)
+            # cv2.waitKey(1)
+
+            self.packet_image_for_tracking.emit(image_resized, image_thresh)
+            self.timestamp_last_track = timestamp_now
 
         # send image to display
         time_now = time.time()
-        if time_now-self.timestamp_last_display >= 1/self.fps_display:
-            self.image_to_display.emit(cv2.resize(image_cropped,(round(self.crop_width*self.display_resolution_scaling), round(self.crop_height*self.display_resolution_scaling)),cv2.INTER_LINEAR))
+        if time_now - self.timestamp_last_display >= 1/self.fps_display:
+            print('Sending image to display...')
+            if color:
+                image_resized = cv2.cvtColor(image_resized,cv2.COLOR_RGB2BGR)
+
+            self.image_to_display.emit(image_resized, self.trackingStream)
+            
             self.timestamp_last_display = time_now
 
         # send image to write
         if self.save_image_flag and time_now-self.timestamp_last_save >= 1/self.fps_save:
-            self.packet_image_to_write.emit(image_cropped,frame_ID,timestamp)
+            print('Saving image...')
+            if color:
+                image = cv2.cvtColor(image,cv2.COLOR_RGB2BGR)
+            self.packet_image_to_write.emit(image,camera.frame_ID,camera.timestamp)
             self.timestamp_last_save = time_now
-
-        # send image to track
-        if time_now-self.timestamp_last_display >= 1/self.fps_track:
-            # track emit
-            self.timestamp_last_track = time_now
 
         self.handler_busy = False
 
@@ -259,18 +348,19 @@ class ImageDisplay(QObject):
                 return
             # process the queue
             try:
-                [image,frame_ID,timestamp] = self.queue.get(timeout=0.1)
+                [image, frame_ID, timestamp, trackingStream] = self.queue.get(timeout=0.1)
                 self.image_lock.acquire(True)
-                self.image_to_display.emit(image)
+                # Send image and trackingStream
+                self.image_to_display.emit(image, trackingStream)
                 self.image_lock.release()
                 self.queue.task_done()
             except:
                 pass
 
     # def enqueue(self,image,frame_ID,timestamp):
-    def enqueue(self,image):
+    def enqueue(self,image, trackingStream = False):
         try:
-            self.queue.put_nowait([image,None,None])
+            self.queue.put_nowait([image, None, None, trackingStream])
             # when using self.queue.put(str_) instead of try + nowait, program can be slowed down despite multithreading because of the block and the GIL
             pass
         except:
@@ -563,7 +653,7 @@ class MultiPointController(QObject):
         self.do_autofocus = False
         self.crop_width = Acquisition.CROP_WIDTH
         self.crop_height = Acquisition.CROP_HEIGHT
-        self.display_resolution_scaling = Acquisition.IMAGE_DISPLAY_SCALING_FACTOR
+        self.working_resolution_scaling = Acquisition.IMAGE_DISPLAY_SCALING_FACTOR
         self.counter = 0
         self.experiment_ID = None
         self.base_path = None
@@ -683,7 +773,7 @@ class MultiPointController(QObject):
                                 image = image_processing.crop_image(image,self.crop_width,self.crop_height)
                                 saving_path = os.path.join(current_path, file_ID + '_bf' + '.' + Acquisition.IMAGE_FORMAT)
                                 cv2.imwrite(saving_path,image)
-                                self.image_to_display.emit(cv2.resize(image,(round(self.crop_width*self.display_resolution_scaling), round(self.crop_height*self.display_resolution_scaling)),cv2.INTER_LINEAR))
+                                self.image_to_display.emit(cv2.resize(image,(round(self.crop_width*self.working_resolution_scaling), round(self.crop_height*self.working_resolution_scaling)),cv2.INTER_LINEAR))
 
                             # take fluorescence
                             if self.do_fluorescence:
@@ -695,7 +785,7 @@ class MultiPointController(QObject):
                                 image = image_processing.crop_image(image,self.crop_width,self.crop_height)
                                 saving_path = os.path.join(current_path, file_ID + '_fluorescence' + '.' + Acquisition.IMAGE_FORMAT)
                                 cv2.imwrite(saving_path,image)
-                                self.image_to_display.emit(cv2.resize(image,(round(self.crop_width*self.display_resolution_scaling), round(self.crop_height*self.display_resolution_scaling)),cv2.INTER_LINEAR))
+                                self.image_to_display.emit(cv2.resize(image,(round(self.crop_width*self.working_resolution_scaling), round(self.crop_height*self.working_resolution_scaling)),cv2.INTER_LINEAR))
 
                             # move z
                             if k < self.NZ - 1:
@@ -797,7 +887,7 @@ class MultiPointController(QObject):
                         image = image_processing.crop_image(image,self.crop_width,self.crop_height)
                         saving_path = os.path.join(current_path, file_ID + '_bf' + '.' + Acquisition.IMAGE_FORMAT)
                         cv2.imwrite(saving_path,image)
-                        self.image_to_display.emit(cv2.resize(image,(round(self.crop_width*self.display_resolution_scaling), round(self.crop_height*self.display_resolution_scaling)),cv2.INTER_LINEAR))
+                        self.image_to_display.emit(cv2.resize(image,(round(self.crop_width*self.working_resolution_scaling), round(self.crop_height*self.working_resolution_scaling)),cv2.INTER_LINEAR))
                         QApplication.processEvents()
 
                     # take fluorescence
@@ -811,7 +901,7 @@ class MultiPointController(QObject):
                         image = image_processing.crop_image(image,self.crop_width,self.crop_height)
                         saving_path = os.path.join(current_path, file_ID + '_fluorescence' + '.' + Acquisition.IMAGE_FORMAT)
                         cv2.imwrite(saving_path,image)
-                        self.image_to_display.emit(cv2.resize(image,(round(self.crop_width*self.display_resolution_scaling), round(self.crop_height*self.display_resolution_scaling)),cv2.INTER_LINEAR))
+                        self.image_to_display.emit(cv2.resize(image,(round(self.crop_width*self.working_resolution_scaling), round(self.crop_height*self.working_resolution_scaling)),cv2.INTER_LINEAR))
                         QApplication.processEvents()
                     
                     if self.do_bfdf is not True and self.do_fluorescence is not True:
@@ -883,11 +973,75 @@ class ImageDisplayWindow(QMainWindow):
         self.graphics_widget.img = pg.ImageItem(border='w')
         self.graphics_widget.view.addItem(self.graphics_widget.img)
 
+        ## Variables for annotating images
+        self.DrawRect = False
+        self.ptRect1 = None
+        self.ptRect2 = None
+
+        self.DrawCirc = False
+        self.centroid = None
+
+        self.DrawCrossHairs = False
+
+
         layout = QGridLayout()
         layout.addWidget(self.graphics_widget, 0, 0) 
         self.widget.setLayout(layout)
         self.setCentralWidget(self.widget)
 
-    def display_image(self,image):
+    def display_image(self,image, trackingStream):
+        
+        if(trackingStream):
+
+            if(self.DrawRect):
+                cv2.rectangle(image, self.ptRect1, self.ptRect2,(0,0,0) , 2) #cv2.rectangle(img, (20,20), (300,300),(0,0,255) , 2)#
+                self.DrawRect=False
+
+            if(self.DrawCirc):
+                cv2.circle(image,(self.centroid[0],self.centroid[1]), 20, (255,0,0), 2)
+                self.DrawCirc=False
+
+            if(self.DrawCrossHairs):
+                cv2.Line(image, horLine_pt1, horLine_pt2, (255,255,255), thickness=1, lineType=8, shift=0) 
+                cv2.Line(image, verLine_pt1, verLine_pt2, (255,255,255), thickness=1, lineType=8, shift=0) 
+                self.DrawCrossHairs=False
+
         self.graphics_widget.img.setImage(image,autoLevels=False)
         # print('display image')
+    
+    
+    def draw_rectangle(self, RectPts):
+        # Connected to Signal from Tracking object
+        self.DrawRect=True
+        self.ptRect1=(pts[0][0],pts[0][1])
+        self.ptRect2=(pts[1][0],pts[1][1])
+
+    def draw_circle(self, centroid):
+        # Connected to Signal from Tracking object
+        self.DrawCirc=True
+        self.centroid=(centroid[0],centroid[1])
+        
+    def draw_crosshairs(self, image_center, image_width):
+        # Connected to Signal from Tracking object
+        cross_length = round(image_width/20)
+
+        horLine_pt1 = (round(image_center[0] - cross_length/2), image_center[1])
+        horLine_pt2 = (round(image_center[0] + cross_length/2), image_center[1])
+
+        verLine_pt1 = (round(image_center[0]), round(image_center[1] - cross_length/2))
+        verLine_pt2 = (round(image_center[0]), round(image_center[1] + cross_length/2))
+
+        self.DrawCrossHairs = True
+
+
+
+
+
+
+
+
+
+
+
+
+        

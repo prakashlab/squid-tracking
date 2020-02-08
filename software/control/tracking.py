@@ -46,6 +46,7 @@ class Tracker_Image(object):
 		# Centroid of object along optical axis
 		self.centroid_focus = None # (1,)
 		self.bbox = None
+		self.rect_pts = None
 
 		self.origLoc = np.array([0,0])
 
@@ -90,6 +91,10 @@ class Tracker_Image(object):
 			# Get the latest thresholded image from the relevant Queue
 			# thresh_image = image_processing.threshold_image(image, lower_HSV, upper_HSV)  #The threshold image as one channel
 
+			#@@@ Debugging
+			print('Track start: Using thresholded image...')
+
+
 			self.isCentroidFound, self.centroid_image, self.bbox = image_processing.find_centroid_basic_Rect(thresh_image)
 			
 			
@@ -97,9 +102,13 @@ class Tracker_Image(object):
 
 			self.trackerActive = True
 
+			self.rect_pts = self.rectpts_from_bbox(self.bbox)
+
 
 		else:
 			# Find centroid using the tracking.
+			print('Continued track: Using Tracker...')
+
 			self.bbox = self.update_tracker(image) # (x,y,w,h)
 
 			if(self.bbox is not None):
@@ -136,7 +145,7 @@ class Tracker_Image(object):
 	def init_tracker(self, image, centroid, bbox):
 
 		# Initialize the OpenCV based tracker
-		if(self.tracker_type in OpenCVTrackers.keys()):
+		if(self.tracker_type in self.OPENCV_OBJECT_TRACKERS.keys()):
 
 			self.tracker.init(image, bbox)
 
@@ -157,10 +166,10 @@ class Tracker_Image(object):
 
 		new_bbox = None
 
-		if(self.tracker_type in OpenCVTrackers.keys()):
+		if(self.tracker_type in self.OPENCV_OBJECT_TRACKERS.keys()):
 			self.origLoc = np.array([0,0])
 			# (x,y,w,h)
-			ok, new_bbox = self.tracker.update(image_data)
+			ok, new_bbox = self.tracker.update(image)
 
 				
 
@@ -168,7 +177,7 @@ class Tracker_Image(object):
 
 			self.origLoc = np.array([0,0])
 
-			self.state = SiamRPN_track(self.state, image_data)
+			self.state = SiamRPN_track(self.state, image)
 
 			ok = True
 
@@ -186,11 +195,11 @@ class Tracker_Image(object):
 			# Get the latest thresholded image from the queue
 			# thresh_image = 
 
-			pts,image_data = image_processing.crop(image, self.centroid_image, self.searchArea)
+			pts,image = image_processing.crop(image, self.centroid_image, self.searchArea)
 			
 			self.origLoc = pts[0]
 
-			isCentroidFound, centroid, new_bbox = image_processing.find_centroid_basic_Rect(image_data)
+			isCentroidFound, centroid, new_bbox = image_processing.find_centroid_basic_Rect(image)
 
 
 		# @@@ Can add additional methods here for future tracker implementations

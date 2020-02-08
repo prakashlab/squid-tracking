@@ -101,9 +101,24 @@ class Microcontroller():
         '''
         return data
 
+# Define a micro controller emulator
+
 class Microcontroller_Simulation():
     def __init__(self,parent=None):
-        pass
+        #REC_DATA = ['FocusPhase', 'X_stage', 'Y_stage', 'Theta_stage', 'track_obj_image', 'track_obj_stage']
+        self.FocusPhase = 0
+        self.Xpos = 0
+        self.Ypos = 0
+        self.Thetapos = 0
+        
+        self.track_obj_image = 0
+        self.track_obj_stage = 1
+
+        self.dummydata = {'FocusPhase':self.FocusPhase, 'X_stage': self.Xpos, 'Y_stage':self.Ypos, 'Theta_stage':self.Thetapos, 'track_obj_image':self.track_obj_image, 'track_obj_stage' : self.track_obj_stage}
+
+        self.RecData = {key : self.dummydata[key] for key in REC_DATA}
+
+        self.SendData = {key:[] for key in SEND_DATA}
 
     def close(self):
         pass
@@ -115,19 +130,32 @@ class Microcontroller_Simulation():
         pass
 
     def move_x(self,delta):
-        pass
+        self.Xpos += delta
 
     def move_y(self,delta):
-        pass
+        self.Ypos += delta
+
+    def move_Theta(self,delta):
+        self.Thetapos += delta
 
     def move_z(self,delta):
         pass
-
+    
     def send_command(self,command):
-        pass
+        #SEND_DATA = ['X_order', 'Y_order', 'Z_order', 'track_obj_image', 'track_focus', 'homing_state']
+        X_order, Y_order, Theta_order = command['X_order'], command['Y_order'], command['Theta_order']
+        self.track_obj_image = command['track_obj_image']
+        self.track_obj_stage = command['track_obj_stage']
+
+        self.move_x(X_order)
+        self.move_y(Y_order)
+        self.move_Theta(Theta_order)
+
 
     def read_received_packet(self):
-        pass
+        self.RecData = {'FocusPhase':self.FocusPhase, 'X_stage': self.Xpos, 'Y_stage':self.Ypos, 'Theta_stage':self.Thetapos, 'track_obj_image':self.track_obj_image, 'track_obj_stage' : self.track_obj_stage}
+        return self.RecData
+
 
 
 # from Gravity machine

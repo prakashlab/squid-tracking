@@ -3,16 +3,19 @@
 import numpy as np
 
 
-class units_converter:
+class Units_Converter:
 
     def __init__(self):
-
 
         self.chamberWidth = 4    # Width of chamber in mm (Wheel 18)
 
         # Pixel per mm 10x objective
         self.pixelPermm = 1122.67
-        self.imW_max = None
+
+        print('Initializing Units Converter')
+        print(self.pixelPermm)
+
+        self.imW_max = 1920
         # Pixel per mm 4x objective
         # pixelPermm = 456
         # --------------------------------------------------
@@ -74,7 +77,7 @@ class units_converter:
         self.pixelPermm = new_pixelPermm
 
     def px_to_mm(self, Dist,resolution_width):
-        return 1./self.pixelPermm/(resolution_width/self.imW_max)*Dist   
+        return 1/self.pixelPermm/(resolution_width/self.imW_max)*Dist   
 
     def mm_to_px(self, Dist,resolution_width):
         return Dist*self.pixelPermm*resolution_width/self.imW_max
