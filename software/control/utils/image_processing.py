@@ -187,8 +187,9 @@ def find_centroid_basic_Rect(image):
 
 def get_image_center_width(image):
     ImShape=image.shape
+    print(ImShape)
     ImH,ImW=ImShape[0],ImShape[1]
-    return np.array([ImW*0.5,ImH*0.5]),ImW
+    return np.array([ImW*0.5,ImH*0.5]), ImW
 
 def get_image_top_center_width(image):
     ImShape=image.shape

@@ -44,7 +44,7 @@ class TrackingController(QObject):
 
     save_data_signal = Signal()
 
-    multiplex_send_signal = Signal(int, int, int)
+    multiplex_send_signal = Signal(float, float, float)
 
     ''' 
     Connection map
@@ -143,7 +143,7 @@ class TrackingController(QObject):
         self.Z_objStage = deque(maxlen=self.dequeLen)
 
         # Subset of INTERNAL_STATE_MODEL that is updated by Tracking_Controller (self)
-        self.internal_state_vars = ['Time','Z_objStage','X_image', 'Z_image']
+        self.internal_state_vars = ['Time','X_objStage', 'Y_objStage', 'Z_objStage','X_image', 'Z_image']
 
         
 
@@ -153,7 +153,8 @@ class TrackingController(QObject):
     # Triggered by signal from StreamHandler
     def on_new_frame(self,image, thresh_image = None):
         
-        print('In Tracking controller new frame')
+        # @@@testing
+        # print('In Tracking controller new frame')
 
         # Get the required values from internal state
 
@@ -288,13 +289,15 @@ class TrackingController(QObject):
                 self.update_obj_position()  
 
                 # get motion commands
-
+                # Error is in mm.
                 X_order, Y_order, Theta_order = self.get_motion_commands(x_error,y_error,z_error)
 
             else:
                 X_order, Y_order, Theta_order = 0,0,0            
                 # X_order, Y_order, Z_order is in stepper motor steps
-                
+            
+            # @@@testing
+            print(X_order, Y_order, Theta_order)
             # We want to send to the microcontroller at a constant rate, even if an object is not found
 
             # Send the motion commands and instruct the multiplex send object to send data 
@@ -363,6 +366,8 @@ class TrackingController(QObject):
 
     def get_motion_commands(self, x_error, y_error, z_error):
         # Take an error signal and pass it through a PID algorithm
+
+        # Convert from mm to steps.
         x_error_steps = self.units_converter.X_mm_to_step(x_error)
         y_error_steps = self.units_converter.Y_mm_to_step(y_error)
         theta_error_steps = self.units_converter.Z_mm_to_step(z_error, self.X_objStage[-1])
@@ -385,7 +390,7 @@ class TrackingController(QObject):
             Y_order = round(Y_order,2)
 
             Theta_order = self.pid_controller_theta.update(theta_error_steps,self.Time[-1])
-            Theta_order = round(Z_order,2)
+            Theta_order = round(Theta_order,2)
 
 
         return X_order, Y_order, Theta_order
@@ -404,12 +409,9 @@ class TrackingController(QObject):
             self.color = False
 
 
-    def update_thresh_image(self, thresh_image_data):
-        # Take thresh_image from the thresh_image stream and set it as current image.
-        self.thresh_image = thresh_image_data
-
     def update_image_center_width(self, image):
         self.image_center, self.image_width = image_processing.get_image_center_width(image)
+        print(self.image_width)
 
     def update_tracking_setpoint(self):
 
@@ -480,12 +482,16 @@ class microcontroller_Receiver(QObject):
 
     # This function is triggered by the "rec new image signal" from StreamHandler
     def getData_microcontroller(self):
+        # for debugging
+        print("Receiving data from uController")
 
-        data = microcontroller.read_received_packet()
+        data = self.microcontroller.read_received_packet()
         for key in REC_DATA:
             self.RecData[key] = data[key]
             # Update internal state
             self.internal_state.data[key] = data[key]
+
+        print(self.internal_state.data)
 
         
 class microcontroller_Sender(QObject):
@@ -504,11 +510,12 @@ class microcontroller_Sender(QObject):
         self.internal_state = internal_state
 
         self.sendData = {key:[] for key in SEND_DATA}
-
         
 
     def multiplex_Send(self, X_order, Y_order, Theta_order):
-
+        # for debugging
+        print("Sending data to uController")
+        print(X_order, Y_order, Theta_order)
         # X_error, Y_error, Z_error (in full steps)
         self.sendData['X_order'] = X_order
         self.sendData['Y_order'] = Y_order
@@ -518,16 +525,17 @@ class microcontroller_Sender(QObject):
         self.get_sendData()
         
         # Send command to the microcontroller
-        self.microcontroller.send_command([sendData[key] for key in SEND_DATA])
+        self.microcontroller.send_command(self.sendData)
 
 
     def get_sendData(self):
 
         for key in SEND_DATA:
-            try:
-                self.sendData[key] = self.internal_state.data[key]
-            except:
-                print('{} not found in Internal State model'.format(key))
+            if(key not in MOTION_COMMANDS):
+                try:
+                    self.sendData[key] = self.internal_state.data[key]
+                except:
+                    print('{} not found in Internal State model'.format(key))
 
 
 

@@ -24,9 +24,18 @@ def SimulateImageStream():
     trackingController = core_tracking.TrackingController(microcontroller = microcontroller, 
         internal_state = internal_state)
 
+    microcontroller_sender = core_tracking.microcontroller_Sender(microcontroller, internal_state)
+
+    microcontroller_receiver = core_tracking.microcontroller_Receiver(microcontroller, internal_state)
+
 
     # Make connections between objects
     streamHandler.packet_image_for_tracking.connect(trackingController.on_new_frame)
+
+    streamHandler.signal_new_frame_received.connect(microcontroller_receiver.getData_microcontroller)
+
+    trackingController.multiplex_send_signal.connect(microcontroller_sender.multiplex_Send)
+
 
     # Tested and Tracking Works
     # path = '/Users/deepak/Dropbox/GravityMachine/ExperimentResults/TestData/seacucumber9_PIV'
@@ -46,8 +55,6 @@ def SimulateImageStream():
 
 
         # Pass the image to streamHandler
-        print('passing image to stream handler')
-
         streamHandler.on_new_frame_from_simulation(image = image)
 
 

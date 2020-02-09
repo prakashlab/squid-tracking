@@ -51,7 +51,7 @@ class StreamHandler(QObject):
 
     '''
 
-    def __init__(self,crop_width=3000,crop_height=3000,working_resolution_scaling=0.5, image_width = 1920, trackingStream = True):
+    def __init__(self, camera = None , crop_width=3000,crop_height=3000,working_resolution_scaling = 0.5, trackingStream = True):
         QObject.__init__(self)
         self.fps_display = 1
         self.fps_save = 1
@@ -64,7 +64,14 @@ class StreamHandler(QObject):
         self.crop_height = crop_height
         self.working_resolution_scaling = working_resolution_scaling
 
-        self.image_width = image_width
+        self.camera = camera
+
+        # Raw image width
+        if(camera is not None):
+            self.image_width = self.camera.width
+        else:
+            self.image_width = 720
+
 
         self.save_image_flag = False
 
@@ -177,7 +184,7 @@ class StreamHandler(QObject):
         if self.save_image_flag and time_now-self.timestamp_last_save >= 1/self.fps_save:
             if camera.is_color:
                 image = cv2.cvtColor(image,cv2.COLOR_RGB2BGR)
-            self.packet_image_to_write.emit(image,camera.frame_ID,camera.timestamp)
+            self.packet_image_to_write.emit(image, camera.frame_ID, self.camera.timestamp)
             self.timestamp_last_save = time_now
 
 
@@ -220,12 +227,12 @@ class StreamHandler(QObject):
         if self.track_flag and self.trackingStream:
             # track is a blocking operation - it needs to be
             # @@@ will cropping before emitting the signal lead to speedup?
-            print('Sending image to tracking controller...')
+            # print('Sending image to tracking controller...')
 
             image_thresh = 255*np.array(self.threshold_image(image_resized, color = False), dtype='uint8')
 
             cv2.imshow('Thresh image',image_thresh)
-            # cv2.waitKey(1)
+            cv2.waitKey(1)
 
             self.packet_image_for_tracking.emit(image_resized, image_thresh)
             self.timestamp_last_track = timestamp_now
@@ -233,7 +240,7 @@ class StreamHandler(QObject):
         # send image to display
         time_now = time.time()
         if time_now - self.timestamp_last_display >= 1/self.fps_display:
-            print('Sending image to display...')
+            # print('Sending image to display...')
             if color:
                 image_resized = cv2.cvtColor(image_resized,cv2.COLOR_RGB2BGR)
 
@@ -243,7 +250,7 @@ class StreamHandler(QObject):
 
         # send image to write
         if self.save_image_flag and time_now-self.timestamp_last_save >= 1/self.fps_save:
-            print('Saving image...')
+            # print('Saving image...')
             if color:
                 image = cv2.cvtColor(image,cv2.COLOR_RGB2BGR)
             self.packet_image_to_write.emit(image,camera.frame_ID,camera.timestamp)

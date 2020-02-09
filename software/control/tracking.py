@@ -92,7 +92,7 @@ class Tracker_Image(object):
 			# thresh_image = image_processing.threshold_image(image, lower_HSV, upper_HSV)  #The threshold image as one channel
 
 			#@@@ Debugging
-			print('Track start: Using thresholded image...')
+			# print('Track start: Using thresholded image...')
 
 
 			self.isCentroidFound, self.centroid_image, self.bbox = image_processing.find_centroid_basic_Rect(thresh_image)
@@ -107,7 +107,9 @@ class Tracker_Image(object):
 
 		else:
 			# Find centroid using the tracking.
-			print('Continued track: Using Tracker...')
+
+			#@@@ Debugging
+			# print('Continued track: Using Tracker...')
 
 			self.bbox = self.update_tracker(image) # (x,y,w,h)
 

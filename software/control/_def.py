@@ -99,12 +99,11 @@ INTERNAL_STATE_VARIABLES = ['Time', 'X_objStage', 'Y_objStage', 'Z_objStage', 'X
 SAVE_DATA = ['Time', 'X_objStage', 'Y_objStage', 'Z_objStage', 'Theta_stage', 'X_image', 
     'Z_image', 'track_focus', 'track_obj_stage','liquidLens_Freq', 'liquidLens_Amp', 'FocusPhase']
 
+MOTION_COMMANDS = ['X_order', 'Y_order', 'Theta_order']
 
 SEND_DATA = ['X_order', 'Y_order', 'Theta_order', 'track_obj_image', 'track_focus', 'homing_state']
 
 REC_DATA = ['FocusPhase', 'X_stage', 'Y_stage', 'Theta_stage', 'track_obj_image', 'track_obj_stage']
-
-
 
 INITIAL_VALUES = {'Time':0, 'X_objStage':0, 'Y_objStage':0, 'Z_objStage':0, 'X_stage':0, 'Y_stage':0,
     'Theta_stage':0, 'X_image':0, 'Z_image':0, 'track_obj_image':False, 'track_focus':False, 

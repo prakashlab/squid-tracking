@@ -112,6 +112,8 @@ class Microcontroller_Simulation():
         self.Thetapos = 0
         
         self.track_obj_image = 0
+        self.track_focus = 0
+
         self.track_obj_stage = 1
 
         self.dummydata = {'FocusPhase':self.FocusPhase, 'X_stage': self.Xpos, 'Y_stage':self.Ypos, 'Theta_stage':self.Thetapos, 'track_obj_image':self.track_obj_image, 'track_obj_stage' : self.track_obj_stage}
@@ -145,7 +147,7 @@ class Microcontroller_Simulation():
         #SEND_DATA = ['X_order', 'Y_order', 'Z_order', 'track_obj_image', 'track_focus', 'homing_state']
         X_order, Y_order, Theta_order = command['X_order'], command['Y_order'], command['Theta_order']
         self.track_obj_image = command['track_obj_image']
-        self.track_obj_stage = command['track_obj_stage']
+        self.track_focus = command['track_focus']
 
         self.move_x(X_order)
         self.move_y(Y_order)
