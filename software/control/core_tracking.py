@@ -97,16 +97,16 @@ class TrackingController(QObject):
 
         self.image_center = None
 
-        self.image_width = None
+        self.image_width = 720
 
         self.posError_image = np.array([0,0])
 
         self.image_offset = np.array([0,0])
 
         # Create a tracking object that does the image-based tracking
-        self.tracker_xz = tracking.Tracker_Image()
+        self.tracker_image = tracking.Tracker_Image()
         # Create a tracking object that does the focus-based tracking
-        self.tracker_y = tracking_focus.Tracker_Focus()
+        self.tracker_focus = tracking_focus.Tracker_Focus()
 
         # PID controller for each axis
 
@@ -215,7 +215,7 @@ class TrackingController(QObject):
                 self.resetPID = False
 
                 
-            self.objectFound, self.centroid, self.rect_pts = self.tracker_xz.track(image, thresh_image, start_flag = start_flag)
+            self.objectFound, self.centroid, self.rect_pts = self.tracker_image.track(image, thresh_image, start_flag = start_flag)
             
             self.tracking_frame_counter += 1
    
@@ -268,10 +268,10 @@ class TrackingController(QObject):
                     # Set the size of the cropped Image used for calculating focus measures
                     self.set_cropped_image_size()
                     # Update the focus phase
-                    self.tracker_y.update_data(FocusPhase)
+                    self.tracker_focus.update_data(FocusPhase)
 
                     # y-error in mm
-                    y_error = self.tracker_y.get_focus_error(image, self.centroid)
+                    y_error = self.tracker_focus.get_focus_error(image, self.centroid)
                 else:
                     y_error = 0
 
@@ -422,11 +422,11 @@ class TrackingController(QObject):
 
     def set_searchArea(self):
 
-        self.tracker_xz.searchArea = int(self.image_width/Tracking.SEARCH_AREA_RATIO)
+        self.tracker_image.searchArea = int(self.image_width/Tracking.SEARCH_AREA_RATIO)
 
     def set_cropped_image_size(self):
 
-        self.tracker_y.cropped_imSize = int(self.image_width/Tracking.CROPPED_IMG_RATIO)
+        self.tracker_focus.cropped_imSize = int(self.image_width/Tracking.CROPPED_IMG_RATIO)
 
     def get_latest_attr_value(self, key):
 

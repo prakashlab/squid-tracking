@@ -77,6 +77,9 @@ class FocusTracking:
 
 RESOLUTION_WIDTH = 1920
 
+TRACKERS = ['nearest-nbr', 'csrt', 'daSIAMRPN']
+DEFAULT_TRACKER = 'csrt'
+
 objectives = {'10x':{'magnification':10, 'NA':0.17, 'PixelPermm':1122}}    
 
 cameras = {'DF':{'serial':[], 'px_format':(4000,3000), 'color_format': 'RGBx', 'fps':120},

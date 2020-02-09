@@ -118,8 +118,8 @@ class StreamHandler(QObject):
         print(self.working_resolution_scaling)
 
     def set_image_thresholds(self, lower_HSV, upper_HSV):
-        self.lower_HSV = lowerHSV
-        self.upper_HSV = upperHSV
+        self.lower_HSV = lower_HSV
+        self.upper_HSV = upper_HSV
 
     def threshold_image(self, image_resized, color):
         if(color):

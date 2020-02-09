@@ -63,7 +63,7 @@ class OctopiGUI(QMainWindow):
 		self.navigationWidget = widgets.NavigationWidget(self.navigationController)
 		#self.autofocusWidget = widgets.AutoFocusWidget(self.autofocusController)
 		self.recordingControlWidget = widgets.RecordingWidget(self.streamHandler,self.imageSaver)
-		self.trackingControlWidget = widgets_tracking.TrackingControllerWidget(self.streamHandler,self.trackingController)
+		self.trackingControlWidget = widgets_tracking.TrackingControllerWidget(self.streamHandler, self.trackingController)
 		#self.multiPointWidget = widgets.MultiPointWidget(self.multipointController)
 
 		self.recordTabWidget = QTabWidget()

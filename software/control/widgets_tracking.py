@@ -2,13 +2,21 @@
 import os 
 os.environ["QT_API"] = "pyqt5"
 import qtpy
+import numpy as np
 
 # qt libraries
 from qtpy.QtCore import *
 from qtpy.QtWidgets import *
 from qtpy.QtGui import *
 
+import pyqtgraph as pg
+#import pyqtgraph.ptime as ptime
+import pyqtgraph.dockarea as dock
+from pyqtgraph.dockarea.Dock import DockLabel
+
 from control._def import *
+
+from control.utils import rangeslider as rangeslider
 
 class TrackingControllerWidget(QFrame):
 	'''
@@ -19,12 +27,137 @@ class TrackingControllerWidget(QFrame):
 	Text boxes for base path and Experiment ID.
 
 	'''
-	def __init__(self, microcontroller, navigationController, main=None, *args, **kwargs):
+	def __init__(self, streamHandler, trackingController, main=None, *args, **kwargs):
 		super().__init__(*args, **kwargs)
 
 		self.base_path_is_set = False
+
+		self.streamHandler = streamHandler
+		self.trackingController = trackingController
 		# self.add_components()
 		self.setFrameStyle(QFrame.Panel | QFrame.Raised)
+
+		self.add_components()
+
+
+	def add_components(self):
+
+		# Image Tracking Button
+		self.btn_track = QPushButton("Track")
+		# self.btn_track.setStyleSheet('QPushButton {color: red;}')
+		self.btn_track.setCheckable(True)
+		self.btn_track.setChecked(False)
+		self.btn_track.setDefault(False)
+
+		# Image Tracker Dropdown
+		self.dropdown_TrackerSelection = QComboBox()
+		self.dropdown_TrackerSelection.addItems(TRACKERS)
+		self.dropdown_TrackerSelection.setCurrentText(DEFAULT_TRACKER)
+		self.trackingController.tracker_image.update_tracker_type(self.dropdown_TrackerSelection.currentText())
+
+		# Image offset settings
+		self.tracking_setPoint_group = QGroupBox('Tracking set-point offset', alignment = Qt.AlignCenter)
+		tracking_setPoint_layout = QHBoxLayout()
+
+		self.label_x = QLabel('x (px)')
+		# Image tracking offset - X axis
+		self.tracking_setPoint_offset_x = QDoubleSpinBox()
+		self.tracking_setPoint_offset_x.setMinimum(-round(self.trackingController.image_width/4)) 
+		self.tracking_setPoint_offset_x.setMaximum(round(self.trackingController.image_width/4)) 
+		self.tracking_setPoint_offset_x.setSingleStep(1)
+		self.tracking_setPoint_offset_x.setValue(0)
+
+		# Image tracking offset - Y axis
+		self.label_y = QLabel('y (px)')
+
+		self.tracking_setPoint_offset_y = QDoubleSpinBox()
+		self.tracking_setPoint_offset_y.setMinimum(-round(self.trackingController.image_width/4)) 
+		self.tracking_setPoint_offset_y.setMaximum(round(self.trackingController.image_width/4)) 
+		self.tracking_setPoint_offset_y.setSingleStep(1)
+		self.tracking_setPoint_offset_y.setValue(0)
+		# layout
+
+		tracking_setPoint_layout.addWidget(self.label_x)
+		tracking_setPoint_layout.addWidget(self.tracking_setPoint_offset_x)
+		tracking_setPoint_layout.addWidget(self.label_y)
+		tracking_setPoint_layout.addWidget(self.tracking_setPoint_offset_y)
+
+		self.tracking_setPoint_group.setLayout(tracking_setPoint_layout)
+
+
+		
+
+		# Range sliders for image color thresholding
+		self.group_sliders = QWidget()
+		layout_sliders = QGridLayout()
+		
+		self.label_Hue = QLabel('Hue')
+		self.range_slider1 = rangeslider.QRangeSlider()
+		self.range_slider1.setMax(255)
+		self.label_Saturation=QLabel('Saturation')
+		self.range_slider2=rangeslider.QRangeSlider()
+		self.range_slider2.setMax(255)
+		self.label_Vibrance=QLabel('Value')
+		self.range_slider3=rangeslider.QRangeSlider()
+		self.range_slider3.setMax(255)
+		
+		layout_sliders.addWidget(self.label_Hue,0,0,1,1)
+		layout_sliders.addWidget(self.range_slider1,0,1,1,1)
+		layout_sliders.addWidget(self.label_Saturation,1,0,1,1)
+		layout_sliders.addWidget(self.range_slider2,1,1,1,1)
+		layout_sliders.addWidget(self.label_Vibrance,2,0,1,1)
+		layout_sliders.addWidget(self.range_slider3,2,1,1,1)
+		self.group_sliders.setLayout(layout_sliders)
+		self.group_sliders.setEnabled(True)
+
+
+		# groupbox_track_settings = QGroupBox('Tracking Controller')
+
+		groupbox_track_layout = QGridLayout()
+		groupbox_track_layout.addWidget(self.btn_track, 0,0,1,1)
+		groupbox_track_layout.addWidget(self.dropdown_TrackerSelection, 0,1,1,1)
+		groupbox_track_layout.addWidget(self.tracking_setPoint_group,0,2,1,1)
+		groupbox_track_layout.addWidget(self.group_sliders,1,0,1,3)
+
+
+		self.range_slider1.startValueChanged.connect(self.sliders_move)
+		self.range_slider2.startValueChanged.connect(self.sliders_move)
+		self.range_slider3.startValueChanged.connect(self.sliders_move)
+		self.range_slider1.endValueChanged.connect(self.sliders_move)
+		self.range_slider2.endValueChanged.connect(self.sliders_move)
+		self.range_slider3.endValueChanged.connect(self.sliders_move)
+
+
+		self.setLayout(groupbox_track_layout)
+
+
+
+
+	def set_slider_defaults(self, LOWER =[0,0,0], UPPER = [255,255,255]):
+
+		LOWER=np.array(LOWER,dtype="uint8")
+		UPPER=np.array(UPPER,dtype="uint8")
+
+		self.range_slider1.setRange(LOWER[0],UPPER[0])
+		self.range_slider2.setRange(LOWER[1],UPPER[1])
+		self.range_slider3.setRange(LOWER[2],UPPER[2])
+
+	def sliders_move(self):
+		LOWER=np.array([0,0,0],dtype="uint8")
+		UPPER=np.array([255,255,255],dtype="uint8")
+		
+		LOWER[0],UPPER[0]=self.range_slider1.getRange()
+		LOWER[1],UPPER[1]=self.range_slider2.getRange()
+		LOWER[2],UPPER[2]=self.range_slider3.getRange()
+
+		self.streamHandler.set_image_thresholds(np.uint8(LOWER), np.uint8(UPPER))
+
+
+
+		# self.camera_functions[self.tracking_channel].lower_HSV=np.uint8(LOWER)
+		# # self.object_tracking.lower_HSV=np.uint8(LOWER)
+		# self.camera_functions[self.tracking_channel].upper_HSV=np.uint8(UPPER)
+		# self.object_tracking.upper_HSV=np.uint8(UPPER		
 
 
 # class PID_Widget(QFrame):
@@ -33,6 +166,105 @@ class TrackingControllerWidget(QFrame):
 # 		super().__init__(*args, **kwargs)
 # 		pass
 
+# class PIDgroupbox(QtGui.QGroupBox):
+	
+# 	def __init__(self,name,Pmax=2,Dmax=1,Imax=1):
+# 		super().__init__()
+		
+# 		self.setTitle(name)
+	
+# 		# Slider Groupe P
+# 		defaultP = Pmax/2
+# 		stepP = Pmax/100
+
+# 		self.labelP = QtGui.QLabel('P')
+# 		self.hsliderP = QtGui.QSlider(QtCore.Qt.Horizontal)
+# 		self.hsliderP.setRange(0,int(Pmax*100))
+# 		self.hsliderP.setValue(int(defaultP*100))
+# 		self.spinboxP=QtGui.QDoubleSpinBox()
+# 		self.spinboxP.setRange(0,round(Pmax,2))
+# 		self.spinboxP.setSingleStep(round(stepP,2))
+# 		self.spinboxP.setValue(round(defaultP,2))
+# 		self.hsliderP.valueChanged.connect(self.spinBoxP_setValue)
+# 		self.spinboxP.valueChanged.connect(self.hsliderP_setValue)
+# 		sliderP_layout=QtGui.QHBoxLayout()
+# 		sliderP_layout.addWidget(self.labelP)
+# 		sliderP_layout.addWidget(self.hsliderP)
+# 		sliderP_layout.addWidget(self.spinboxP)
+# 		group_sliderP=QtWidgets.QWidget()
+# 		group_sliderP.setLayout(sliderP_layout)
+		
+
+# 		defaultI = 0
+# 		stepI = Imax/100
+# 		# Slider Groupe I
+# 		self.labelI = QtGui.QLabel('I')
+# 		self.hsliderI = QtGui.QSlider(QtCore.Qt.Horizontal)
+# 		self.hsliderI.setRange(0,int(Imax*100))
+# 		self.hsliderI.setValue(int(defaultI*100))
+# 		self.spinboxI=QtGui.QDoubleSpinBox()
+# 		self.spinboxI.setSingleStep(round(stepI,2))
+# 		self.spinboxI.setRange(0,int(Imax))
+# 		self.spinboxI.setValue(round(defaultI,2))
+# 		self.hsliderI.valueChanged.connect(self.spinBoxI_setValue)
+# 		self.spinboxI.valueChanged.connect(self.hsliderI_setValue)
+# 		sliderI_layout=QtGui.QHBoxLayout()
+# 		sliderI_layout.addWidget(self.labelI)
+# 		sliderI_layout.addWidget(self.hsliderI)
+# 		sliderI_layout.addWidget(self.spinboxI)
+# 		group_sliderI=QtWidgets.QWidget()
+# 		group_sliderI.setLayout(sliderI_layout)
+		
+# 		# Slider Groupe D
+# 		defaultD = Dmax/4
+# 		stepD = Dmax/100
+
+# 		self.labelD = QtGui.QLabel('D')
+# 		self.hsliderD = QtGui.QSlider(QtCore.Qt.Horizontal)
+# 		self.hsliderD.setRange(0,int(Dmax*100))
+# 		self.hsliderD.setValue(int(defaultD*100))
+# 		self.spinboxD=QtGui.QDoubleSpinBox()
+# 		self.spinboxD.setRange(0,int(Dmax))
+# 		self.spinboxI.setSingleStep(round(stepD,2))
+# 		self.spinboxD.setValue(round(defaultD,2))
+# 		self.hsliderD.valueChanged.connect(self.spinBoxD_setValue)
+# 		self.spinboxD.valueChanged.connect(self.hsliderD_setValue)
+# 		sliderD_layout=QtGui.QHBoxLayout()
+# 		sliderD_layout.addWidget(self.labelD)
+# 		sliderD_layout.addWidget(self.hsliderD)
+# 		sliderD_layout.addWidget(self.spinboxD)
+# 		group_sliderD=QtWidgets.QWidget()
+# 		group_sliderD.setLayout(sliderD_layout)
+		
+# 				# Big PID group
+# 		groupbox_layout_PID = QtGui.QVBoxLayout()
+# 		groupbox_layout_PID.addWidget(group_sliderP)   
+# 		groupbox_layout_PID.addWidget(group_sliderI)
+# 		groupbox_layout_PID.addWidget(group_sliderD)
+		
+		
+# 		self.setLayout(groupbox_layout_PID)
+	
+# 	def spinBoxP_setValue(self,value):
+# 		newvalue=float(value)/100.
+# 		self.spinboxP.setValue(newvalue)
+
+# 	def hsliderP_setValue(self,value):
+# 		self.hsliderP.setValue(int(value*100)) 
+
+# 	def spinBoxI_setValue(self,value):
+# 		newvalue=float(value)/100.
+# 		self.spinboxI.setValue(newvalue)
+
+# 	def hsliderI_setValue(self,value):
+# 		self.hsliderI.setValue(int(value*100)) 
+
+# 	def spinBoxD_setValue(self,value):
+# 		newvalue=float(value)/100.
+# 		self.spinboxD.setValue(newvalue)
+
+# 	def hsliderD_setValue(self,value):
+# 		self.hsliderD.setValue(int(value*100))
 
 
 # class FocusTracking_Widget(QFrame):
