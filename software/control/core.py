@@ -121,6 +121,9 @@ class StreamHandler(QObject):
         self.lower_HSV = lower_HSV
         self.upper_HSV = upper_HSV
 
+        #@@@Testing
+        print('Updated color thresholds to {} and {}'.format(self.lower_HSV, self.upper_HSV))
+
     def threshold_image(self, image_resized, color):
         if(color):
             thresh_image = image_processing.threshold_image(image_resized,self.lower_HSV,self.upper_HSV)  #The threshold image as one channel

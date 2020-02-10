@@ -133,6 +133,7 @@ class Tracker_Image(object):
 			self.tracker = self.OPENCV_OBJECT_TRACKERS[self.tracker_type]()
 
 		elif(self.tracker_type in self.NEURALNETTRACKERS.keys()):
+			pass
 			
 			print('Using {} tracker'.format(self.tracker_type))
 
@@ -141,6 +142,8 @@ class Tracker_Image(object):
 	def update_tracker_type(self, tracker_type):
 		self.tracker_type = tracker_type
 
+		#@@@ Testing
+		print('Image tracker set to {}'.format(self.tracker_type))
 		# Update the actual tracker
 		self.create_tracker()
 

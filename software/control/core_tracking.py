@@ -93,7 +93,7 @@ class TrackingController(QObject):
 
         
 
-        self.setPoint_image = None
+        self.image_setPoint = None
 
         self.image_center = None
 
@@ -178,9 +178,11 @@ class TrackingController(QObject):
             
         self.tracking_triggered_prev = tracking_triggered
 
-        # Note that this needs to be a local copy since on the internal_state value changing due to a hardware
-        # button press
-        if self.track_obj_image == True:
+        ''' 
+            Note that this needs to be a local copy since on the internal_state 
+            value changing due to a hardware button press
+        '''
+        if self.internal_state['track_obj_image'] == True:
 
             
             self.update_elapsed_time()
@@ -253,7 +255,7 @@ class TrackingController(QObject):
                 self.stage_auto_prev = self.stage_auto
 
                 # Find the object's position relative to the tracking set point on the image
-                self.posError_image = self.centroid - self.setPoint_image
+                self.posError_image = self.centroid - self.image_setPoint
 
                 # Get the error and convert it to mm
                 # x_error, z_error are in mm
@@ -315,6 +317,9 @@ class TrackingController(QObject):
     # Triggered when you hit track_obj_image
     def initialise_track(self):
 
+        # @@@ Testing
+        print('Initializing track...')
+        
         self.tracking_frame_counter = 0
 
         #Time
@@ -335,7 +340,6 @@ class TrackingController(QObject):
         self.Y_objStage = deque(maxlen=self.dequeLen)
         self.Z_objStage = deque(maxlen=self.dequeLen)
 
-        self.track_obj_image = True
 
     def update_elapsed_time(self):
 
@@ -415,10 +419,14 @@ class TrackingController(QObject):
 
     def update_tracking_setpoint(self):
 
-        self.setPoint_image = self.image_center + self.image_offset
+        self.image_setPoint = self.image_center + self.image_offset
+        #@@@Testing
+        print('New tracking set point :{}'.format(self.image_setPoint))
 
     def update_image_offset(self, new_image_offset):
         self.image_offset = new_image_offset
+        #@@@Testing
+        print('Updated image offset to :{}'.format(self.image_offset))
 
     def set_searchArea(self):
 
@@ -540,7 +548,7 @@ class microcontroller_Sender(QObject):
 
 
 
-class trackingDataSaver(QObject):
+class TrackingDataSaver(QObject):
 
     ''' 
     Signals and Slots
@@ -600,6 +608,8 @@ class trackingDataSaver(QObject):
         
         self.thread = Thread(target=self.process_queue)
         self.thread.start()
+
+        self.exp_folder_created = False
 
     def process_queue(self):
         while True:
@@ -661,8 +671,14 @@ class trackingDataSaver(QObject):
         '''
         This is called when a new Acquisition is started.
         '''
+         # @@@ Testing
+        print('Starting new experiment...')
+
         # generate unique experiment ID
         if(self.internal_state.data['Acquisition']==True):
+
+             # @@@ Testing
+            print('Creating folders...')
 
             self.experiment_ID = experiment_ID + '_' + datetime.now().strftime('%Y-%m-%d %H-%M-%-S')
             
@@ -675,15 +691,16 @@ class trackingDataSaver(QObject):
             # create a new folder to hold current experiment data
             try:
                 os.mkdir(os.path.join(self.base_path, self.experiment_ID))
+                self.exp_folder_created = True
             except:
                 pass
 
-            # reset the counter
-            self.track_counter = 0
+           
+        
+        # reset the counter
+        self.track_counter = 0
 
-            self.start_new_track()
-        else:
-            pass
+        self.start_new_track()
 
 
     def start_new_track(self):
@@ -692,11 +709,13 @@ class trackingDataSaver(QObject):
         this will save a new track file. Within a given Experiment Acquisition, each track button 
         press creates a new track file.
         '''
+         # @@@ Testing
+        print('Starting new track...')
 
         # If a current track file is open then close it
         self.csv_register.close()
 
-        if(self.internal_state.data['Acquisition']==True):
+        if(self.internal_state.data['Acquisition']==True and self.exp_folder_created):
 
 
             file_name = os.path.join(self.base_path, self.experiment_ID, 'track{:03d}.csv'.format(self.track_counter))
@@ -733,11 +752,13 @@ class trackingDataSaver(QObject):
         self.current_image_name[image_channel] = image_name
         
 
-    def update_imaging_channels(self, imaging_channels):
+    def update_imaging_channels(self):
         '''
         Call this function to change the number of image name fields. 
         This can only be called when an Acquisition is not in progress.
         '''
+        imaging_channels = self.internal_state.data['imaging channels']
+
         if(self.internal_state.data['Acquisition'] == False):
             self.saveDataNames_imageChannels = self.saveDataNames + [channel for channel in imaging_channels]
 

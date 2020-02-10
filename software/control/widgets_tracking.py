@@ -27,13 +27,18 @@ class TrackingControllerWidget(QFrame):
 	Text boxes for base path and Experiment ID.
 
 	'''
-	def __init__(self, streamHandler, trackingController, main=None, *args, **kwargs):
+	def __init__(self, streamHandler, trackingController, trackingDataSaver, internal_state, main=None, *args, **kwargs):
 		super().__init__(*args, **kwargs)
 
 		self.base_path_is_set = False
 
 		self.streamHandler = streamHandler
 		self.trackingController = trackingController
+
+		self.trackingDataSaver = trackingDataSaver
+
+		self.internal_state = internal_state
+
 		# self.add_components()
 		self.setFrameStyle(QFrame.Panel | QFrame.Raised)
 
@@ -119,6 +124,16 @@ class TrackingControllerWidget(QFrame):
 		groupbox_track_layout.addWidget(self.tracking_setPoint_group,0,2,1,1)
 		groupbox_track_layout.addWidget(self.group_sliders,1,0,1,3)
 
+		# Track button connection
+		self.btn_track.clicked.connect(self.do_track_button_tasks)
+
+		# Choose tracker
+		self.dropdown_TrackerSelection.currentIndexChanged.connect(self.update_tracker)
+
+		# Image tracking setpoint
+		self.tracking_setPoint_offset_x.valueChanged.connect(self.update_tracking_setPoints)
+		self.tracking_setPoint_offset_y.valueChanged.connect(self.update_tracking_setPoints)
+
 
 		self.range_slider1.startValueChanged.connect(self.sliders_move)
 		self.range_slider2.startValueChanged.connect(self.sliders_move)
@@ -127,10 +142,43 @@ class TrackingControllerWidget(QFrame):
 		self.range_slider2.endValueChanged.connect(self.sliders_move)
 		self.range_slider3.endValueChanged.connect(self.sliders_move)
 
+		
 
 		self.setLayout(groupbox_track_layout)
 
 
+
+	def do_track_button_tasks(self):
+
+		if self.btn_track.isChecked():
+
+			# Start a new track. If 'Aquire' is true this also creates a track file.
+			# Internal state is changed after creating this file.
+			self.trackingDataSaver.start_new_track()
+
+		else:
+			self.internal_state.data['track_obj_image'] = False
+			# Resets the track deques and counters
+
+			self.trackingController.initialise_track()
+
+	# This function is connected to the signal from tracking Controller triggered by 
+	# hardware start-tracking input.
+	def handle_hardware_track_signal(self):
+
+		self.btn_track.toggle()
+		self.do_track_button_tasks()
+
+	def update_tracker(self, index):
+
+		self.trackingController.tracker_image.update_tracker_type(self.dropdown_TrackerSelection.currentText())
+
+	def update_tracking_setPoints(self):
+
+		value_x = self.tracking_setPoint_offset_x.value()
+		value_y = self.tracking_setPoint_offset_y.value()
+
+		self.trackingController.update_image_offset((value_x, value_y))
 
 
 	def set_slider_defaults(self, LOWER =[0,0,0], UPPER = [255,255,255]):

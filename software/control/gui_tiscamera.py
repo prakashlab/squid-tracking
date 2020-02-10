@@ -34,14 +34,20 @@ class OctopiGUI(QMainWindow):
 			self.camera = camera.Camera(sn=17910085)
 			self.microcontroller = microcontroller.Microcontroller()
 		
+		self.internal_state = core_tracking.InternalState()
+
 		self.streamHandler = core.StreamHandler()
 		self.liveController = core.LiveController(self.camera,self.microcontroller)
 		self.navigationController = core.NavigationController(self.microcontroller)
 		#self.autofocusController = core.AutoFocusController(self.camera,self.navigationController,self.liveController)
 		#self.multipointController = core.MultiPointController(self.camera,self.navigationController,self.liveController,self.autofocusController)
 		self.trackingController = core_tracking.TrackingController(self.microcontroller,self.navigationController)
+		
+		self.trackingDataSaver = core_tracking.TrackingDataSaver(self.internal_state)
+
 		self.imageSaver = core.ImageSaver()
 		self.imageDisplay = core.ImageDisplay()
+
 
 		'''
 		# thread
@@ -63,7 +69,7 @@ class OctopiGUI(QMainWindow):
 		self.navigationWidget = widgets.NavigationWidget(self.navigationController)
 		#self.autofocusWidget = widgets.AutoFocusWidget(self.autofocusController)
 		self.recordingControlWidget = widgets.RecordingWidget(self.streamHandler,self.imageSaver)
-		self.trackingControlWidget = widgets_tracking.TrackingControllerWidget(self.streamHandler, self.trackingController)
+		self.trackingControlWidget = widgets_tracking.TrackingControllerWidget(self.streamHandler, self.trackingController, self.trackingDataSaver, self.internal_state)
 		#self.multiPointWidget = widgets.MultiPointWidget(self.multipointController)
 
 		self.recordTabWidget = QTabWidget()
