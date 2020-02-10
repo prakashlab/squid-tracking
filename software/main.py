@@ -22,7 +22,7 @@ if __name__ == "__main__":
 	app = QApplication([])
 	
 	# Main GUI window
-	win = gui.OctopiGUI()
+	win = gui.GravityMachineGUI()
 
 	# Style sheet
 	qss = QSSHelper.open_qss(os.path.join('aqua', 'aqua.qss'))

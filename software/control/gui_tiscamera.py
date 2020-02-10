@@ -18,13 +18,15 @@ import control.microcontroller as microcontroller
 
 SIMULATION = True
 
-class OctopiGUI(QMainWindow):
+class GravityMachineGUI(QMainWindow):
 
 	# variables
 	fps_software_trigger = 100
 
 	def __init__(self, *args, **kwargs):
 		super().__init__(*args, **kwargs)
+		
+		self.setWindowTitle('Gravity Machine')
 
 		# load objects
 		if SIMULATION is True:
@@ -70,20 +72,28 @@ class OctopiGUI(QMainWindow):
 		#self.autofocusWidget = widgets.AutoFocusWidget(self.autofocusController)
 		self.recordingControlWidget = widgets.RecordingWidget(self.streamHandler,self.imageSaver)
 		self.trackingControlWidget = widgets_tracking.TrackingControllerWidget(self.streamHandler, self.trackingController, self.trackingDataSaver, self.internal_state)
+		
+		self.PID_Group_Widget = widgets_tracking.PID_Group_Widget(self.trackingController)
+
 		#self.multiPointWidget = widgets.MultiPointWidget(self.multipointController)
 
 		self.recordTabWidget = QTabWidget()
 		self.recordTabWidget.addTab(self.recordingControlWidget, "Simple Recording")
-		self.recordTabWidget.addTab(self.trackingControlWidget, "Tracking")
+		# self.recordTabWidget.addTab(self.trackingControlWidget, "Tracking")
 		#self.recordTabWidget.addTab(self.multiPointWidget, "Multipoint Acquisition")
 
 		# layout widgets
 		layout = QGridLayout() #layout = QStackedLayout()
-		layout.addWidget(self.cameraSettingWidget,0,0)
-		layout.addWidget(self.liveControlWidget,1,0)
-		layout.addWidget(self.navigationWidget,2,0)
+		# layout.addWidget(self.cameraSettingWidget,0,0)
+
+		layout.addWidget(self.liveControlWidget,0,0)
+
+		layout.addWidget(self.trackingControlWidget,1,0)
+
+		layout.addWidget(self.PID_Group_Widget,2,0)
+		# layout.addWidget(self.navigationWidget,2,0)
 		#layout.addWidget(self.autofocusWidget,3,0)
-		layout.addWidget(self.recordTabWidget,4,0)
+		# layout.addWidget(self.recordTabWidget,3,0)
 		
 		# transfer the layout to the central widget
 		self.centralWidget = QWidget()
