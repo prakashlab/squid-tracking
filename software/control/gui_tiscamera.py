@@ -68,7 +68,7 @@ class GravityMachineGUI(QMainWindow):
 		# load widgets
 		self.cameraSettingWidget = widgets.CameraSettingsWidget(self.camera,self.liveController)
 		self.liveControlWidget = widgets.LiveControlWidget(self.streamHandler,self.liveController)
-		self.navigationWidget = widgets.NavigationWidget(self.navigationController)
+		self.navigationWidget = widgets_tracking.NavigationWidget(self.navigationController, self.internal_state)
 		#self.autofocusWidget = widgets.AutoFocusWidget(self.autofocusController)
 		self.recordingControlWidget = widgets.RecordingWidget(self.streamHandler,self.imageSaver)
 		self.trackingControlWidget = widgets_tracking.TrackingControllerWidget(self.streamHandler, self.trackingController, self.trackingDataSaver, self.internal_state)
@@ -82,11 +82,13 @@ class GravityMachineGUI(QMainWindow):
 		# self.recordTabWidget.addTab(self.trackingControlWidget, "Tracking")
 		#self.recordTabWidget.addTab(self.multiPointWidget, "Multipoint Acquisition")
 
+		#-----------------------------------------------------
 		# layout widgets
+		#-----------------------------------------------------
 		layout = QGridLayout() #layout = QStackedLayout()
 		# layout.addWidget(self.cameraSettingWidget,0,0)
 
-		layout.addWidget(self.liveControlWidget,0,0)
+		layout.addWidget(self.navigationWidget,0,0)
 
 		layout.addWidget(self.trackingControlWidget,1,0)
 
@@ -113,9 +115,10 @@ class GravityMachineGUI(QMainWindow):
 		self.streamHandler.packet_image_to_write.connect(self.imageSaver.enqueue)
 		self.streamHandler.packet_image_for_tracking.connect(self.trackingController.on_new_frame)
 		self.imageDisplay.image_to_display.connect(self.imageDisplayWindow.display_image) # may connect streamHandler directly to imageDisplayWindow
-		self.navigationController.xPos.connect(self.navigationWidget.label_Xpos.setNum)
-		self.navigationController.yPos.connect(self.navigationWidget.label_Ypos.setNum)
-		self.navigationController.zPos.connect(self.navigationWidget.label_Zpos.setNum)
+		
+		# self.navigationController.xPos.connect(self.navigationWidget.label_Xpos.setNum)
+		# self.navigationController.yPos.connect(self.navigationWidget.label_Ypos.setNum)
+		# self.navigationController.zPos.connect(self.navigationWidget.label_Zpos.setNum)
 		#self.autofocusController.image_to_display.connect(self.imageDisplayWindow.display_image)
 		#self.multipointController.image_to_display.connect(self.imageDisplayWindow.display_image)
 
