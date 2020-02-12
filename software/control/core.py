@@ -91,6 +91,8 @@ class StreamHandler(QObject):
         self.lower_HSV = np.array([0, 0, 100],dtype='uint8') 
         self.upper_HSV = np.array([255, 255, 255],dtype='uint8') 
 
+       
+
     def start_recording(self):
         self.save_image_flag = True
 
@@ -260,6 +262,9 @@ class StreamHandler(QObject):
             self.timestamp_last_save = time_now
 
         self.handler_busy = False
+
+    def stop(self):
+        self.camera.stop()
 
 class ImageSaver(QObject):
 

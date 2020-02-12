@@ -110,15 +110,17 @@ class Microcontroller_Simulation():
         self.Xpos = 0
         self.Ypos = 0
         self.Thetapos = 0
+
+        self.deltaX_stage = 0
+        self.deltaY_stage = 0
+        self.deltaTheta_stage = 0
         
         self.track_obj_image = 0
         self.track_focus = 0
 
         self.track_obj_stage = 1
 
-        self.dummydata = {'FocusPhase':self.FocusPhase, 'X_stage': self.Xpos, 'Y_stage':self.Ypos, 'Theta_stage':self.Thetapos, 'track_obj_image':self.track_obj_image, 'track_obj_stage' : self.track_obj_stage}
-
-        self.RecData = {key : self.dummydata[key] for key in REC_DATA}
+        self.RecData = {'FocusPhase':self.FocusPhase, 'deltaX_stage': self.deltaX_stage, 'deltaY_stage':self.deltaY_stage, 'deltaTheta_stage':self.deltaTheta_stage, 'track_obj_image':self.track_obj_image, 'track_obj_stage' : self.track_obj_stage}
 
         self.SendData = {key:[] for key in SEND_DATA}
 
@@ -132,12 +134,15 @@ class Microcontroller_Simulation():
         pass
 
     def move_x(self,delta):
+        self.deltaX_stage = delta
         self.Xpos += delta
 
     def move_y(self,delta):
+        self.deltaY_stage = delta
         self.Ypos += delta
 
     def move_Theta(self,delta):
+        self.deltaTheta_stage = delta
         self.Thetapos += delta
 
     def move_z(self,delta):
@@ -155,7 +160,7 @@ class Microcontroller_Simulation():
 
 
     def read_received_packet(self):
-        self.RecData = {'FocusPhase':self.FocusPhase, 'X_stage': self.Xpos, 'Y_stage':self.Ypos, 'Theta_stage':self.Thetapos, 'track_obj_image':self.track_obj_image, 'track_obj_stage' : self.track_obj_stage}
+        self.RecData = {'FocusPhase':self.FocusPhase, 'deltaX_stage': self.deltaX_stage, 'deltaY_stage':self.deltaY_stage, 'deltaTheta_stage':self.deltaTheta_stage, 'track_obj_image':self.track_obj_image, 'track_obj_stage' : self.track_obj_stage}
         return self.RecData
 
 

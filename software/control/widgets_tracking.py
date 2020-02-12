@@ -3,6 +3,7 @@ import os
 os.environ["QT_API"] = "pyqt5"
 import qtpy
 import numpy as np
+import time
 
 # qt libraries
 from qtpy.QtCore import *
@@ -219,71 +220,141 @@ class TrackingControllerWidget(QFrame):
 
 
 class NavigationWidget(QFrame):
-    def __init__(self, navigationController, internal_state, main=None, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        self.navigationController = navigationController
-        self.internal_state = internal_state
-        self.add_components()
-        self.setFrameStyle(QFrame.Panel | QFrame.Raised)
+	def __init__(self, navigationController, internal_state, main=None, *args, **kwargs):
+		super().__init__(*args, **kwargs)
+		self.navigationController = navigationController
+		self.internal_state = internal_state
+		self.add_components()
+		self.setFrameStyle(QFrame.Panel | QFrame.Raised)
 
-    def add_components(self):
-
-   		# Stage position display 
-
-        self.pos_X_lcd = QLCDNumber()
-        self.pos_X_lcd.setNumDigits(4)
-        self.pos_X_lcd.display(self.internal_state.data['X_stage'])
-
-        self.pos_Y_lcd = QLCDNumber()
-        self.pos_Y_lcd.setNumDigits(4)
-        self.pos_Y_lcd.display(self.internal_state.data['Y_stage'])
-
-        self.pos_Theta_lcd = QLCDNumber()
-        self.pos_Theta_lcd.setNumDigits(4)
-        self.pos_Theta_lcd.display(self.internal_state.data['Theta_stage'])
-
-        stage_pos_layout = QGridLayout()
-
-        stage_pos_layout.addWidget(QLabel('X-stage (mm)'),0,0)
-
-        stage_pos_layout.addWidget(self.pos_X_lcd, 0,1)
-
-        stage_pos_layout.addWidget(QLabel('Y-stage (mm)'),1,0)
-
-        stage_pos_layout.addWidget(self.pos_Y_lcd, 1,1)
-
-        stage_pos_layout.addWidget(QLabel('Rotational-stage (deg)'),2,0)
-
-        stage_pos_layout.addWidget(self.pos_Theta_lcd, 2,1)
-
-        self.stage_position = QGroupBox('Stage positions')
-
-        self.stage_position.setLayout(stage_pos_layout)
+		
 
 
-        # Stage zeroing buttons
-        self.zero_X = QPushButton('Zero X-stage')
-        self.zero_Y = QPushButton('Zero Y-stage')
-        self.zero_Theta = QPushButton('Zero Rotation-stage')
+	def add_components(self):
 
-        stage_zero_layout = QVBoxLayout()
+		# Stage position display 
 
-        stage_zero_layout.addWidget(self.zero_X)
-        stage_zero_layout.addWidget(self.zero_Y)
-        stage_zero_layout.addWidget(self.zero_Theta)
-
-        self.stage_zero = QGroupBox('Set stage zero')
-
-        self.stage_zero.setLayout(stage_zero_layout)
+		self.pos_X_label = pg.ValueLabel(siPrefix=True, suffix='m')
+		self.pos_X_label.setValue(0)
 
 
-        layout = QHBoxLayout()
+		self.pos_Y_label = pg.ValueLabel(siPrefix=True, suffix='m')
+		self.pos_Y_label.setValue(0)
+	
 
-        layout.addWidget(self.stage_position)
-        layout.addWidget(self.stage_zero)
+		self.pos_Theta_label = pg.ValueLabel(siPrefix=True, suffix='m')
+		self.pos_Theta_label.setValue(0)
 
 
-        self.setLayout(layout)
+
+
+
+
+		stage_pos_layout = QGridLayout()
+
+		stage_pos_layout.addWidget(QLabel('X-stage (mm)'),0,0)
+
+		stage_pos_layout.addWidget(self.pos_X_label, 0,1)
+
+		stage_pos_layout.addWidget(QLabel('Y-stage (mm)'),1,0)
+
+		stage_pos_layout.addWidget(self.pos_Y_label, 1,1)
+
+		stage_pos_layout.addWidget(QLabel('Rotational-stage (deg)'),2,0)
+
+		stage_pos_layout.addWidget(self.pos_Theta_label, 2,1)
+
+		self.stage_position = QGroupBox('Stage positions')
+
+		self.stage_position.setLayout(stage_pos_layout)
+
+
+		# Stage zeroing buttons
+		self.zero_X = QPushButton('Zero X-stage')
+		
+		self.zero_Y = QPushButton('Zero Y-stage')
+	
+		self.zero_Theta = QPushButton('Zero Rotation-stage')
+	
+		
+		# Homing Button
+		self.homing_button = pg.FeedbackButton('Run Homing')
+
+		stage_control = QVBoxLayout()
+
+		stage_control.addWidget(self.homing_button)
+		stage_control.addWidget(self.zero_X)
+		stage_control.addWidget(self.zero_Y)
+		stage_control.addWidget(self.zero_Theta)
+
+		self.stage_control_group = QGroupBox('Stage control')
+
+		self.stage_control_group.setLayout(stage_control)
+
+
+		
+
+
+		layout = QGridLayout()
+
+		layout.addWidget(self.stage_position, 0,0,1,1)
+		layout.addWidget(self.stage_control_group, 0,1,1,1)
+		
+
+		self.setLayout(layout)
+
+
+		# Connections
+		self.zero_X.clicked.connect(self.zero_X_stage)
+		self.zero_Y.clicked.connect(self.zero_Y_stage)
+		self.zero_Theta.clicked.connect(self.zero_Theta_stage)
+
+		self.homing_button.clicked.connect(self.homing_button_click)
+
+
+
+
+
+	def zero_X_stage(self):
+
+		self.internal_state.data['X_stage'] = 0
+
+	def zero_Y_stage(self):
+
+		self.internal_state.data['Y_stage'] = 0
+
+	def zero_Theta_stage(self):
+
+		
+		self.internal_state.data['Theta_stage'] = 10
+		print(self.internal_state.data['Theta_stage'])
+
+	def update_display(self):
+
+		print('In update display')
+		self.pos_X_label.setValue(self.internal_state.data['X_stage'])
+		self.pos_Y_label.setValue(self.internal_state.data['Y_stage'])
+		self.pos_Theta_label.setValue(self.internal_state.data['Theta_stage'])
+
+	def homing_button_click(self):
+
+		self.homing_button.processing('Homing stages...')
+
+		#@@@@ Hard-coding this to check button function
+		time.sleep(2.0)
+		self.internal_state.data['homing_state'] = False
+
+
+		if(self.internal_state.data['homing_state']):
+			self.homing_button.success('Homing completed!')
+			self.homing_button.setText('Homing complete')
+
+		else:
+			self.homing_button.failure('Homing failed!')
+
+
+		
+
 
 
 

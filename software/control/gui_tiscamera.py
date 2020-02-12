@@ -38,6 +38,8 @@ class GravityMachineGUI(QMainWindow):
 		
 		self.internal_state = core_tracking.InternalState()
 
+		self.microcontroller_Rec = core_tracking.microcontroller_Receiver(self.microcontroller, self.internal_state)
+
 		self.streamHandler = core.StreamHandler()
 		self.liveController = core.LiveController(self.camera,self.microcontroller)
 		self.navigationController = core.NavigationController(self.microcontroller)
@@ -49,6 +51,8 @@ class GravityMachineGUI(QMainWindow):
 
 		self.imageSaver = core.ImageSaver()
 		self.imageDisplay = core.ImageDisplay()
+
+
 
 
 		'''
@@ -116,6 +120,8 @@ class GravityMachineGUI(QMainWindow):
 		self.streamHandler.packet_image_for_tracking.connect(self.trackingController.on_new_frame)
 		self.imageDisplay.image_to_display.connect(self.imageDisplayWindow.display_image) # may connect streamHandler directly to imageDisplayWindow
 		
+
+
 		# self.navigationController.xPos.connect(self.navigationWidget.label_Xpos.setNum)
 		# self.navigationController.yPos.connect(self.navigationWidget.label_Ypos.setNum)
 		# self.navigationController.zPos.connect(self.navigationWidget.label_Zpos.setNum)
@@ -128,7 +134,7 @@ class GravityMachineGUI(QMainWindow):
 		event.accept()
 		# self.softwareTriggerGenerator.stop() @@@ => 
 		self.liveController.stop_live()
-		self.camera.close()
+		self.streamHandler.stop()
 		self.imageSaver.close()
 		self.imageDisplay.close()
 		self.imageDisplayWindow.close()

@@ -95,7 +95,7 @@ OpticalPaths = {'DF single':['DF'], 'DF_FL':['DF', 'FL'], 'DF_BF':['DF', 'BF']}
 
 INTERNAL_STATE_VARIABLES = ['Time', 'X_objStage', 'Y_objStage', 'Z_objStage', 'X_stage', 'Y_stage',
     'Theta_stage', 'X_image', 'Z_image', 'track_obj_image', 'track_focus', 'track_obj_stage', 
-    'Acquisition', 'homing_state','liquidLens_Freq', 'liquidLens_Amp', 'FocusPhase', 'imaging channels', 'uScope mode', 
+    'Acquisition', 'homing_command', 'homing_state', 'liquidLens_Freq', 'liquidLens_Amp', 'FocusPhase', 'imaging channels', 'uScope mode', 
     'Objective', 'basePath', 'experimentID']
 
 # Based on the number of imaging channels, there will also be 1 or more image names saved.
@@ -106,11 +106,11 @@ MOTION_COMMANDS = ['X_order', 'Y_order', 'Theta_order']
 
 SEND_DATA = ['X_order', 'Y_order', 'Theta_order', 'track_obj_image', 'track_focus', 'homing_state']
 
-REC_DATA = ['FocusPhase', 'X_stage', 'Y_stage', 'Theta_stage', 'track_obj_image', 'track_obj_stage']
+REC_DATA = ['FocusPhase', 'deltaX_stage', 'deltaY_stage', 'deltaTheta_stage', 'track_obj_image', 'track_obj_stage']
 
 INITIAL_VALUES = {'Time':0, 'X_objStage':0, 'Y_objStage':0, 'Z_objStage':0, 'X_stage':0, 'Y_stage':0,
     'Theta_stage':0, 'X_image':0, 'Z_image':0, 'track_obj_image':False, 'track_focus':False, 
-    'track_obj_stage':False, 'Acquisition':False, 'homing_state':False, 'liquidLens_Freq': liquidLens['liquidLens_Freq']['default'], 
+    'track_obj_stage':False, 'Acquisition':False, 'homing_command':False, 'homing_state':False, 'liquidLens_Freq': liquidLens['liquidLens_Freq']['default'], 
     'liquidLens_Amp': liquidLens['liquidLens_Amp']['default'] , 'FocusPhase':0, 'imaging channels':['DF', 'FL'], 
     'uScope mode': 'Tracking', 'Objective':'10x', 'basePath':'/', 'experimentID':'track'}
 

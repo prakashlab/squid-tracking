@@ -480,6 +480,8 @@ class microcontroller_Receiver(QObject):
     Connection Map:
     StreamHandler (rec new image) -> getData_microcontroller
     '''
+    update_display = Signal()
+
     def __init__(self, microcontroller, internal_state):
         QObject.__init__(self)
 
@@ -497,9 +499,19 @@ class microcontroller_Receiver(QObject):
         for key in REC_DATA:
             self.RecData[key] = data[key]
             # Update internal state
-            self.internal_state.data[key] = data[key]
+            if(key in INTERNAL_STATE_VARIABLES):
+                self.internal_state.data[key] = data[key]
 
-        print(self.internal_state.data)
+        # Find the actual stage position based prev position and the change.
+        self.internal_state.data['X_stage']+=self.RecData['deltaX_stage']
+        self.internal_state.data['Y_stage']+=self.RecData['deltaY_stage']
+        self.internal_state.data['Theta_stage']+=self.RecData['deltaTheta_stage']
+
+        # Emit the stage position so it can be displayed (only need to display the position when it changes)
+
+        self.update_display.emit()
+
+
 
         
 class microcontroller_Sender(QObject):
@@ -605,6 +617,8 @@ class TrackingDataSaver(QObject):
 
         # Use a counter 
         self.counter = 0
+
+        self.stop_signal_received = False
         
         self.thread = Thread(target=self.process_queue)
         self.thread.start()
@@ -650,7 +664,7 @@ class TrackingDataSaver(QObject):
             'Data queue full, current cycle data not saved'
 
 
-
+    # Stop signal from Acquisition Widget
     def stop_DataSaver(self):
         self.stop_signal_received = True
         self.thread.join()
