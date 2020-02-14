@@ -956,6 +956,8 @@ void loop()
           reset_X_StepperSpeed(microSteps_Old_X);
           reset_Y_StepperSpeed(microSteps_Old_Y);
 
+          // Also set some Homing_Complete flag to true and send it to the computer
+
       }
   }
   //+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++

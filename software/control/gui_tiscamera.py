@@ -1,5 +1,6 @@
 # set QT_API environment variable
 import os 
+import sys
 os.environ["QT_API"] = "pyqt5"
 import qtpy
 
@@ -79,6 +80,7 @@ class GravityMachineGUI(QMainWindow):
 		
 		self.PID_Group_Widget = widgets_tracking.PID_Group_Widget(self.trackingController)
 
+		self.FocusTracking_Widget = widgets_tracking.FocusTracking_Widget(self.trackingController, self.internal_state)
 		#self.multiPointWidget = widgets.MultiPointWidget(self.multipointController)
 
 		self.recordTabWidget = QTabWidget()
@@ -96,7 +98,9 @@ class GravityMachineGUI(QMainWindow):
 
 		layout.addWidget(self.trackingControlWidget,1,0)
 
-		layout.addWidget(self.PID_Group_Widget,2,0)
+		layout.addWidget(self.FocusTracking_Widget,2,0)
+
+		# layout.addWidget(self.PID_Group_Widget,2,0)
 		# layout.addWidget(self.navigationWidget,2,0)
 		#layout.addWidget(self.autofocusWidget,3,0)
 		# layout.addWidget(self.recordTabWidget,3,0)
@@ -133,9 +137,16 @@ class GravityMachineGUI(QMainWindow):
 	def closeEvent(self, event):
 		event.accept()
 		# self.softwareTriggerGenerator.stop() @@@ => 
+		print(1)
 		self.liveController.stop_live()
-		self.streamHandler.stop()
+		print(2)
+		# self.streamHandler.stop()
+		print(3)
 		self.imageSaver.close()
+		print(4)
 		self.imageDisplay.close()
+		print(5)
 		self.imageDisplayWindow.close()
+		print(6)
 		self.imageDisplayWindow_ThresholdedImage.close()
+		print(7)

@@ -338,12 +338,17 @@ class NavigationWidget(QFrame):
 
 	def homing_button_click(self):
 
-		self.homing_button.processing('Homing stages...')
+		# Update the internal homing command state
+		self.internal_state.data['homing_command'] = True
+
+		# self.homing_button.processing('Homing stages...')
 
 		#@@@@ Hard-coding this to check button function
-		time.sleep(2.0)
-		self.internal_state.data['homing_state'] = False
+		# time.sleep(2.0)
+		# self.internal_state.data['homing_state'] = True
 
+	# Can implement later if necessary
+	def homing_button_feedback(self):
 
 		if(self.internal_state.data['homing_state']):
 			self.homing_button.success('Homing completed!')
@@ -530,11 +535,192 @@ class PID_Widget(QGroupBox):
 		self.hsliderD.setValue(int(value*100))
 
 
-# class FocusTracking_Widget(QFrame):
+class FocusTracking_Widget(QFrame):
 
-# 	def __init__(self, main=None, *args, **kwargs):
-# 		super().__init__(*args, **kwargs)
-# 		pass
+	def __init__(self, trackingController, internal_state, main=None, *args, **kwargs):
+		super().__init__(*args, **kwargs)
+
+		self.trackingController = trackingController
+
+		self.internal_state = internal_state
+
+		self.add_components()
+		
+
+	def add_components(self):
+
+		self.button_FocusTracking = QPushButton('Start Focus Tracking')
+		self.button_FocusTracking.setCheckable(True)
+		self.button_FocusTracking.setChecked(False)
+
+		# cropRatio
+		self.label_crop_ratio = QLabel('Cropping ratio')
+		self.hslider_crop_ratio = QSlider(Qt.Horizontal)
+		self.hslider_crop_ratio.setRange(1,50)
+		self.hslider_crop_ratio.setValue(FocusTracking['Cropped image ratio']['default'])
+		self.spinbox_crop_ratio=QSpinBox()
+		self.spinbox_crop_ratio.setRange(1,50)
+		self.spinbox_crop_ratio.setValue(FocusTracking['Cropped image ratio']['default'])
+	
+		slider_crop_ratio_layout=QHBoxLayout()
+		slider_crop_ratio_layout.addWidget(self.label_crop_ratio)
+		slider_crop_ratio_layout.addWidget(self.hslider_crop_ratio)
+		slider_crop_ratio_layout.addWidget(self.spinbox_crop_ratio)
+		group_slider_crop_ratio=QWidget()
+		group_slider_crop_ratio.setLayout(slider_crop_ratio_layout)
+
+		# Liquid lens freq
+		self.label_lensFreq = QLabel('Liquid lens frequency (Hz)')
+		self.hslider_lensFreq = QSlider(Qt.Horizontal)
+		self.hslider_lensFreq.setRange(100*liquidLens['Freq']['min'],100*liquidLens['Freq']['max'])
+		self.hslider_lensFreq.setValue(100*liquidLens['Freq']['default'])
+		self.spinbox_lensFreq=QDoubleSpinBox()
+		self.spinbox_lensFreq.setRange(liquidLens['Freq']['min'],liquidLens['Freq']['max'])
+		self.spinbox_lensFreq.setSingleStep(liquidLens['Freq']['step'])
+		self.spinbox_lensFreq.setValue(liquidLens['Freq']['default'])
+		
+		slider_lensFreq_layout=QHBoxLayout()
+		slider_lensFreq_layout.addWidget(self.label_lensFreq)
+		slider_lensFreq_layout.addWidget(self.hslider_lensFreq)
+		slider_lensFreq_layout.addWidget(self.spinbox_lensFreq)
+		group_slider_lensFreq=QWidget()
+		group_slider_lensFreq.setLayout(slider_lensFreq_layout)
+
+		# Liquid lens amplitude
+		self.label_lensAmpl = QLabel('Liquid lens amplitude (mm)')
+		self.hslider_lensAmpl = QSlider(Qt.Horizontal)
+		self.hslider_lensAmpl.setRange(100*liquidLens['Amp']['min'],100*liquidLens['Amp']['max'])
+		self.hslider_lensAmpl.setValue(2*liquidLens['Amp']['default'])
+		self.spinbox_lensAmpl=QDoubleSpinBox()
+		self.spinbox_lensAmpl.setRange(liquidLens['Amp']['min'], liquidLens['Amp']['max'])
+		self.spinbox_lensAmpl.setSingleStep(liquidLens['Amp']['step'])
+		self.spinbox_lensAmpl.setValue(2*liquidLens['Amp']['default'])
+		
+		slider_lensAmpl_layout=QHBoxLayout()
+		slider_lensAmpl_layout.addWidget(self.label_lensAmpl)
+		slider_lensAmpl_layout.addWidget(self.hslider_lensAmpl)
+		slider_lensAmpl_layout.addWidget(self.spinbox_lensAmpl)
+		group_slider_lensAmpl=QWidget()
+		group_slider_lensAmpl.setLayout(slider_lensAmpl_layout)
+
+		self.groupbox_FocusTracking = QGroupBox('Focus Tracking')
+
+		# layout
+		groupbox_layout_FocusTracking = QGridLayout()
+		groupbox_layout_FocusTracking.addWidget(self.button_FocusTracking,0,0,1,1)
+		groupbox_layout_FocusTracking.addWidget(group_slider_crop_ratio,0,1,1,1)
+		groupbox_layout_FocusTracking.addWidget(group_slider_lensFreq,1,0,1,2)  
+		groupbox_layout_FocusTracking.addWidget(group_slider_lensAmpl,2,0,1,2)
+		# groupbox_layout_YTracking.addWidget(group_slider_lensGain) 
+		# self.groupbox_YTracking.setLayout(groupbox_layout_YTracking)
+
+		self.setLayout(groupbox_layout_FocusTracking)
+
+		# Connections
+		self.button_FocusTracking.clicked.connect(self.button_focusTracking_clicked)
+
+		self.hslider_crop_ratio.valueChanged.connect(self.spinbox_crop_ratio_setValue)
+		self.spinbox_crop_ratio.valueChanged.connect(self.hslider_crop_ratio_setValue)
+
+		self.hslider_lensFreq.valueChanged.connect(self.spinbox_lensFreq_setValue)
+		self.spinbox_lensFreq.valueChanged.connect(self.hslider_lensFreq_setValue)
+
+		self.hslider_lensAmpl.valueChanged.connect(self.spinbox_lensAmpl_setValue)
+		self.spinbox_lensAmpl.valueChanged.connect(self.hslider_lensAmpl_setValue)
+
+
+
+
+	def button_focusTracking_clicked(self):
+		
+		if self.button_FocusTracking.isChecked():
+			
+			# Set the internal state value
+			self.internal_state.data['track_focus'] = True
+
+			# Start the liquid lens sweep
+			self.trackingController.tracker_focus.liquid_lens.start()
+			self.button_FocusTracking.setText("Stop Focus Tracking")
+			
+		else:
+			# Set the internal state value
+			self.internal_state.data['track_focus'] = False
+			self.trackingController.tracker_focus.liquid_lens.stop()
+			self.button_FocusTracking.setText("Start Focus Tracking")
+			
+	def spinbox_crop_ratio_setValue(self, value):
+		newvalue=int(value)
+
+		self.spinbox_crop_ratio.setValue(newvalue)
+
+		self.trackingController.set_cropped_image_size(newvalue)
+
+	def hslider_crop_ratio_setValue(self, value):
+		newvalue=int(value)
+
+		self.hslider_crop_ratio.setValue(newvalue)
+
+
+
+	def spinbox_lensAmpl_setValue(self,value):
+		newvalue=float(value)/100.
+		self.spinbox_lensAmpl.setValue(newvalue)
+
+		
+
+		# Also send the amplitude change to the liquid lens
+		# @@@@@@ To Implement @@@@@@@
+
+		self.trackingController.tracker_focus.set_Amp(newvalue/2)
+
+		self.trackingController.tracker_focus.liquid_lens.set_Amp(newvalue/2)
+
+
+		# self.object_tracking.liquid_lens_ampl=newvalue/2
+		# self.object_tracking.ytracker.set_ampl(newvalue/2)
+		# # Now we need to also send the new amplitude to the liquid lens
+		# self.object_tracking.liquid_lens.changeAmp(newvalue/2)
+
+	def hslider_lensAmpl_setValue(self,value):
+		self.hslider_lensAmpl.setValue(int(value*100))
+
+	# Setting liquid lens current functions (for optical characterization)
+	# def spinbox_lensAmpl_setValue(self,value):
+	# 	newvalue = int(value)
+	# 	self.spinbox_lensAmpl.setValue(newvalue)
+	# 	# self.object_tracking.liquid_lens_ampl=newvalue/2
+	# 	# self.object_tracking.ytracker.set_ampl(newvalue/2)
+	# 	# Now we need to also send the new amplitude to the liquid lens
+	# 	# self.object_tracking.liquid_lens.changeAmp(newvalue/2)
+	# 	self.object_tracking.liquid_lens.sendCurrent(newvalue)
+
+	# def hslider_lensAmpl_setValue(self,value):
+	# 	self.hslider_lensAmpl.setValue(int(value))
+
+	def spinbox_lensFreq_setValue(self,value):
+		newvalue=float(value)/100.
+		self.spinbox_lensFreq.setValue(newvalue)
+
+		self.trackingController.tracker_focus.set_Freq(newvalue)
+
+		self.trackingController.tracker_focus.liquid_lens.set_Freq(newvalue)
+
+		# Also send the amplitude change to the liquid lens
+		# @@@@@@ To Implement @@@@@@@
+
+		# self.object_tracking.liquid_lens_freq=newvalue 
+		# # self.set_Y_buffers_lenght()
+		# self.object_tracking.ytracker.set_freq(newvalue)
+		# Now we need to also send the new frequency to the liquid lens
+
+		# self.object_tracking.liquid_lens.changeFreq(newvalue)
+
+	def hslider_lensFreq_setValue(self,value):
+		new_value = int(value*100)
+		self.hslider_lensFreq.setValue(new_value)
+
+
+
 
 
 # class PlotDisplay_Widget(QFrame):

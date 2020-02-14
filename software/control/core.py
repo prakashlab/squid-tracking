@@ -264,7 +264,8 @@ class StreamHandler(QObject):
         self.handler_busy = False
 
     def stop(self):
-        self.camera.stop()
+        pass
+        # self.camera.stop()
 
 class ImageSaver(QObject):
 

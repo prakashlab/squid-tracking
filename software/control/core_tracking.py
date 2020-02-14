@@ -146,7 +146,7 @@ class TrackingController(QObject):
         self.internal_state_vars = ['Time','X_objStage', 'Y_objStage', 'Z_objStage','X_image', 'Z_image']
 
         
-
+        self.tracker_focus.cropped_imSize = int(self.image_width/CROPPED_IMG_RATIO)
 
 
 
@@ -267,8 +267,7 @@ class TrackingController(QObject):
                 # and handle this downstream
 
                 if(self.track_focus):
-                    # Set the size of the cropped Image used for calculating focus measures
-                    self.set_cropped_image_size()
+                
                     # Update the focus phase
                     self.tracker_focus.update_data(FocusPhase)
 
@@ -432,9 +431,13 @@ class TrackingController(QObject):
 
         self.tracker_image.searchArea = int(self.image_width/Tracking.SEARCH_AREA_RATIO)
 
-    def set_cropped_image_size(self):
+    def set_cropped_image_size(self, new_ratio):
 
-        self.tracker_focus.cropped_imSize = int(self.image_width/Tracking.CROPPED_IMG_RATIO)
+
+        self.tracker_focus.cropped_imSize = int(self.image_width/new_ratio)
+
+        # @@@ Testing
+        print('new cropped image size: {}'.format(self.tracker_focus.cropped_imSize))
 
     def get_latest_attr_value(self, key):
 

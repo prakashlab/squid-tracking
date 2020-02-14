@@ -230,6 +230,10 @@ class Tracker_Image(object):
 
 		return pts
 
+	def update_searchArea(self, value):
+
+		self.searchArea = value
+
 
 
 

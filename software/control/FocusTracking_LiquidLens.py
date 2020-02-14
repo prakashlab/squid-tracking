@@ -9,12 +9,18 @@ import scipy.interpolate as interpolate
 import scipy.signal as signal
 import numpy as np
 
+from control.optotune_lens import optotune_lens
+
 import control.utils.image_processing as image_processing
 
-from control._def import FocusTracking
+from control._def import *
 
 
 class Tracker_Focus():
+    '''
+    Liquid lens based tracker.
+
+    '''
     
     def __init__(self,parent=None):
         
@@ -30,8 +36,12 @@ class Tracker_Focus():
 
         self.error = 0
         
-        self.liquidLensAmp = FocusTracking.LIQLENS_AMP_DEFAULT
-        self.liquidLensFreq = FocusTracking.LIQLENS_FREQ_DEFAULT
+        self.liquidLensAmp = liquidLens['Amp']['default']
+        self.liquidLensFreq = liquidLens['Freq']['default']
+
+        # Initialize a liquid lens
+        self.liquid_lens = optotune_lens(freq = self.liquidLensFreq, amp = self.liquidLensAmp, offset = 0)
+
 
         self.window_size = 25
         
@@ -49,7 +59,7 @@ class Tracker_Focus():
         # kept for class compatibility
         self.FM_slope = 0 # measured decay rate of FM with distance (Delta FM/ Delta mm)
         
-        freq_range=[0,10]
+        freq_range=[liquidLens['Freq']['min'],liquidLens['Freq']['max']]
         phase_lag=[0,0]
         self.phase_lag_funct=interpolate.interp1d(freq_range,phase_lag)
         self.phase_lag=self.phase_lag_funct(self.liquidLensFreq)
@@ -145,16 +155,20 @@ class Tracker_Focus():
         self.YfocusPhase=deque(self.YfocusPhase,maxlen = self.YdequeLen)
         self.YmaxFM=deque(self.YmaxFM,maxlen = self.YdequeLen)
         
-    def set_ampl(self,liquidLensAmp):
+    def set_Amp(self,liquidLensAmp):
         self.liquidLensAmp=liquidLensAmp
+        print('liquid Lens amp: {}'.format(self.liquidLensAmp))
             
-    def set_freq(self,liquidLensFreq):
+    def set_Freq(self,liquidLensFreq):
         # print("Frequency: {}".format(liquidLensFreq))
         self.liquidLensFreq=liquidLensFreq
         self.phase_lag=self.phase_lag_funct(self.liquidLensFreq)
+        print('liquid Lens freq: {}'.format(self.liquidLensFreq))
         
     def set_maxGain(self,gain):
         self.maxGain=gain
+
+
 
     def initialise_ytracking(self):
         self.YfocusMeasure = deque(maxlen = self.YdequeLen)
