@@ -144,50 +144,59 @@ class CameraSettingsWidget(QFrame):
         self.entry_analogGain.repaint()
 
 class LiveControlWidget(QFrame):
+    '''
+    Widget controls salient microscopy parameters such as:
+        - Objective
+        - display fps (set and actual)
+        - Display resolution slider
+
+
+    '''
     def __init__(self, streamHandler, liveController, main=None, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.liveController = liveController
         self.streamHandler = streamHandler
-        self.fps_trigger = 10
         self.fps_display = 10
-        self.liveController.set_trigger_fps(self.fps_trigger)
+   
         self.streamHandler.set_display_fps(self.fps_display)
         
-        self.triggerMode = TriggerMode.SOFTWARE
         self.add_components()
         self.setFrameStyle(QFrame.Panel | QFrame.Raised)
 
     def add_components(self):
-        # line 0: trigger mode
-        self.triggerMode = None
-        self.dropdown_triggerManu = QComboBox()
-        self.dropdown_triggerManu.addItems([TriggerMode.SOFTWARE,TriggerMode.HARDWARE,TriggerMode.CONTINUOUS])
 
-        # line 1: fps
-        self.entry_triggerFPS = QDoubleSpinBox()
-        self.entry_triggerFPS.setMinimum(0.02) 
-        self.entry_triggerFPS.setMaximum(200) 
-        self.entry_triggerFPS.setSingleStep(1)
-        self.entry_triggerFPS.setValue(self.fps_trigger)
+        #  0, 0: choose microscope mode
+        # self.dropdown_modeSelection = QComboBox()
+        # self.dropdown_modeSelection.addItems(list(OPTICAL_PATHS['modes'].keys()))
+        # self.dropdown_modeSelection.setCurrentText(OPTICAL_PATHS['default'])
+        # self.liveController.set_microscope_mode(self.dropdown_modeSelection.currentText())
 
-        # line 2: choose microscope mode / toggle live mode @@@ change mode to microscope_mode
-        self.dropdown_modeSelection = QComboBox()
-        self.dropdown_modeSelection.addItems([MicroscopeMode.BFDF, MicroscopeMode.FLUORESCENCE, MicroscopeMode.FLUORESCENCE_PREVIEW])
-        self.dropdown_modeSelection.setCurrentText(MicroscopeMode.BFDF)
-        self.liveController.set_microscope_mode(self.dropdown_modeSelection.currentText())
 
-        self.btn_live = QPushButton("Live")
-        self.btn_live.setCheckable(True)
-        self.btn_live.setChecked(False)
-        self.btn_live.setDefault(False)
+        # 0,1 : choose tracking objective
+        self.dropdown_objectiveSelection = QComboBox()
+        self.dropdown_objectiveSelection.addItems(list(OBJECTIVES['objectives'].keys()))
+        self.dropdown_objectiveSelection.setCurrentText(OBJECTIVES['default'])
 
-        # line 3: display fps and resolution scaling
+
+        # self.btn_live = QPushButton("Live")
+        # self.btn_live.setCheckable(True)
+        # self.btn_live.setChecked(False)
+        # self.btn_live.setDefault(False)
+
+
+        # line 3: display fps
         self.entry_displayFPS = QDoubleSpinBox()
         self.entry_displayFPS.setMinimum(1) 
         self.entry_displayFPS.setMaximum(30) 
         self.entry_displayFPS.setSingleStep(1)
         self.entry_displayFPS.setValue(self.fps_display)
 
+        # Display fps actual
+        self.actual_displayFPS = QLCDNumber()
+        self.actual_displayFPS.setNumDigits(4)
+        self.actual_displayFPS.display(0.0)
+
+        # Display resolution slider
         self.slider_resolutionScaling = QSlider(Qt.Horizontal)
         self.slider_resolutionScaling.setTickPosition(QSlider.TicksBelow)
         self.slider_resolutionScaling.setMinimum(10)
@@ -195,45 +204,97 @@ class LiveControlWidget(QFrame):
         self.slider_resolutionScaling.setValue(50)
         self.slider_resolutionScaling.setSingleStep(10)
 
+        self.display_workingResolution = QLCDNumber()
+        self.display_workingResolution.setNumDigits(6)
+        self.display_workingResolution.display(0.0)
+
+
+
         # connections
-        self.entry_triggerFPS.valueChanged.connect(self.liveController.set_trigger_fps)
+
         self.entry_displayFPS.valueChanged.connect(self.streamHandler.set_display_fps)
         self.slider_resolutionScaling.valueChanged.connect(self.streamHandler.set_working_resolution_scaling)
-        self.dropdown_modeSelection.currentIndexChanged.connect(self.update_microscope_mode)
-        self.btn_live.clicked.connect(self.toggle_live)
+        # self.dropdown_modeSelection.currentIndexChanged.connect(self.update_microscope_mode)
+       
+
 
         # layout
-        grid_line0 = QGridLayout()
-        grid_line0.addWidget(QLabel('Trigger Mode'), 0,0)
-        grid_line0.addWidget(self.dropdown_triggerManu, 0,1)
 
-        grid_line1 = QGridLayout()
-        grid_line1.addWidget(QLabel('Trigger FPS'), 0,0)
-        grid_line1.addWidget(self.entry_triggerFPS, 0,1)
-        grid_line1.addWidget(self.dropdown_modeSelection, 0,2)
-        grid_line1.addWidget(self.btn_live, 0,3)
+        # microscope_mode_layout = QVBoxLayout()
+        # microscope_mode_layout.addWidget(QLabel('Microscope Mode'))
+        # microscope_mode_layout.addWidget(self.dropdown_modeSelection)
 
-        grid_line2 = QGridLayout()
-        grid_line2.addWidget(QLabel('Display FPS'), 0,0)
-        grid_line2.addWidget(self.entry_displayFPS, 0,1)
-        grid_line2.addWidget(QLabel('Display Resolution'), 0,2)
-        grid_line2.addWidget(self.slider_resolutionScaling,0,3)
+        objective_layout = QHBoxLayout()
+        objective_layout.addWidget(QLabel('Objective'))
+        objective_layout.addWidget(self.dropdown_objectiveSelection)
+
+
+        display_fps_group = QGroupBox('Display FPS')
+        display_fps_layout = QGridLayout()
+        
+        display_fps_layout.addWidget(QLabel('Set'),0,0)
+        display_fps_layout.addWidget(self.entry_displayFPS, 0,1)
+        display_fps_layout.addWidget(QLabel('Actual'),0,2)
+        display_fps_layout.addWidget(self.actual_displayFPS, 0,3)
+        display_fps_group.setLayout(display_fps_layout)
+
+        working_resolution_group = QGroupBox('Working resolution')
+        working_resolution_layout = QHBoxLayout()
+        working_resolution_layout.addWidget(self.slider_resolutionScaling)
+        working_resolution_layout.addWidget(self.display_workingResolution)
+        working_resolution_group.setLayout(working_resolution_layout)
+
 
         self.grid = QGridLayout()
-        self.grid.addLayout(grid_line0,0,0)
-        self.grid.addLayout(grid_line1,1,0)
-        self.grid.addLayout(grid_line2,2,0)
+        # self.grid.addLayout(microscope_mode_layout,0,0)
+        self.grid.addLayout(objective_layout,0,0)
+        self.grid.addWidget(display_fps_group,0,1)
+        self.grid.addWidget(working_resolution_group,1,0,1,2)
+
         self.setLayout(self.grid)
 
-    def toggle_live(self,pressed):
-        if pressed:
-            self.liveController.start_live()
-        else:
-            self.liveController.stop_live()
+        # # line 0: trigger mode
+        # self.triggerMode = None
+        # self.dropdown_triggerManu = QComboBox()
+        # self.dropdown_triggerManu.addItems([TriggerMode.SOFTWARE,TriggerMode.HARDWARE,TriggerMode.CONTINUOUS])
 
-    def update_microscope_mode(self,index):
-        self.liveController.turn_off_illumination()
-        self.liveController.set_microscope_mode(self.dropdown_modeSelection.currentText())
+        # # line 1: fps
+        # self.entry_triggerFPS = QDoubleSpinBox()
+        # self.entry_triggerFPS.setMinimum(0.02) 
+        # self.entry_triggerFPS.setMaximum(200) 
+        # self.entry_triggerFPS.setSingleStep(1)
+        # self.entry_triggerFPS.setValue(self.fps_trigger)
+
+        
+
+       
+
+ 
+    # Slot connected to signal from trackingController.
+
+    def update_working_resolution(self, value):
+
+        self.display_workingResolution.display(value)
+
+    # Slot connected to signal from streamHandler.
+    def update_display_fps(self, value):
+
+        self.actual_displayFPS.display(value)
+
+
+
+        
+
+
+    # def toggle_live(self,pressed):
+    #     if pressed:
+    #         self.liveController.start_live()
+    #     else:
+    #         self.liveController.stop_live()
+
+    # def update_microscope_mode(self,index):
+    #     self.liveController.turn_off_illumination()
+    #     self.liveController.set_microscope_mode(self.dropdown_modeSelection.currentText())
 
 class RecordingWidget(QFrame):
     def __init__(self, streamHandler, imageSaver, main=None, *args, **kwargs):

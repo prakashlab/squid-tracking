@@ -93,12 +93,15 @@ class GravityMachineGUI(QMainWindow):
 		#-----------------------------------------------------
 		layout = QGridLayout() #layout = QStackedLayout()
 		# layout.addWidget(self.cameraSettingWidget,0,0)
-
-		layout.addWidget(self.navigationWidget,0,0)
+		layout.addWidget(self.liveControlWidget,0,0)
+		
+		layout.addWidget(self.navigationWidget,0,1)
 
 		layout.addWidget(self.trackingControlWidget,1,0)
 
 		layout.addWidget(self.FocusTracking_Widget,2,0)
+
+
 
 		# layout.addWidget(self.PID_Group_Widget,2,0)
 		# layout.addWidget(self.navigationWidget,2,0)
@@ -135,18 +138,29 @@ class GravityMachineGUI(QMainWindow):
 		self.camera.start_streaming()
 
 	def closeEvent(self, event):
-		event.accept()
+
+		reply = QMessageBox.question(self, 'Message',
+			"Are you sure you want to exit?", QMessageBox.Yes | 
+			QMessageBox.No, QMessageBox.Yes)
+
+		if reply == QMessageBox.Yes:
+
+			event.accept()
 		# self.softwareTriggerGenerator.stop() @@@ => 
-		print(1)
-		self.liveController.stop_live()
-		print(2)
-		# self.streamHandler.stop()
-		print(3)
-		self.imageSaver.close()
-		print(4)
-		self.imageDisplay.close()
-		print(5)
-		self.imageDisplayWindow.close()
-		print(6)
-		self.imageDisplayWindow_ThresholdedImage.close()
-		print(7)
+	
+			self.liveController.stop_live()
+			
+			# self.streamHandler.stop()
+		
+			self.imageSaver.close()
+		
+			self.imageDisplay.close()
+			
+			self.imageDisplayWindow.close()
+			
+			self.imageDisplayWindow_ThresholdedImage.close()
+	
+			
+		else:
+			event.ignore() 
+		

@@ -84,17 +84,20 @@ CROPPED_IMG_RATIO = 10
 
 FocusTracking = {'Cropped image ratio':{'default':10}}
 
-objectives = {'10x':{'magnification':10, 'NA':0.17, 'PixelPermm':1122}}    
+OBJECTIVES = {'objectives':{'10x':{'magnification':10, 'NA':0.17, 'PixelPermm':1122}, 
+'20x':{'magnification':20, 'NA':0.17, 'PixelPermm':2244}}, 'default':'10x'}    
 
-cameras = {'DF':{'serial':[], 'px_format':(4000,3000), 'color_format': 'RGBx', 'fps':120},
-            'FL':{'serial':[], 'px_format':(4000,3000), 'color_format': 'RGBx', 'fps':120}}
+
+cameras = {'DF':{'serial':[], 'px_format':(4000,3000), 'color_format': 'RGBx', 'fps': 120}, 
+    'FL':{'serial':[], 'px_format':(4000,3000), 'color_format': 'RGBx', 'fps': 120}}
 
 liquidLens = {'type': 'optotune', 'Freq':{'default':2, 'min':0.1, 'max':20, 'step':0.1, 'units':'Hz'}, 
     'Amp':{'default':0.05, 'min':0, 'max':0.5, 'step':0.01, 'units':'mm'}, 'currentScaleFactor':1/(0.0003) }
 
 
 
-OpticalPaths = {'DF single':['DF'], 'DF_FL':['DF', 'FL'], 'DF_BF':['DF', 'BF']}
+OPTICAL_PATHS = {'modes':{'DF single':['DF'], 'DF_FL':['DF', 'FL'], 'DF_BF':['DF', 'BF']}, 'default':'DF single'}
+
 
 
 INTERNAL_STATE_VARIABLES = ['Time', 'X_objStage', 'Y_objStage', 'Z_objStage', 'X_stage', 'Y_stage',
