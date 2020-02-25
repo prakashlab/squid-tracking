@@ -46,7 +46,7 @@ class GravityMachineGUI(QMainWindow):
 		self.navigationController = core.NavigationController(self.microcontroller)
 		#self.autofocusController = core.AutoFocusController(self.camera,self.navigationController,self.liveController)
 		#self.multipointController = core.MultiPointController(self.camera,self.navigationController,self.liveController,self.autofocusController)
-		self.trackingController = core_tracking.TrackingController(self.microcontroller,self.navigationController)
+		self.trackingController = core_tracking.TrackingController(self.microcontroller,self.internal_state)
 		
 		self.trackingDataSaver = core_tracking.TrackingDataSaver(self.internal_state)
 

@@ -7,7 +7,7 @@ Key objects:
 '''
 
 # set QT_API environment variable
-import os 
+import os, sys
 os.environ["QT_API"] = "pyqt5"
 import qtpy
 
@@ -163,6 +163,7 @@ class StreamHandler(QObject):
         # crop image
         # image = image_processing.crop_image(camera.current_frame,self.crop_width,self.crop_height)
         image = camera.current_frame
+
         # save a copy of full-res image for saving (make sure to do a deep copy)
         # @@@@@@@@@
 
@@ -171,7 +172,8 @@ class StreamHandler(QObject):
 
         
         
-        # Deepak: For now tracking with every image from camera 
+        # Deepak: For now tracking with every image from camera
+        time_now = time.time() 
         if self.track_flag and self.trackingStream:
             # track is a blocking operation - it needs to be
             # @@@ will cropping before emitting the signal lead to speedup?
@@ -191,6 +193,7 @@ class StreamHandler(QObject):
             self.timestamp_last_display = time_now
 
         # send image to write
+        time_now = time.time()
         if self.save_image_flag and time_now-self.timestamp_last_save >= 1/self.fps_save:
             if camera.is_color:
                 image = cv2.cvtColor(image,cv2.COLOR_RGB2BGR)
@@ -346,52 +349,6 @@ class ImageSaver(QObject):
         self.stop_signal_received = True
         self.thread.join()
 
-'''
-class ImageSaver_MultiPointAcquisition(QObject):
-'''
-
-class ImageDisplay(QObject):
-
-    image_to_display = Signal(np.ndarray)
-
-    def __init__(self):
-        QObject.__init__(self)
-        self.queue = Queue(10) # max 10 items in the queue
-        self.image_lock = Lock()
-        self.stop_signal_received = False
-        self.thread = Thread(target=self.process_queue)
-        self.thread.start()        
-        
-    def process_queue(self):
-        while True:
-            # stop the thread if stop signal is received
-            if self.stop_signal_received:
-                return
-            # process the queue
-            try:
-                [image, frame_ID, timestamp, trackingStream] = self.queue.get(timeout=0.1)
-                self.image_lock.acquire(True)
-                # Send image and trackingStream
-                self.image_to_display.emit(image, trackingStream)
-                self.image_lock.release()
-                self.queue.task_done()
-            except:
-                pass
-
-    # def enqueue(self,image,frame_ID,timestamp):
-    def enqueue(self,image, trackingStream = False):
-        try:
-            self.queue.put_nowait([image, None, None, trackingStream])
-            # when using self.queue.put(str_) instead of try + nowait, program can be slowed down despite multithreading because of the block and the GIL
-            pass
-        except:
-            print('imageDisplay queue is full, image discarded')
-
-    def close(self):
-        self.queue.join()
-        self.stop_signal_received = True
-        self.thread.join()
-
 class LiveController(QObject):
 
     def __init__(self,camera,microcontroller):
@@ -404,7 +361,7 @@ class LiveController(QObject):
         self.was_live_before_autofocus = False
         self.was_live_before_multipoint = False
 
-        self.fps_software_trigger = 1;
+        self.fps_software_trigger = 10;
         self.timer_software_trigger_interval = (1/self.fps_software_trigger)*1000
 
         self.timer_software_trigger = QTimer()
@@ -426,16 +383,18 @@ class LiveController(QObject):
 
     # illumination control
     def turn_on_illumination(self):
-        if self.mode == MicroscopeMode.BFDF:
-            self.microcontroller.toggle_LED(1)
-        else:
-            self.microcontroller.toggle_laser(1)
+        pass
+        # if self.mode == MicroscopeMode.BFDF:
+        #     self.microcontroller.toggle_LED(1)
+        # else:
+        #     self.microcontroller.toggle_laser(1)
 
     def turn_off_illumination(self):
-        if self.mode == MicroscopeMode.BFDF:
-            self.microcontroller.toggle_LED(0)
-        else:
-            self.microcontroller.toggle_laser(0)
+        pass
+        # if self.mode == MicroscopeMode.BFDF:
+        #     self.microcontroller.toggle_LED(0)
+        # else:
+        #     self.microcontroller.toggle_laser(0)
 
     def start_live(self):
         self.is_live = True
@@ -558,421 +517,54 @@ class NavigationController(QObject):
         self.z_pos = self.z_pos + delta
         self.zPos.emit(self.z_pos*1000)
 
-class AutoFocusController(QObject):
+class ImageDisplay(QObject):
 
-    z_pos = Signal(float)
-    autofocusFinished = Signal()
-    image_to_display = Signal(np.ndarray)
+    image_to_display = Signal(np.ndarray, bool)
 
-    def __init__(self,camera,navigationController,liveController):
+    def __init__(self):
         QObject.__init__(self)
-        self.camera = camera
-        self.navigationController = navigationController
-        self.liveController = liveController
-        self.N = None
-        self.deltaZ = None
-        self.crop_width = AF.CROP_WIDTH
-        self.crop_height = AF.CROP_HEIGHT
-
-    def set_N(self,N):
-        self.N = N
-
-    def set_deltaZ(self,deltaZ_um):
-        self.deltaZ = deltaZ_um/1000
-
-    def set_crop(self,crop_width,height):
-        self.crop_width = crop_width
-        self.crop_height = crop_height
-
-    def autofocus(self):
-
-        # stop live
-        if self.liveController.is_live:
-            self.liveController.was_live_before_autofocus = True
-            self.liveController.stop_live()
-
-        # temporarily disable call back -> image does not go through streamHandler
-        if self.camera.callback_is_enabled:
-            self.camera.callback_was_enabled_before_autofocus = True
-            self.camera.stop_streaming()
-            self.camera.disable_callback()
-            self.camera.start_streaming() # @@@ to do: absorb stop/start streaming into enable/disable callback - add a flag is_streaming to the camera class
+        self.queue = Queue(10) # max 10 items in the queue
+        self.image_lock = Lock()
+        self.stop_signal_received = False
+        self.thread = Thread(target=self.process_queue)
+        self.thread.start()        
         
-        # @@@ to add: increase gain, decrease exposure time
-        # @@@ can move the execution into a thread
-        focus_measure_vs_z = [0]*self.N
-        focus_measure_max = 0
+    def process_queue(self):
+        while True:
+            # stop the thread if stop signal is received
+            if self.stop_signal_received:
+                return
+            # process the queue
+            try:
+                [image, frame_ID, timestamp, trackingStream] = self.queue.get(timeout=0.1)
+                print('Got image from queue')
+                # self.image_lock.acquire(True)
+                # Send image and trackingStream
+                self.image_to_display.emit(image, trackingStream)
+                print('Sent image to display window')
+                # self.image_lock.release()
+                # self.queue.task_done()
+            except:
+                print("Exception:", sys.exc_info()[0])
+                print('Not sending image to display window')
 
-        z_af_offset = self.deltaZ*round(self.N/2)
-        self.navigationController.move_z(-z_af_offset)
-
-        steps_moved = 0
-        for i in range(self.N):
-            self.navigationController.move_z(self.deltaZ)
-            steps_moved = steps_moved + 1
-            self.camera.send_trigger()
-            image = self.camera.read_frame()
-            image = image_processing.crop_image(image,self.crop_width,self.crop_height)
-            self.image_to_display.emit(image)
-            QApplication.processEvents()
-            timestamp_0 = time.time() # @@@ to remove
-            focus_measure = image_processing.calculate_focus_measure(image)
-            timestamp_1 = time.time() # @@@ to remove
-            print('             calculating focus measure took ' + str(timestamp_1-timestamp_0) + ' second')
-            focus_measure_vs_z[i] = focus_measure
-            print(i,focus_measure)
-            focus_measure_max = max(focus_measure, focus_measure_max)
-            if focus_measure < focus_measure_max*AF.STOP_THRESHOLD:
-                break
-
-        idx_in_focus = focus_measure_vs_z.index(max(focus_measure_vs_z))
-        self.navigationController.move_z((idx_in_focus-steps_moved)*self.deltaZ)
-        if idx_in_focus == 0:
-            print('moved to the bottom end of the AF range')
-        if idx_in_focus == self.N-1:
-            print('moved to the top end of the AF range')
-
-        if self.camera.callback_was_enabled_before_autofocus:
-            self.camera.stop_streaming()
-            self.camera.enable_callback()
-            self.camera.start_streaming()
-            self.camera.callback_was_enabled_before_autofocus = False
-
-        if self.liveController.was_live_before_autofocus:
-            self.liveController.start_live()
-            self.liveController.was_live = False
-        
-        print('autofocus finished')
-        self.autofocusFinished.emit()
-
-class MultiPointController(QObject):
-
-    acquisitionFinished = Signal()
-    image_to_display = Signal(np.ndarray)
-
-    x_pos = Signal(float)
-    y_pos = Signal(float)
-    z_pos = Signal(float)
-
-    def __init__(self,camera,navigationController,liveController,autofocusController):
-        QObject.__init__(self)
-
-        self.camera = camera
-        self.navigationController = navigationController
-        self.liveController = liveController
-        self.autofocusController = autofocusController
-        self.NX = 1
-        self.NY = 1
-        self.NZ = 1
-        self.Nt = 1
-        self.deltaX = Acquisition.DX
-        self.deltaY = Acquisition.DY
-        self.deltaZ = Acquisition.DZ/1000
-        self.deltat = 0
-        self.do_bfdf = False
-        self.do_fluorescence = False
-        self.do_autofocus = False
-        self.crop_width = Acquisition.CROP_WIDTH
-        self.crop_height = Acquisition.CROP_HEIGHT
-        self.working_resolution_scaling = Acquisition.IMAGE_DISPLAY_SCALING_FACTOR
-        self.counter = 0
-        self.experiment_ID = None
-        self.base_path = None
-
-    def set_NX(self,N):
-        self.NX = N
-    def set_NY(self,N):
-        self.NY = N
-    def set_NZ(self,N):
-        self.NZ = N
-    def set_Nt(self,N):
-        self.Nt = N
-    def set_deltaX(self,delta):
-        self.deltaX = delta
-    def set_deltaY(self,delta):
-        self.deltaY = delta
-    def set_deltaZ(self,delta_um):
-        self.deltaZ = delta_um/1000
-    def set_deltat(self,delta):
-        self.deltat = delta
-    def set_bfdf_flag(self,flag):
-        self.do_bfdf = flag
-    def set_fluorescence_flag(self,flag):
-        self.do_fluorescence = flag
-    def set_af_flag(self,flag):
-        self.do_autofocus = flag
-
-    def set_crop(self,crop_width,height):
-        self.crop_width = crop_width
-        self.crop_height = crop_height
-
-    def set_base_path(self,path):
-        self.base_path = path
-
-    def start_new_experiment(self,experiment_ID): # @@@ to do: change name to prepare_folder_for_new_experiment
-        # generate unique experiment ID
-        self.experiment_ID = experiment_ID + '_' + datetime.now().strftime('%Y-%m-%d %H-%M-%-S.%f')
-        self.recording_start_time = time.time()
-        # create a new folder
+    # def enqueue(self,image,frame_ID,timestamp):
+    def enqueue(self,image, trackingStream = False):
         try:
-            os.mkdir(os.path.join(self.base_path,self.experiment_ID))
-        except:
+            print('In image display queue')
+            self.queue.put_nowait([image, None, None, trackingStream])
+            # when using self.queue.put(str_) instead of try + nowait, program can be slowed down despite multithreading because of the block and the GIL
             pass
-        
-    def run_acquisition(self): # @@@ to do: change name to run_experiment
-        print('start multipoint')
-        print(str(self.Nt) + '_' + str(self.NX) + '_' + str(self.NY) + '_' + str(self.NZ))
+        except:
+            print('imageDisplay queue is full, image discarded')
 
-        self.time_point = 0
-        self.single_acquisition_in_progress = False
-        self.acquisitionTimer = QTimer()
-        self.acquisitionTimer.setInterval(self.deltat*1000)
-        self.acquisitionTimer.timeout.connect(self._on_acquisitionTimer_timeout)
-        self.acquisitionTimer.start()
-        self.acquisitionTimer.timeout.emit() # trigger the first acquisition
+    def close(self):
+        self.queue.join()
+        self.stop_signal_received = True
+        self.thread.join()
 
-    '''
-    def run_acquisition(self):
-        # stop live
-        if self.liveController.is_live:
-            self.liveController.was_live = True
-            self.liveController.stop_live() # @@@ to do: also uncheck the live button
-
-        thread = Thread(target=self.acquisition_thread)
-        thread.start()
-        thread.join()
-        # restart live
-        if self.liveController.was_live:
-            self.liveController.start_live()
-        # emit acquisitionFinished signal
-        self.acquisitionFinished.emit()
-
-    def acquisition_thread(self):
-
-        if self.liveController.get_trigger_mode() == TriggerMode.SOFTWARE: # @@@ to do: move trigger mode to camera
-            
-            print('start multipoint')
-            print(str(self.Nt) + '_' + str(self.NX) + '_' + str(self.NY) + '_' + str(self.NZ))
-
-            # disable callback
-            if self.camera.callback_is_enabled:
-                self.camera.callback_is_enabled = False
-                self.camera.callback_was_enabled = True
-                self.camera.stop_streaming()
-                self.camera.disable_callback()
-                self.camera.start_streaming() # @@@ to do: absorb stop/start streaming into enable/disable callback - add a flag is_streaming to the camera class
-            
-            # do the multipoint acquisition
-            for l in range(self.Nt):
-
-                # for each time point, create a new folder
-                os.mkdir(os.path.join(self.base_path,self.experiment_ID,str(l)))
-                current_path = os.path.join(self.base_path,self.experiment_ID,str(l))
-
-                # along y
-                for i in range(self.NY):
-
-                    # along x
-                    for j in range(self.NX):
-
-                        # z-stack
-                        for k in range(self.NZ):
-
-                            # perform AF only if when not taking z stack
-                            if (self.NZ == 1) and (self.do_autofocus) and (self.FOV_counter%Acquisition.NUMBER_OF_FOVS_PER_AF==0):
-                                self.autofocusController.autofocus()
-
-                            file_ID = str(i) + '_' + str(j) + '_' + str(k)
-
-                            # take bf
-                            if self.do_bfdf:
-                                self.liveController.set_microscope_mode(MicroscopeMode.BFDF)
-                                self.liveController.turn_on_illumination()
-                                self.camera.send_trigger()
-                                image = self.camera.read_frame()
-                                self.liveController.turn_off_illumination()
-                                image = image_processing.crop_image(image,self.crop_width,self.crop_height)
-                                saving_path = os.path.join(current_path, file_ID + '_bf' + '.' + Acquisition.IMAGE_FORMAT)
-                                cv2.imwrite(saving_path,image)
-                                self.image_to_display.emit(cv2.resize(image,(round(self.crop_width*self.working_resolution_scaling), round(self.crop_height*self.working_resolution_scaling)),cv2.INTER_LINEAR))
-
-                            # take fluorescence
-                            if self.do_fluorescence:
-                                self.liveController.set_microscope_mode(MicroscopeMode.FLUORESCENCE)
-                                self.liveController.turn_on_illumination()
-                                self.camera.send_trigger()
-                                image = self.camera.read_frame()
-                                self.liveController.turn_off_illumination()
-                                image = image_processing.crop_image(image,self.crop_width,self.crop_height)
-                                saving_path = os.path.join(current_path, file_ID + '_fluorescence' + '.' + Acquisition.IMAGE_FORMAT)
-                                cv2.imwrite(saving_path,image)
-                                self.image_to_display.emit(cv2.resize(image,(round(self.crop_width*self.working_resolution_scaling), round(self.crop_height*self.working_resolution_scaling)),cv2.INTER_LINEAR))
-
-                            # move z
-                            if k < self.NZ - 1:
-                                self.navigationController.move_z(self.deltaZ)
-
-                        # move z back
-                        self.navigationController.move_z(-self.deltaZ*(self.NZ-1))
-
-                        # move x
-                        if j < self.NX - 1:
-                            self.navigationController.move_x(self.deltaX)
-
-                    # move x back
-                    self.navigationController.move_x(-self.deltaX*(self.NX-1))
-
-                    # move y
-                    if i < self.NY - 1:
-                        self.navigationController.move_y(self.deltaY)
-
-                # move y back
-                self.navigationController.move_y(-self.deltaY*(self.NY-1))
-                            
-                # sleep until the next acquisition # @@@ to do: change to timer instead
-                if l < self.Nt - 1:
-                    time.sleep(self.deltat)
-
-            print('Multipoint acquisition finished')
-
-            # re-enable callback
-            if self.camera.callback_was_enabled:
-                self.camera.stop_streaming()
-                self.camera.enable_callback()
-                self.camera.start_streaming()
-                self.camera.callback_is_enabled = True
-                self.camera.callback_was_enabled = False
-    '''
-    def _on_acquisitionTimer_timeout(self):
-    	# check if the last single acquisition is ongoing
-        if self.single_acquisition_in_progress is True:
-            # skip time point if self.deltat is nonzero
-            if self.deltat > 0.1: # @@@ to do: make this more elegant - note that both self.deltat is not 0 and self.deltat is not .0 don't work
-                self.time_point = self.time_point + 1
-                # stop the timer if number of time points is equal to Nt (despite some time points may have been skipped)
-                if self.time_point >= self.Nt:
-                    self.acquisitionTimer.stop()
-                else:
-                	print('the last acquisition has not completed, skip time point ' + str(self.time_point))
-            return
-        # if not, run single acquisition
-        self._run_single_acquisition()
-
-    def _run_single_acquisition(self):           
-        self.single_acquisition_in_progress = True
-        self.FOV_counter = 0
-
-        print('multipoint acquisition - time point ' + str(self.time_point))
-
-        # stop live
-        if self.liveController.is_live:
-            self.liveController.was_live_before_multipoint = True
-            self.liveController.stop_live() # @@@ to do: also uncheck the live button
-
-        # disable callback
-        if self.camera.callback_is_enabled:
-            self.camera.callback_was_enabled_before_multipoint = True
-            self.camera.stop_streaming()
-            self.camera.disable_callback()
-            self.camera.start_streaming() # @@@ to do: absorb stop/start streaming into enable/disable callback - add a flag is_streaming to the camera class
-        
-        # do the multipoint acquisition
-
-        # for each time point, create a new folder
-        current_path = os.path.join(self.base_path,self.experiment_ID,str(self.time_point))
-        os.mkdir(current_path)
-
-        # along y
-        for i in range(self.NY):
-
-            # along x
-            for j in range(self.NX):
-
-                # z-stack
-                for k in range(self.NZ):
-
-                    # perform AF only if when not taking z stack
-                    if (self.NZ == 1) and (self.do_autofocus) and (self.FOV_counter%Acquisition.NUMBER_OF_FOVS_PER_AF==0):
-                        self.autofocusController.autofocus()
-
-                    file_ID = str(i) + '_' + str(j) + '_' + str(k)
-
-                    # take bf
-                    if self.do_bfdf:
-                        self.liveController.set_microscope_mode(MicroscopeMode.BFDF)
-                        self.liveController.turn_on_illumination()
-                        print('take bf image')
-                        self.camera.send_trigger() 
-                        image = self.camera.read_frame()
-                        self.liveController.turn_off_illumination()
-                        image = image_processing.crop_image(image,self.crop_width,self.crop_height)
-                        saving_path = os.path.join(current_path, file_ID + '_bf' + '.' + Acquisition.IMAGE_FORMAT)
-                        cv2.imwrite(saving_path,image)
-                        self.image_to_display.emit(cv2.resize(image,(round(self.crop_width*self.working_resolution_scaling), round(self.crop_height*self.working_resolution_scaling)),cv2.INTER_LINEAR))
-                        QApplication.processEvents()
-
-                    # take fluorescence
-                    if self.do_fluorescence:
-                        self.liveController.set_microscope_mode(MicroscopeMode.FLUORESCENCE)
-                        self.liveController.turn_on_illumination()
-                        self.camera.send_trigger()
-                        image = self.camera.read_frame()
-                        print('take fluorescence image')
-                        self.liveController.turn_off_illumination()
-                        image = image_processing.crop_image(image,self.crop_width,self.crop_height)
-                        saving_path = os.path.join(current_path, file_ID + '_fluorescence' + '.' + Acquisition.IMAGE_FORMAT)
-                        cv2.imwrite(saving_path,image)
-                        self.image_to_display.emit(cv2.resize(image,(round(self.crop_width*self.working_resolution_scaling), round(self.crop_height*self.working_resolution_scaling)),cv2.INTER_LINEAR))
-                        QApplication.processEvents()
-                    
-                    if self.do_bfdf is not True and self.do_fluorescence is not True:
-                        QApplication.processEvents()
-
-                    # move z
-                    if k < self.NZ - 1:
-                        self.navigationController.move_z(self.deltaZ)
-
-                # move z back
-                self.navigationController.move_z(-self.deltaZ*(self.NZ-1))
-
-                # move x
-                if j < self.NX - 1:
-                    self.navigationController.move_x(self.deltaX)
-
-            # move x back
-            self.navigationController.move_x(-self.deltaX*(self.NX-1))
-
-            # move y
-            if i < self.NY - 1:
-                self.navigationController.move_y(self.deltaY)
-
-        # move y back
-        self.navigationController.move_y(-self.deltaY*(self.NY-1))
-                        
-        # re-enable callback
-        if self.camera.callback_was_enabled_before_multipoint:
-            self.camera.stop_streaming()
-            self.camera.enable_callback()
-            self.camera.start_streaming()
-            self.camera.callback_was_enabled_before_multipoint = False
-        
-        if self.liveController.was_live_before_multipoint:
-            self.liveController.start_live()
-            # emit acquisitionFinished signal
-            self.acquisitionFinished.emit()
-        
-        # update time_point for the next scheduled single acquisition (if any)
-        self.time_point = self.time_point + 1
-
-        if self.time_point >= self.Nt:
-            print('Multipoint acquisition finished')
-            if self.acquisitionTimer.isActive():
-            	self.acquisitionTimer.stop()
-            self.acquisitionFinished.emit()
-
-        self.single_acquisition_in_progress = False
-
-
+    def __del__(self):
+        self.wait()
 
 # from gravity machine
 class ImageDisplayWindow(QMainWindow):
@@ -1028,7 +620,7 @@ class ImageDisplayWindow(QMainWindow):
                 self.DrawCrossHairs=False
 
         self.graphics_widget.img.setImage(image,autoLevels=False)
-        # print('display image')
+        print('In ImageDisplayWindow display image')
     
     
     def draw_rectangle(self, RectPts):

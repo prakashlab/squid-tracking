@@ -192,10 +192,10 @@ class LiveControlWidget(QFrame):
         self.dropdown_objectiveSelection.setCurrentText(OBJECTIVES['default'])
 
 
-        # self.btn_live = QPushButton("Live")
-        # self.btn_live.setCheckable(True)
-        # self.btn_live.setChecked(False)
-        # self.btn_live.setDefault(False)
+        self.btn_live = QPushButton("Live")
+        self.btn_live.setCheckable(True)
+        self.btn_live.setChecked(False)
+        self.btn_live.setDefault(False)
 
 
         # line 3: display fps
@@ -230,7 +230,7 @@ class LiveControlWidget(QFrame):
         self.slider_resolutionScaling.valueChanged.connect(self.streamHandler.set_working_resolution_scaling)
         # self.dropdown_modeSelection.currentIndexChanged.connect(self.update_microscope_mode)
         self.dropdown_objectiveSelection.currentIndexChanged.connect(self.update_pixel_size)
-
+        self.btn_live.clicked.connect(self.toggle_live)
 
         # layout
 
@@ -261,9 +261,10 @@ class LiveControlWidget(QFrame):
 
         self.grid = QGridLayout()
         # self.grid.addLayout(microscope_mode_layout,0,0)
-        self.grid.addLayout(objective_layout,0,0)
-        self.grid.addWidget(display_fps_group,0,1)
-        self.grid.addWidget(working_resolution_group,1,0,1,2)
+        self.grid.addWidget(self.btn_live,0,0)
+        self.grid.addLayout(objective_layout,0,1)
+        self.grid.addWidget(display_fps_group,0,2)
+        self.grid.addWidget(working_resolution_group,1,0,1,3)
 
         self.setLayout(self.grid)
 
@@ -303,11 +304,11 @@ class LiveControlWidget(QFrame):
         
 
 
-    # def toggle_live(self,pressed):
-    #     if pressed:
-    #         self.liveController.start_live()
-    #     else:
-    #         self.liveController.stop_live()
+    def toggle_live(self,pressed):
+        if pressed:
+            self.liveController.start_live()
+        else:
+            self.liveController.stop_live()
 
     # def update_microscope_mode(self,index):
     #     self.liveController.turn_off_illumination()

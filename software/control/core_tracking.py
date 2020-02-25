@@ -182,7 +182,7 @@ class TrackingController(QObject):
             Note that this needs to be a local copy since on the internal_state 
             value changing due to a hardware button press
         '''
-        if self.internal_state['track_obj_image'] == True:
+        if self.internal_state.data['track_obj_image'] == True:
 
             
             self.update_elapsed_time()
