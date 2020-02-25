@@ -8,6 +8,7 @@ Created on Mon May  7 19:44:40 2018
 import numpy as np
 import cv2
 from scipy.ndimage.filters import laplace
+from numpy import std, square, mean
 
 #color is a vector HSV whose size is 3
 
@@ -55,6 +56,18 @@ def crop(image,center,imSize): #center is the vector [x,y]
     ymin = max(10,center[1] - int(imSize))
     ymax = min(imH-10,center[1] + int(imSize))
     return np.array([[xmin,ymin],[xmax,ymax]]),np.array(image[ymin:ymax,xmin:xmax])
+
+
+
+def crop_image_wh(image,crop_width,crop_height):
+    image_height = image.shape[0]
+    image_width = image.shape[1]
+    roi_left = int(max(image_width/2 - crop_width/2,0))
+    roi_right = int(min(image_width/2 + crop_width/2,image_width))
+    roi_top = int(max(image_height/2 - crop_height/2,0))
+    roi_bottom = int(min(image_height/2 + crop_height/2,image_height))
+    image_cropped = image[roi_top:roi_bottom,roi_left:roi_right]
+    return image_cropped
 
 def get_bbox(cnt):
     return cv2.boundingRect(cnt)
@@ -167,14 +180,16 @@ def find_centroid_basic_Rect(image):
             ymin = max(0,ymin)
             width = min(width, imW - xmin)
             height = min(height, imH - ymin)
-            rect = (xmin, ymin, width, height)
+            
+            bbox = (xmin, ymin, width, height)
 
-    return isCentroidFound,centroid, rect
+    return isCentroidFound,centroid, bbox
 
 def get_image_center_width(image):
     ImShape=image.shape
+    print(ImShape)
     ImH,ImW=ImShape[0],ImShape[1]
-    return np.array([ImW*0.5,ImH*0.5]),ImW
+    return np.array([ImW*0.5,ImH*0.5]), ImW
 
 def get_image_top_center_width(image):
     ImShape=image.shape
@@ -183,7 +198,7 @@ def get_image_top_center_width(image):
 
 
 def YTracking_Objective_Function(image, color):
-    #variance methode
+    #variance method
     if(image.size is not 0):
         if(color):
             image = bgr2gray(image)
@@ -191,6 +206,13 @@ def YTracking_Objective_Function(image, color):
         return std[0][0]**2
     else:
         return 0
+
+def calculate_focus_measure(image):
+    if len(image.shape) == 3:
+        image = cv2.cvtColor(image,cv2.COLOR_RGB2GRAY) # optional
+    lap = cv2.Laplacian(image,cv2.CV_16S)
+    focus_measure = mean(square(lap))
+    return focus_measure
 
 #test part
 if __name__ == "__main__":

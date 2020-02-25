@@ -3,16 +3,19 @@
 import numpy as np
 
 
-class units_converter:
+class Units_Converter:
 
     def __init__(self):
-
 
         self.chamberWidth = 4    # Width of chamber in mm (Wheel 18)
 
         # Pixel per mm 10x objective
         self.pixelPermm = 1122.67
-        self.imW_max = None
+
+        print('Initializing Units Converter')
+        print(self.pixelPermm)
+
+        self.imW_max = 1920
         # Pixel per mm 4x objective
         # pixelPermm = 456
         # --------------------------------------------------
@@ -71,10 +74,13 @@ class units_converter:
         self.imW_max = imW
 
     def update_pixel_size(self, new_pixelPermm):
+        
         self.pixelPermm = new_pixelPermm
 
+        print('new pixel size: {}'.format(self.pixelPermm))
+
     def px_to_mm(self, Dist,resolution_width):
-        return 1./self.pixelPermm/(resolution_width/self.imW_max)*Dist   
+        return 1/self.pixelPermm/(resolution_width/self.imW_max)*Dist   
 
     def mm_to_px(self, Dist,resolution_width):
         return Dist*self.pixelPermm*resolution_width/self.imW_max
@@ -136,5 +142,5 @@ class units_converter:
         return theta
 
     def rad_to_mm(self, ThetaWheel,Xobjet):
-        return ThetaWheel*(self.Rcenter+Xobjet)          # 2018_09_01: by Deepak. Note major Error previously the radian value was divided by 2*pi which makes the calculation of distance incorrect. 
+        return ThetaWheel*(self.Rcenter + Xobjet)          # 2018_09_01: by Deepak. Note major Error previously the radian value was divided by 2*pi which makes the calculation of distance incorrect. 
         #ThetaWheel is already in radians so there should be no dividing 2*pi factor. Have checked by manually rotating the wheel that this now corresponds to the actual physical distance. To completely confirm will run calibration experiments again.

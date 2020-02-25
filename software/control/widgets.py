@@ -3,6 +3,15 @@ import os
 os.environ["QT_API"] = "pyqt5"
 import qtpy
 
+import pyqtgraph as pg
+import pyqtgraph.dockarea as dock
+from pyqtgraph.dockarea.Dock import DockLabel
+import control.utils.dockareaStyle as dstyle
+
+
+
+from collections import deque
+
 # qt libraries
 from qtpy.QtCore import *
 from qtpy.QtWidgets import *
@@ -144,50 +153,64 @@ class CameraSettingsWidget(QFrame):
         self.entry_analogGain.repaint()
 
 class LiveControlWidget(QFrame):
-    def __init__(self, streamHandler, liveController, main=None, *args, **kwargs):
+    '''
+    Widget controls salient microscopy parameters such as:
+        - Objective
+        - display fps (set and actual)
+        - Display resolution slider
+
+
+    '''
+    def __init__(self, streamHandler, liveController, trackingController, main=None, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.liveController = liveController
         self.streamHandler = streamHandler
-        self.fps_trigger = 10
+        self.trackingController = trackingController
         self.fps_display = 10
-        self.liveController.set_trigger_fps(self.fps_trigger)
+        self.objective = OBJECTIVES['default']
+
+
         self.streamHandler.set_display_fps(self.fps_display)
         
-        self.triggerMode = TriggerMode.SOFTWARE
         self.add_components()
+        self.update_pixel_size()
+
         self.setFrameStyle(QFrame.Panel | QFrame.Raised)
 
     def add_components(self):
-        # line 0: trigger mode
-        self.triggerMode = None
-        self.dropdown_triggerManu = QComboBox()
-        self.dropdown_triggerManu.addItems([TriggerMode.SOFTWARE,TriggerMode.HARDWARE,TriggerMode.CONTINUOUS])
 
-        # line 1: fps
-        self.entry_triggerFPS = QDoubleSpinBox()
-        self.entry_triggerFPS.setMinimum(0.02) 
-        self.entry_triggerFPS.setMaximum(200) 
-        self.entry_triggerFPS.setSingleStep(1)
-        self.entry_triggerFPS.setValue(self.fps_trigger)
+        #  0, 0: choose microscope mode
+        # self.dropdown_modeSelection = QComboBox()
+        # self.dropdown_modeSelection.addItems(list(OPTICAL_PATHS['modes'].keys()))
+        # self.dropdown_modeSelection.setCurrentText(OPTICAL_PATHS['default'])
+        # self.liveController.set_microscope_mode(self.dropdown_modeSelection.currentText())
 
-        # line 2: choose microscope mode / toggle live mode @@@ change mode to microscope_mode
-        self.dropdown_modeSelection = QComboBox()
-        self.dropdown_modeSelection.addItems([MicroscopeMode.BFDF, MicroscopeMode.FLUORESCENCE, MicroscopeMode.FLUORESCENCE_PREVIEW])
-        self.dropdown_modeSelection.setCurrentText(MicroscopeMode.BFDF)
-        self.liveController.set_microscope_mode(self.dropdown_modeSelection.currentText())
+
+        # 0,1 : choose tracking objective
+        self.dropdown_objectiveSelection = QComboBox()
+        self.dropdown_objectiveSelection.addItems(list(OBJECTIVES['type'].keys()))
+        self.dropdown_objectiveSelection.setCurrentText(OBJECTIVES['default'])
+
 
         self.btn_live = QPushButton("Live")
         self.btn_live.setCheckable(True)
         self.btn_live.setChecked(False)
         self.btn_live.setDefault(False)
 
-        # line 3: display fps and resolution scaling
+
+        # line 3: display fps
         self.entry_displayFPS = QDoubleSpinBox()
         self.entry_displayFPS.setMinimum(1) 
         self.entry_displayFPS.setMaximum(30) 
         self.entry_displayFPS.setSingleStep(1)
         self.entry_displayFPS.setValue(self.fps_display)
 
+        # Display fps actual
+        self.actual_displayFPS = QLCDNumber()
+        self.actual_displayFPS.setNumDigits(4)
+        self.actual_displayFPS.display(0.0)
+
+        # Display resolution slider
         self.slider_resolutionScaling = QSlider(Qt.Horizontal)
         self.slider_resolutionScaling.setTickPosition(QSlider.TicksBelow)
         self.slider_resolutionScaling.setMinimum(10)
@@ -195,35 +218,91 @@ class LiveControlWidget(QFrame):
         self.slider_resolutionScaling.setValue(50)
         self.slider_resolutionScaling.setSingleStep(10)
 
+        self.display_workingResolution = QLCDNumber()
+        self.display_workingResolution.setNumDigits(6)
+        self.display_workingResolution.display(0.0)
+
+
+
         # connections
-        self.entry_triggerFPS.valueChanged.connect(self.liveController.set_trigger_fps)
+
         self.entry_displayFPS.valueChanged.connect(self.streamHandler.set_display_fps)
-        self.slider_resolutionScaling.valueChanged.connect(self.streamHandler.set_display_resolution_scaling)
-        self.dropdown_modeSelection.currentIndexChanged.connect(self.update_microscope_mode)
+        self.slider_resolutionScaling.valueChanged.connect(self.streamHandler.set_working_resolution_scaling)
+        # self.dropdown_modeSelection.currentIndexChanged.connect(self.update_microscope_mode)
+        self.dropdown_objectiveSelection.currentIndexChanged.connect(self.update_pixel_size)
         self.btn_live.clicked.connect(self.toggle_live)
 
         # layout
-        grid_line0 = QGridLayout()
-        grid_line0.addWidget(QLabel('Trigger Mode'), 0,0)
-        grid_line0.addWidget(self.dropdown_triggerManu, 0,1)
 
-        grid_line1 = QGridLayout()
-        grid_line1.addWidget(QLabel('Trigger FPS'), 0,0)
-        grid_line1.addWidget(self.entry_triggerFPS, 0,1)
-        grid_line1.addWidget(self.dropdown_modeSelection, 0,2)
-        grid_line1.addWidget(self.btn_live, 0,3)
+        # microscope_mode_layout = QVBoxLayout()
+        # microscope_mode_layout.addWidget(QLabel('Microscope Mode'))
+        # microscope_mode_layout.addWidget(self.dropdown_modeSelection)
 
-        grid_line2 = QGridLayout()
-        grid_line2.addWidget(QLabel('Display FPS'), 0,0)
-        grid_line2.addWidget(self.entry_displayFPS, 0,1)
-        grid_line2.addWidget(QLabel('Display Resolution'), 0,2)
-        grid_line2.addWidget(self.slider_resolutionScaling,0,3)
+        objective_layout = QHBoxLayout()
+        objective_layout.addWidget(QLabel('Objective'))
+        objective_layout.addWidget(self.dropdown_objectiveSelection)
+
+
+        display_fps_group = QGroupBox('Display FPS')
+        display_fps_layout = QGridLayout()
+        
+        display_fps_layout.addWidget(QLabel('Set'),0,0)
+        display_fps_layout.addWidget(self.entry_displayFPS, 0,1)
+        display_fps_layout.addWidget(QLabel('Actual'),0,2)
+        display_fps_layout.addWidget(self.actual_displayFPS, 0,3)
+        display_fps_group.setLayout(display_fps_layout)
+
+        working_resolution_group = QGroupBox('Working resolution')
+        working_resolution_layout = QHBoxLayout()
+        working_resolution_layout.addWidget(self.slider_resolutionScaling)
+        working_resolution_layout.addWidget(self.display_workingResolution)
+        working_resolution_group.setLayout(working_resolution_layout)
+
 
         self.grid = QGridLayout()
-        self.grid.addLayout(grid_line0,0,0)
-        self.grid.addLayout(grid_line1,1,0)
-        self.grid.addLayout(grid_line2,2,0)
+        # self.grid.addLayout(microscope_mode_layout,0,0)
+        self.grid.addWidget(self.btn_live,0,0)
+        self.grid.addLayout(objective_layout,0,1)
+        self.grid.addWidget(display_fps_group,0,2)
+        self.grid.addWidget(working_resolution_group,1,0,1,3)
+
         self.setLayout(self.grid)
+
+        # # line 0: trigger mode
+        # self.triggerMode = None
+        # self.dropdown_triggerManu = QComboBox()
+        # self.dropdown_triggerManu.addItems([TriggerMode.SOFTWARE,TriggerMode.HARDWARE,TriggerMode.CONTINUOUS])
+
+        # # line 1: fps
+        # self.entry_triggerFPS = QDoubleSpinBox()
+        # self.entry_triggerFPS.setMinimum(0.02) 
+        # self.entry_triggerFPS.setMaximum(200) 
+        # self.entry_triggerFPS.setSingleStep(1)
+        # self.entry_triggerFPS.setValue(self.fps_trigger)
+
+        
+
+       
+
+ 
+    # Slot connected to signal from trackingController.
+    def update_working_resolution(self, value):
+
+        self.display_workingResolution.display(value)
+
+    # Slot connected to signal from streamHandler.
+    def update_display_fps(self, value):
+
+        self.actual_displayFPS.display(value)
+
+
+    def update_pixel_size(self):
+        self.objective = self.dropdown_objectiveSelection.currentText()
+        print('new objective: {}'.format(self.objective))
+        new_pixel_size = OBJECTIVES['type'][self.objective]['PixelPermm']
+        self.trackingController.units_converter.update_pixel_size(new_pixel_size)
+        
+
 
     def toggle_live(self,pressed):
         if pressed:
@@ -231,9 +310,9 @@ class LiveControlWidget(QFrame):
         else:
             self.liveController.stop_live()
 
-    def update_microscope_mode(self,index):
-        self.liveController.turn_off_illumination()
-        self.liveController.set_microscope_mode(self.dropdown_modeSelection.currentText())
+    # def update_microscope_mode(self,index):
+    #     self.liveController.turn_off_illumination()
+    #     self.liveController.set_microscope_mode(self.dropdown_modeSelection.currentText())
 
 class RecordingWidget(QFrame):
     def __init__(self, streamHandler, imageSaver, main=None, *args, **kwargs):
@@ -336,100 +415,174 @@ class RecordingWidget(QFrame):
         self.streamHandler.stop_recording()
         self.btn_setSavingDir.setEnabled(True)
 
-class NavigationWidget(QFrame):
-    def __init__(self, navigationController, main=None, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        self.navigationController = navigationController
-        self.add_components()
-        self.setFrameStyle(QFrame.Panel | QFrame.Raised)
+'''
+#%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+#                            Plot widget
+#%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+'''
 
-    def add_components(self):
-        self.label_Xpos = QLabel()
-        self.label_Xpos.setNum(0)
-        self.label_Xpos.setFrameStyle(QFrame.Panel | QFrame.Sunken)
-        self.entry_dX = QDoubleSpinBox()
-        self.entry_dX.setMinimum(0) 
-        self.entry_dX.setMaximum(5) 
-        self.entry_dX.setSingleStep(0.2)
-        self.entry_dX.setValue(0)
-        self.btn_moveX_forward = QPushButton('Forward')
-        self.btn_moveX_forward.setDefault(False)
-        self.btn_moveX_backward = QPushButton('Backward')
-        self.btn_moveX_backward.setDefault(False)
+class dockAreaPlot(dock.DockArea):
+    def __init__(self, parent=None):
+        super().__init__(parent)
+        DockLabel.updateStyle = dstyle.updateStylePatched
+
+        self.plots = {key:PlotWidget(key) for key in PLOT_VARIABLES.keys()}
         
-        self.label_Ypos = QLabel()
-        self.label_Ypos.setNum(0)
-        self.label_Ypos.setFrameStyle(QFrame.Panel | QFrame.Sunken)
-        self.entry_dY = QDoubleSpinBox()
-        self.entry_dY.setMinimum(0)
-        self.entry_dY.setMaximum(5)
-        self.entry_dY.setSingleStep(0.2)
-        self.entry_dY.setValue(0)
-        self.btn_moveY_forward = QPushButton('Forward')
-        self.btn_moveY_forward.setDefault(False)
-        self.btn_moveY_backward = QPushButton('Backward')
-        self.btn_moveY_backward.setDefault(False)
+        self.docks = {key:dock.Dock(key) for key in PLOT_VARIABLES.keys()}
 
-        self.label_Zpos = QLabel()
-        self.label_Zpos.setNum(0)
-        self.label_Zpos.setFrameStyle(QFrame.Panel | QFrame.Sunken)
-        self.entry_dZ = QDoubleSpinBox()
-        self.entry_dZ.setMinimum(0) 
-        self.entry_dZ.setMaximum(1000) 
-        self.entry_dZ.setSingleStep(0.2)
-        self.entry_dZ.setValue(0)
-        self.btn_moveZ_forward = QPushButton('Forward')
-        self.btn_moveZ_forward.setDefault(False)
-        self.btn_moveZ_backward = QPushButton('Backward')
-        self.btn_moveZ_backward.setDefault(False)
+        for key in PLOT_VARIABLES.keys():
+
+            self.docks[key].addWidget(self.plots[key])
         
-        grid_line0 = QGridLayout()
-        grid_line0.addWidget(QLabel('X (mm)'), 0,0)
-        grid_line0.addWidget(self.label_Xpos, 0,1)
-        grid_line0.addWidget(self.entry_dX, 0,2)
-        grid_line0.addWidget(self.btn_moveX_forward, 0,3)
-        grid_line0.addWidget(self.btn_moveX_backward, 0,4)
-
-        grid_line1 = QGridLayout()
-        grid_line1.addWidget(QLabel('Y (mm)'), 0,0)
-        grid_line1.addWidget(self.label_Ypos, 0,1)
-        grid_line1.addWidget(self.entry_dY, 0,2)
-        grid_line1.addWidget(self.btn_moveY_forward, 0,3)
-        grid_line1.addWidget(self.btn_moveY_backward, 0,4)
-
-        grid_line2 = QGridLayout()
-        grid_line2.addWidget(QLabel('Z (um)'), 0,0)
-        grid_line2.addWidget(self.label_Zpos, 0,1)
-        grid_line2.addWidget(self.entry_dZ, 0,2)
-        grid_line2.addWidget(self.btn_moveZ_forward, 0,3)
-        grid_line2.addWidget(self.btn_moveZ_backward, 0,4)
-
-        self.grid = QGridLayout()
-        self.grid.addLayout(grid_line0,0,0)
-        self.grid.addLayout(grid_line1,1,0)
-        self.grid.addLayout(grid_line2,2,0)
-        self.setLayout(self.grid)
-
-        self.btn_moveX_forward.clicked.connect(self.move_x_forward)
-        self.btn_moveX_backward.clicked.connect(self.move_x_backward)
-        self.btn_moveY_forward.clicked.connect(self.move_y_forward)
-        self.btn_moveY_backward.clicked.connect(self.move_y_backward)
-        self.btn_moveZ_forward.clicked.connect(self.move_z_forward)
-        self.btn_moveZ_backward.clicked.connect(self.move_z_backward)
+        # Layout of the plots
         
-    def move_x_forward(self):
-        self.navigationController.move_x(self.entry_dX.value())
-        print('move x')
-    def move_x_backward(self):
-        self.navigationController.move_x(-self.entry_dX.value())
-    def move_y_forward(self):
-        self.navigationController.move_y(self.entry_dY.value())
-    def move_y_backward(self):
-        self.navigationController.move_y(-self.entry_dY.value())
-    def move_z_forward(self):
-        self.navigationController.move_z(self.entry_dZ.value()/1000)
-    def move_z_backward(self):
-        self.navigationController.move_z(-self.entry_dZ.value()/1000)
+        self.addDock(self.docks['X'])
+        self.addDock(self.docks['Z'],'right',self.docks['X'])
+
+        prev_key = 'Z'
+        for key in PLOT_VARIABLES:
+            if key not in DEFAULT_PLOTS:
+
+                self.addDock(self.docks[key],'above',self.docks[prev_key])
+                prev_key = key
+
+    def initialise_plot_area(self):
+
+        for key in self.plots.keys():
+            self.plot[key].initialise_plot()
+
+
+class PlotWidget(pg.GraphicsLayoutWidget):
+    def __init__(self,title, parent=None):
+        super().__init__(parent)
+        self.title=title
+        #plot Zobj
+        self.Abscissa=deque(maxlen=20)
+        self.Ordinate=deque(maxlen=20)
+        
+        self.Abs=[]
+        self.Ord=[]
+        self.plot1=self.addPlot(title=title)
+        self.curve=self.plot1.plot(self.Abs,self.Ord)
+
+        self.plot1.enableAutoRange('xy', True)
+        self.plot1.showGrid(x=True, y=True)
+        
+        
+    def update_plot(self,data):
+        
+        self.Abscissa.append(data[0])
+
+        self.Ordinate.append(data[1])
+
+        self.label = PLOT_UNITS[self.title]
+            
+        self.Abs=list(self.Abscisse)
+        self.Ord=list(self.Ordonnee)
+
+        self.curve.setData(self.Abs,self.Ord)
+
+    def initialise_plot(self):
+        self.Abscissa=deque(maxlen=20)
+        self.Ordinate=deque(maxlen=20)
+        self.Abs=[]
+        self.Ord=[]
+        self.curve.setData(self.Abs,self.Ord)
+
+# class NavigationWidget(QFrame):
+#     def __init__(self, navigationController, main=None, *args, **kwargs):
+#         super().__init__(*args, **kwargs)
+#         self.navigationController = navigationController
+#         self.add_components()
+#         self.setFrameStyle(QFrame.Panel | QFrame.Raised)
+
+#     def add_components(self):
+#         self.label_Xpos = QLabel()
+#         self.label_Xpos.setNum(0)
+#         self.label_Xpos.setFrameStyle(QFrame.Panel | QFrame.Sunken)
+#         self.entry_dX = QDoubleSpinBox()
+#         self.entry_dX.setMinimum(0) 
+#         self.entry_dX.setMaximum(5) 
+#         self.entry_dX.setSingleStep(0.2)
+#         self.entry_dX.setValue(0)
+#         self.btn_moveX_forward = QPushButton('Forward')
+#         self.btn_moveX_forward.setDefault(False)
+#         self.btn_moveX_backward = QPushButton('Backward')
+#         self.btn_moveX_backward.setDefault(False)
+        
+#         self.label_Ypos = QLabel()
+#         self.label_Ypos.setNum(0)
+#         self.label_Ypos.setFrameStyle(QFrame.Panel | QFrame.Sunken)
+#         self.entry_dY = QDoubleSpinBox()
+#         self.entry_dY.setMinimum(0)
+#         self.entry_dY.setMaximum(5)
+#         self.entry_dY.setSingleStep(0.2)
+#         self.entry_dY.setValue(0)
+#         self.btn_moveY_forward = QPushButton('Forward')
+#         self.btn_moveY_forward.setDefault(False)
+#         self.btn_moveY_backward = QPushButton('Backward')
+#         self.btn_moveY_backward.setDefault(False)
+
+#         self.label_Zpos = QLabel()
+#         self.label_Zpos.setNum(0)
+#         self.label_Zpos.setFrameStyle(QFrame.Panel | QFrame.Sunken)
+#         self.entry_dZ = QDoubleSpinBox()
+#         self.entry_dZ.setMinimum(0) 
+#         self.entry_dZ.setMaximum(1000) 
+#         self.entry_dZ.setSingleStep(0.2)
+#         self.entry_dZ.setValue(0)
+#         self.btn_moveZ_forward = QPushButton('Forward')
+#         self.btn_moveZ_forward.setDefault(False)
+#         self.btn_moveZ_backward = QPushButton('Backward')
+#         self.btn_moveZ_backward.setDefault(False)
+        
+#         grid_line0 = QGridLayout()
+#         grid_line0.addWidget(QLabel('X (mm)'), 0,0)
+#         grid_line0.addWidget(self.label_Xpos, 0,1)
+#         grid_line0.addWidget(self.entry_dX, 0,2)
+#         grid_line0.addWidget(self.btn_moveX_forward, 0,3)
+#         grid_line0.addWidget(self.btn_moveX_backward, 0,4)
+
+#         grid_line1 = QGridLayout()
+#         grid_line1.addWidget(QLabel('Y (mm)'), 0,0)
+#         grid_line1.addWidget(self.label_Ypos, 0,1)
+#         grid_line1.addWidget(self.entry_dY, 0,2)
+#         grid_line1.addWidget(self.btn_moveY_forward, 0,3)
+#         grid_line1.addWidget(self.btn_moveY_backward, 0,4)
+
+#         grid_line2 = QGridLayout()
+#         grid_line2.addWidget(QLabel('Z (um)'), 0,0)
+#         grid_line2.addWidget(self.label_Zpos, 0,1)
+#         grid_line2.addWidget(self.entry_dZ, 0,2)
+#         grid_line2.addWidget(self.btn_moveZ_forward, 0,3)
+#         grid_line2.addWidget(self.btn_moveZ_backward, 0,4)
+
+#         self.grid = QGridLayout()
+#         self.grid.addLayout(grid_line0,0,0)
+#         self.grid.addLayout(grid_line1,1,0)
+#         self.grid.addLayout(grid_line2,2,0)
+#         self.setLayout(self.grid)
+
+#         self.btn_moveX_forward.clicked.connect(self.move_x_forward)
+#         self.btn_moveX_backward.clicked.connect(self.move_x_backward)
+#         self.btn_moveY_forward.clicked.connect(self.move_y_forward)
+#         self.btn_moveY_backward.clicked.connect(self.move_y_backward)
+#         self.btn_moveZ_forward.clicked.connect(self.move_z_forward)
+#         self.btn_moveZ_backward.clicked.connect(self.move_z_backward)
+        
+#     def move_x_forward(self):
+#         self.navigationController.move_x(self.entry_dX.value())
+#         print('move x')
+#     def move_x_backward(self):
+#         self.navigationController.move_x(-self.entry_dX.value())
+#     def move_y_forward(self):
+#         self.navigationController.move_y(self.entry_dY.value())
+#     def move_y_backward(self):
+#         self.navigationController.move_y(-self.entry_dY.value())
+#     def move_z_forward(self):
+#         self.navigationController.move_z(self.entry_dZ.value()/1000)
+#     def move_z_backward(self):
+#         self.navigationController.move_z(-self.entry_dZ.value()/1000)
 
 class AutoFocusWidget(QFrame):
     def __init__(self, autofocusController, main=None, *args, **kwargs):
@@ -661,13 +814,4 @@ class MultiPointWidget(QFrame):
         self.checkbox_withAutofocus.setEnabled(enabled)
         if exclude_btn_startAcquisition is not True:
         	self.btn_startAcquisition.setEnabled(enabled)
-
-class TrackingControllerWidget(QFrame):
-    def __init__(self, multipointController, navigationController, main=None, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        self.multipointController = multipointController
-        self.navigationController = navigationController
-        self.base_path_is_set = False
-        # self.add_components()
-        self.setFrameStyle(QFrame.Panel | QFrame.Raised)
 

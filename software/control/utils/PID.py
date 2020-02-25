@@ -80,6 +80,22 @@ class PID:
     def set_previousError(self, previousError):
         self.previousError = previousError
 
+    def update_P(self, P):
+        
+        self.Kp = P
+        print('P', self.Kp)
+
+    def update_I(self, I):
+        
+        self.Ki = I
+        print('I', self.Ki)
+
+    def update_D(self, D):
+
+        self.Kd = D
+        print('D', self.Kd)
+
+
     def set_Tuning(self,P,I,D):
         
         

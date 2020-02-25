@@ -1,5 +1,6 @@
 # set QT_API environment variable
 import os 
+import sys
 os.environ["QT_API"] = "pyqt5"
 import qtpy
 
@@ -18,13 +19,15 @@ import control.microcontroller as microcontroller
 
 SIMULATION = True
 
-class OctopiGUI(QMainWindow):
+class GravityMachineGUI(QMainWindow):
 
 	# variables
 	fps_software_trigger = 100
 
 	def __init__(self, *args, **kwargs):
 		super().__init__(*args, **kwargs)
+		
+		self.setWindowTitle('Gravity Machine')
 
 		# load objects
 		if SIMULATION is True:
@@ -34,14 +37,24 @@ class OctopiGUI(QMainWindow):
 			self.camera = camera.Camera(sn=17910085)
 			self.microcontroller = microcontroller.Microcontroller()
 		
+		self.internal_state = core_tracking.InternalState()
+
+		self.microcontroller_Rec = core_tracking.microcontroller_Receiver(self.microcontroller, self.internal_state)
+
 		self.streamHandler = core.StreamHandler()
 		self.liveController = core.LiveController(self.camera,self.microcontroller)
 		self.navigationController = core.NavigationController(self.microcontroller)
 		#self.autofocusController = core.AutoFocusController(self.camera,self.navigationController,self.liveController)
 		#self.multipointController = core.MultiPointController(self.camera,self.navigationController,self.liveController,self.autofocusController)
-		self.trackingController = core_tracking.TrackingController(self.microcontroller,self.navigationController)
+		self.trackingController = core_tracking.TrackingController(self.microcontroller,self.internal_state)
+		
+		self.trackingDataSaver = core_tracking.TrackingDataSaver(self.internal_state)
+
 		self.imageSaver = core.ImageSaver()
 		self.imageDisplay = core.ImageDisplay()
+
+
+
 
 		'''
 		# thread
@@ -59,25 +72,45 @@ class OctopiGUI(QMainWindow):
 
 		# load widgets
 		self.cameraSettingWidget = widgets.CameraSettingsWidget(self.camera,self.liveController)
-		self.liveControlWidget = widgets.LiveControlWidget(self.streamHandler,self.liveController)
-		self.navigationWidget = widgets.NavigationWidget(self.navigationController)
+		self.liveControlWidget = widgets.LiveControlWidget(self.streamHandler,self.liveController, self.trackingController)
+		self.navigationWidget = widgets_tracking.NavigationWidget(self.navigationController, self.internal_state)
 		#self.autofocusWidget = widgets.AutoFocusWidget(self.autofocusController)
 		self.recordingControlWidget = widgets.RecordingWidget(self.streamHandler,self.imageSaver)
-		self.trackingControlWidget = widgets_tracking.TrackingControllerWidget(self.streamHandler,self.trackingController)
+		self.trackingControlWidget = widgets_tracking.TrackingControllerWidget(self.streamHandler, self.trackingController, self.trackingDataSaver, self.internal_state)
+		
+		self.PID_Group_Widget = widgets_tracking.PID_Group_Widget(self.trackingController)
+
+		self.FocusTracking_Widget = widgets_tracking.FocusTracking_Widget(self.trackingController, self.internal_state)
 		#self.multiPointWidget = widgets.MultiPointWidget(self.multipointController)
 
 		self.recordTabWidget = QTabWidget()
 		self.recordTabWidget.addTab(self.recordingControlWidget, "Simple Recording")
-		self.recordTabWidget.addTab(self.trackingControlWidget, "Tracking")
+		# self.recordTabWidget.addTab(self.trackingControlWidget, "Tracking")
 		#self.recordTabWidget.addTab(self.multiPointWidget, "Multipoint Acquisition")
 
+		self.plotWidget = widgets.dockAreaPlot()
+
+		#-----------------------------------------------------
 		# layout widgets
+		#-----------------------------------------------------
 		layout = QGridLayout() #layout = QStackedLayout()
-		layout.addWidget(self.cameraSettingWidget,0,0)
-		layout.addWidget(self.liveControlWidget,1,0)
-		layout.addWidget(self.navigationWidget,2,0)
+		# layout.addWidget(self.cameraSettingWidget,0,0)
+		layout.addWidget(self.liveControlWidget,0,0)
+		
+		layout.addWidget(self.navigationWidget,0,1)
+
+		layout.addWidget(self.trackingControlWidget,1,0)
+
+		layout.addWidget(self.FocusTracking_Widget,2,0)
+
+
+
+		# layout.addWidget(self.PID_Group_Widget,2,0)
+		# layout.addWidget(self.navigationWidget,2,0)
 		#layout.addWidget(self.autofocusWidget,3,0)
-		layout.addWidget(self.recordTabWidget,4,0)
+		layout.addWidget(self.recordTabWidget,1,1)
+
+		layout.addWidget(self.plotWidget,2,1)
 		
 		# transfer the layout to the central widget
 		self.centralWidget = QWidget()
@@ -97,20 +130,41 @@ class OctopiGUI(QMainWindow):
 		self.streamHandler.packet_image_to_write.connect(self.imageSaver.enqueue)
 		self.streamHandler.packet_image_for_tracking.connect(self.trackingController.on_new_frame)
 		self.imageDisplay.image_to_display.connect(self.imageDisplayWindow.display_image) # may connect streamHandler directly to imageDisplayWindow
-		self.navigationController.xPos.connect(self.navigationWidget.label_Xpos.setNum)
-		self.navigationController.yPos.connect(self.navigationWidget.label_Ypos.setNum)
-		self.navigationController.zPos.connect(self.navigationWidget.label_Zpos.setNum)
+		
+
+
+		# self.navigationController.xPos.connect(self.navigationWidget.label_Xpos.setNum)
+		# self.navigationController.yPos.connect(self.navigationWidget.label_Ypos.setNum)
+		# self.navigationController.zPos.connect(self.navigationWidget.label_Zpos.setNum)
 		#self.autofocusController.image_to_display.connect(self.imageDisplayWindow.display_image)
 		#self.multipointController.image_to_display.connect(self.imageDisplayWindow.display_image)
 
 		self.camera.start_streaming()
 
 	def closeEvent(self, event):
-		event.accept()
+
+		reply = QMessageBox.question(self, 'Message',
+			"Are you sure you want to exit?", QMessageBox.Yes | 
+			QMessageBox.No, QMessageBox.Yes)
+
+		if reply == QMessageBox.Yes:
+
+			event.accept()
 		# self.softwareTriggerGenerator.stop() @@@ => 
-		self.liveController.stop_live()
-		self.camera.close()
-		self.imageSaver.close()
-		self.imageDisplay.close()
-		self.imageDisplayWindow.close()
-		self.imageDisplayWindow_ThresholdedImage.close()
+	
+			self.liveController.stop_live()
+			
+			# self.streamHandler.stop()
+		
+			self.imageSaver.close()
+		
+			self.imageDisplay.close()
+			
+			self.imageDisplayWindow.close()
+			
+			self.imageDisplayWindow_ThresholdedImage.close()
+	
+			
+		else:
+			event.ignore() 
+		
