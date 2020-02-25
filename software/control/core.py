@@ -537,16 +537,17 @@ class ImageDisplay(QObject):
             # process the queue
             try:
                 [image, frame_ID, timestamp, trackingStream] = self.queue.get(timeout=0.1)
-                print('Got image from queue')
+           
                 # self.image_lock.acquire(True)
                 # Send image and trackingStream
                 self.image_to_display.emit(image, trackingStream)
-                print('Sent image to display window')
+               
                 # self.image_lock.release()
                 # self.queue.task_done()
             except:
-                print("Exception:", sys.exc_info()[0])
-                print('Not sending image to display window')
+                # print("Exception:", sys.exc_info()[0])
+                # print('Not sending image to display window')
+                pass
 
     # def enqueue(self,image,frame_ID,timestamp):
     def enqueue(self,image, trackingStream = False):
