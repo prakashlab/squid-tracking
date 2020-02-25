@@ -3,6 +3,15 @@ import os
 os.environ["QT_API"] = "pyqt5"
 import qtpy
 
+import pyqtgraph as pg
+import pyqtgraph.dockarea as dock
+from pyqtgraph.dockarea.Dock import DockLabel
+import control.utils.dockareaStyle as dstyle
+
+
+
+from collections import deque
+
 # qt libraries
 from qtpy.QtCore import *
 from qtpy.QtWidgets import *
@@ -152,15 +161,20 @@ class LiveControlWidget(QFrame):
 
 
     '''
-    def __init__(self, streamHandler, liveController, main=None, *args, **kwargs):
+    def __init__(self, streamHandler, liveController, trackingController, main=None, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.liveController = liveController
         self.streamHandler = streamHandler
+        self.trackingController = trackingController
         self.fps_display = 10
-   
+        self.objective = OBJECTIVES['default']
+
+
         self.streamHandler.set_display_fps(self.fps_display)
         
         self.add_components()
+        self.update_pixel_size()
+
         self.setFrameStyle(QFrame.Panel | QFrame.Raised)
 
     def add_components(self):
@@ -174,7 +188,7 @@ class LiveControlWidget(QFrame):
 
         # 0,1 : choose tracking objective
         self.dropdown_objectiveSelection = QComboBox()
-        self.dropdown_objectiveSelection.addItems(list(OBJECTIVES['objectives'].keys()))
+        self.dropdown_objectiveSelection.addItems(list(OBJECTIVES['type'].keys()))
         self.dropdown_objectiveSelection.setCurrentText(OBJECTIVES['default'])
 
 
@@ -215,7 +229,7 @@ class LiveControlWidget(QFrame):
         self.entry_displayFPS.valueChanged.connect(self.streamHandler.set_display_fps)
         self.slider_resolutionScaling.valueChanged.connect(self.streamHandler.set_working_resolution_scaling)
         # self.dropdown_modeSelection.currentIndexChanged.connect(self.update_microscope_mode)
-       
+        self.dropdown_objectiveSelection.currentIndexChanged.connect(self.update_pixel_size)
 
 
         # layout
@@ -271,7 +285,6 @@ class LiveControlWidget(QFrame):
 
  
     # Slot connected to signal from trackingController.
-
     def update_working_resolution(self, value):
 
         self.display_workingResolution.display(value)
@@ -282,7 +295,11 @@ class LiveControlWidget(QFrame):
         self.actual_displayFPS.display(value)
 
 
-
+    def update_pixel_size(self):
+        self.objective = self.dropdown_objectiveSelection.currentText()
+        print('new objective: {}'.format(self.objective))
+        new_pixel_size = OBJECTIVES['type'][self.objective]['PixelPermm']
+        self.trackingController.units_converter.update_pixel_size(new_pixel_size)
         
 
 
@@ -397,7 +414,79 @@ class RecordingWidget(QFrame):
         self.streamHandler.stop_recording()
         self.btn_setSavingDir.setEnabled(True)
 
+'''
+#%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+#                            Plot widget
+#%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+'''
 
+class dockAreaPlot(dock.DockArea):
+    def __init__(self, parent=None):
+        super().__init__(parent)
+        DockLabel.updateStyle = dstyle.updateStylePatched
+
+        self.plots = {key:PlotWidget(key) for key in PLOT_VARIABLES.keys()}
+        
+        self.docks = {key:dock.Dock(key) for key in PLOT_VARIABLES.keys()}
+
+        for key in PLOT_VARIABLES.keys():
+
+            self.docks[key].addWidget(self.plots[key])
+        
+        # Layout of the plots
+        
+        self.addDock(self.docks['X'])
+        self.addDock(self.docks['Z'],'right',self.docks['X'])
+
+        prev_key = 'Z'
+        for key in PLOT_VARIABLES:
+            if key not in DEFAULT_PLOTS:
+
+                self.addDock(self.docks[key],'above',self.docks[prev_key])
+                prev_key = key
+
+    def initialise_plot_area(self):
+
+        for key in self.plots.keys():
+            self.plot[key].initialise_plot()
+
+
+class PlotWidget(pg.GraphicsLayoutWidget):
+    def __init__(self,title, parent=None):
+        super().__init__(parent)
+        self.title=title
+        #plot Zobj
+        self.Abscissa=deque(maxlen=20)
+        self.Ordinate=deque(maxlen=20)
+        
+        self.Abs=[]
+        self.Ord=[]
+        self.plot1=self.addPlot(title=title)
+        self.curve=self.plot1.plot(self.Abs,self.Ord)
+
+        self.plot1.enableAutoRange('xy', True)
+        self.plot1.showGrid(x=True, y=True)
+        
+        
+    def update_plot(self,data):
+        
+        self.Abscissa.append(data[0])
+
+        self.Ordinate.append(data[1])
+
+        self.label = PLOT_UNITS[self.title]
+            
+        self.Abs=list(self.Abscisse)
+        self.Ord=list(self.Ordonnee)
+
+        self.curve.setData(self.Abs,self.Ord)
+
+    def initialise_plot(self):
+        self.Abscissa=deque(maxlen=20)
+        self.Ordinate=deque(maxlen=20)
+        self.Abs=[]
+        self.Ord=[]
+        self.curve.setData(self.Abs,self.Ord)
 
 # class NavigationWidget(QFrame):
 #     def __init__(self, navigationController, main=None, *args, **kwargs):

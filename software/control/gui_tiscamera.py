@@ -72,7 +72,7 @@ class GravityMachineGUI(QMainWindow):
 
 		# load widgets
 		self.cameraSettingWidget = widgets.CameraSettingsWidget(self.camera,self.liveController)
-		self.liveControlWidget = widgets.LiveControlWidget(self.streamHandler,self.liveController)
+		self.liveControlWidget = widgets.LiveControlWidget(self.streamHandler,self.liveController, self.trackingController)
 		self.navigationWidget = widgets_tracking.NavigationWidget(self.navigationController, self.internal_state)
 		#self.autofocusWidget = widgets.AutoFocusWidget(self.autofocusController)
 		self.recordingControlWidget = widgets.RecordingWidget(self.streamHandler,self.imageSaver)
@@ -87,6 +87,8 @@ class GravityMachineGUI(QMainWindow):
 		self.recordTabWidget.addTab(self.recordingControlWidget, "Simple Recording")
 		# self.recordTabWidget.addTab(self.trackingControlWidget, "Tracking")
 		#self.recordTabWidget.addTab(self.multiPointWidget, "Multipoint Acquisition")
+
+		self.plotWidget = widgets.dockAreaPlot()
 
 		#-----------------------------------------------------
 		# layout widgets
@@ -106,7 +108,9 @@ class GravityMachineGUI(QMainWindow):
 		# layout.addWidget(self.PID_Group_Widget,2,0)
 		# layout.addWidget(self.navigationWidget,2,0)
 		#layout.addWidget(self.autofocusWidget,3,0)
-		# layout.addWidget(self.recordTabWidget,3,0)
+		layout.addWidget(self.recordTabWidget,1,1)
+
+		layout.addWidget(self.plotWidget,2,1)
 		
 		# transfer the layout to the central widget
 		self.centralWidget = QWidget()

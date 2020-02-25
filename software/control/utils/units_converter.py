@@ -74,7 +74,10 @@ class Units_Converter:
         self.imW_max = imW
 
     def update_pixel_size(self, new_pixelPermm):
+        
         self.pixelPermm = new_pixelPermm
+
+        print('new pixel size: {}'.format(self.pixelPermm))
 
     def px_to_mm(self, Dist,resolution_width):
         return 1/self.pixelPermm/(resolution_width/self.imW_max)*Dist   

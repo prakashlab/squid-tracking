@@ -84,8 +84,9 @@ CROPPED_IMG_RATIO = 10
 
 FocusTracking = {'Cropped image ratio':{'default':10}}
 
-OBJECTIVES = {'objectives':{'10x':{'magnification':10, 'NA':0.17, 'PixelPermm':1122}, 
-'20x':{'magnification':20, 'NA':0.17, 'PixelPermm':2244}}, 'default':'10x'}    
+OBJECTIVES = {'type':{'10x':{'magnification':10, 'NA':0.17, 'PixelPermm':1122}, 
+'20x':{'magnification':20, 'NA':0.17, 'PixelPermm':2244}}, 'default':'10x'}
+  
 
 
 cameras = {'DF':{'serial':[], 'px_format':(4000,3000), 'color_format': 'RGBx', 'fps': 120}, 
@@ -121,6 +122,11 @@ INITIAL_VALUES = {'Time':0, 'X_objStage':0, 'Y_objStage':0, 'Z_objStage':0, 'X_s
     'liquidLens_Amp': liquidLens['Amp']['default'] , 'FocusPhase':0, 'imaging channels':['DF', 'FL'], 
     'uScope mode': 'Tracking', 'Objective':'10x', 'basePath':'/', 'experimentID':'track'}
 
+PLOT_VARIABLES = {'X':'X_objStage','Y':'Y_objStage', 'Z':'Z_objStage', 'Theta':'Theta_stage'}
+
+PLOT_UNITS = {'X':'mm','Y':'mm', 'Z':'mm', 'Theta':'radians'}
+
+DEFAULT_PLOTS = ['X', 'Z']
 
 # 
 print(INTERNAL_STATE_VARIABLES)

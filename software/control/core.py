@@ -95,9 +95,11 @@ class StreamHandler(QObject):
 
     def start_recording(self):
         self.save_image_flag = True
+        print('Starting Acquisition')
 
     def stop_recording(self):
         self.save_image_flag = False
+        print('Stopping Acquisition')
 
     def start_tracking(self):
         self.tracking_flag = True
@@ -107,9 +109,12 @@ class StreamHandler(QObject):
 
     def set_display_fps(self,fps):
         self.fps_display = fps
+        #@@@Testing
+        print(self.fps_display)
 
     def set_save_fps(self,fps):
         self.fps_save = fps
+        print(self.fps_save)
 
     def set_crop(self,crop_width,height):
         self.crop_width = crop_width
