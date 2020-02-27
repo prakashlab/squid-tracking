@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 
 import numpy as np
-
+from control._def import *
 
 class Units_Converter:
 
@@ -10,7 +10,7 @@ class Units_Converter:
         self.chamberWidth = 4    # Width of chamber in mm (Wheel 18)
 
         # Pixel per mm 10x objective
-        self.pixelPermm = 1122.67
+        self.pixelPermm = OBJECTIVES[DEFAULT_OBJECTIVE]['PixelPermm']
 
         print('Initializing Units Converter')
         print(self.pixelPermm)
@@ -70,7 +70,7 @@ class Units_Converter:
     # --------------------------------------------------
     # Functions
     # --------------------------------------------------
-    def set_max_imWidth(self, imW):
+    def set_ref_imWidth(self, imW):
         self.imW_max = imW
 
     def update_pixel_size(self, new_pixelPermm):

@@ -9,6 +9,9 @@ from qtpy.QtCore import *
 from qtpy.QtWidgets import *
 from qtpy.QtGui import *
 
+
+# Definitions
+from control._def import *
 # app specific libraries
 import control.widgets as widgets
 import control.widgets_tracking as widgets_tracking
@@ -50,7 +53,11 @@ class GravityMachineGUI(QMainWindow):
 		
 		self.internal_state = core_tracking.InternalState()
 
+		# Microcontroller Receiver object
 		self.microcontroller_Rec = core_tracking.microcontroller_Receiver(self.microcontroller, self.internal_state)
+
+		# Microcontroller Send object
+		self.microcontroller_Sender = core_tracking.microcontroller_Sender(self.microcontroller, self.internal_state)
 
 		self.streamHandler = core.StreamHandler(camera = self.camera)
 		self.liveController = core.LiveController(self.camera,self.microcontroller)
@@ -69,6 +76,8 @@ class GravityMachineGUI(QMainWindow):
 		self.camera.set_software_triggered_acquisition() #self.camera.set_continuous_acquisition()
 		self.camera.set_callback(self.streamHandler.on_new_frame)
 		self.camera.enable_callback()
+
+
 
 		#------------------------------------------------------------------
 		# load widgets
@@ -141,6 +150,10 @@ class GravityMachineGUI(QMainWindow):
 
 		self.trackingController.centroid_image.connect(self.imageDisplayWindow.draw_circle)
 		self.trackingController.Rect_pt1_pt2.connect(self.imageDisplayWindow.draw_rectangle)
+		
+
+		self.trackingController.multiplex_send_signal.connect(self.microcontroller_Sender.multiplex_Send)
+
 		# self.navigationController.xPos.connect(self.navigationWidget.label_Xpos.setNum)
 		# self.navigationController.yPos.connect(self.navigationWidget.label_Ypos.setNum)
 		# self.navigationController.zPos.connect(self.navigationWidget.label_Zpos.setNum)

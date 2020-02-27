@@ -75,6 +75,7 @@ class Tracking:
 #     def __init__(self):
 #         pass
 
+# Width of Image used for Pixel Size Calibration. 
 RESOLUTION_WIDTH = 1920
 
 TRACKERS = ['nearest-nbr', 'csrt', 'daSIAMRPN']
@@ -84,8 +85,10 @@ CROPPED_IMG_RATIO = 10
 
 FocusTracking = {'Cropped image ratio':{'default':10}}
 
-OBJECTIVES = {'type':{'10x':{'magnification':10, 'NA':0.17, 'PixelPermm':1122}, 
-'20x':{'magnification':20, 'NA':0.17, 'PixelPermm':2244}}, 'default':'10x'}
+OBJECTIVES = {'10x':{'magnification':10, 'NA':0.17, 'PixelPermm':1122}, 
+'20x':{'magnification':20, 'NA':0.17, 'PixelPermm':2244}}
+
+DEFAULT_OBJECTIVE = '10x'
   
 
 

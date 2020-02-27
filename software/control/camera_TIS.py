@@ -215,7 +215,10 @@ class Camera_Simulation(object):
         self.EXPOSURE_TIME_MS_MAX = 4000
 
         # Path for getting an image stream from disk
-        self.path = '/Users/deepak/Dropbox/GravityMachine/ExperimentResults/TestData/seacucmber4_auto_verylong_goodtrack/images'
+        # self.path = '/Users/deepak/Dropbox/GravityMachine/ExperimentResults/TestData/seacucmber4_auto_verylong_goodtrack/images'
+        
+        self.path = '/Users/deepak/Dropbox/GravityMachine/ExperimentResults/TestData/Stentor'
+
         self.FileList = os.listdir(self.path)
     
 
@@ -264,36 +267,36 @@ class Camera_Simulation(object):
     def set_hardware_triggered_acquisition(self):
         pass
 
-    # def send_trigger(self):
-
-
-    #     self.frame_ID = self.frame_ID + 1
-    #     self.timestamp = time.time()
-    #     if self.frame_ID == 1:
-    #         self.current_frame = np.random.randint(50,size=(2000,2000),dtype=np.uint8)
-    #         self.current_frame[901:1100,901:1100] = 200
-    #     else:
-    #         self.current_frame = np.roll(self.current_frame,10,axis=0)
-    #         pass 
-    #         # self.current_frame = np.random.randint(255,size=(768,1024),dtype=np.uint8)
-    #     if self.new_image_callback_external is not None:
-    #         self.new_image_callback_external(self)
-
     def send_trigger(self):
+
 
         self.frame_ID = self.frame_ID + 1
         self.timestamp = time.time()
-
-        if(self.frame_ID == len(self.FileList)):
-            self.frame_ID = 0
-
-        file = self.FileList[self.frame_ID]
-
-        image = cv2.imread(os.path.join(self.path, file),0)
-        self.current_frame = image
-
+        if self.frame_ID == 1:
+            self.current_frame = np.random.randint(50,size=(2000,2000),dtype=np.uint8)
+            self.current_frame[225:275,475:525] = 200
+        else:
+            # self.current_frame = np.roll(self.current_frame,10,axis=0)
+            pass 
+            # self.current_frame = np.random.randint(255,size=(768,1024),dtype=np.uint8)
         if self.new_image_callback_external is not None:
             self.new_image_callback_external(self)
+
+    # def send_trigger(self):
+
+    #     self.frame_ID = self.frame_ID + 1
+    #     self.timestamp = time.time()
+
+    #     if(self.frame_ID == len(self.FileList)):
+    #         self.frame_ID = 0
+
+    #     file = self.FileList[self.frame_ID]
+
+    #     image = cv2.imread(os.path.join(self.path, file),0)
+    #     self.current_frame = image
+
+    #     if self.new_image_callback_external is not None:
+    #         self.new_image_callback_external(self)
 
     def read_frame(self):
         pass

@@ -73,9 +73,9 @@ class StreamHandler(QObject):
 
         # Raw image width
         if(camera is not None):
-            self.image_width = self.camera.width
+            self.working_image_width = round(self.working_resolution_scaling*self.camera.width)
         else:
-            self.image_width = 720
+            self.working_image_width = 720
 
 
         self.save_image_flag = False
@@ -134,7 +134,11 @@ class StreamHandler(QObject):
 
     def set_working_resolution_scaling(self, working_resolution_scaling):
         self.working_resolution_scaling = working_resolution_scaling/100
+        self.update_working_image_width()
         # print(self.working_resolution_scaling)
+    def update_working_image_width(self):
+        self.working_image_width = round(self.working_resolution_scaling*self.camera.width)
+
 
     def set_image_thresholds(self, lower_HSV, upper_HSV):
         self.lower_HSV = lower_HSV
@@ -142,6 +146,7 @@ class StreamHandler(QObject):
 
         #@@@Testing
         print('Updated color thresholds to {} and {}'.format(self.lower_HSV, self.upper_HSV))
+
 
     def threshold_image(self, image_resized, color):
         if(color):
@@ -200,7 +205,7 @@ class StreamHandler(QObject):
         # @@@@@@@@@
 
         # image_resized = cv2.resize(image,(round(self.crop_width*self.working_resolution_scaling), round(self.crop_height*self.working_resolution_scaling)),cv2.INTER_LINEAR)
-        image_resized = imutils.resize(image, round(self.image_width*self.working_resolution_scaling))
+        image_resized = imutils.resize(image, self.working_image_width)
 
         # Threshold the image based on the color-thresholds
         image_thresh = 255*np.array(self.threshold_image(image_resized, color = camera.is_color), dtype = 'uint8')
@@ -233,7 +238,7 @@ class StreamHandler(QObject):
 
             self.get_real_display_fps()
 
-            self.signal_working_resolution.emit(round(self.image_width*self.working_resolution_scaling))
+            self.signal_working_resolution.emit(self.working_image_width)
 
 
             

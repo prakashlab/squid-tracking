@@ -171,7 +171,7 @@ class LiveControlWidget(QFrame):
         self.fps_display = FPS['display']['default']
         self.fps_trigger = FPS['trigger_software']['default']
 
-        self.objective = OBJECTIVES['default']
+        self.objective = DEFAULT_OBJECTIVE
 
 
         self.streamHandler.set_display_fps(self.fps_display)
@@ -197,8 +197,8 @@ class LiveControlWidget(QFrame):
 
         # 0,1 : choose tracking objective
         self.dropdown_objectiveSelection = QComboBox()
-        self.dropdown_objectiveSelection.addItems(list(OBJECTIVES['type'].keys()))
-        self.dropdown_objectiveSelection.setCurrentText(OBJECTIVES['default'])
+        self.dropdown_objectiveSelection.addItems(list(OBJECTIVES.keys()))
+        self.dropdown_objectiveSelection.setCurrentText(DEFAULT_OBJECTIVE)
 
 
         self.triggerMode = None
@@ -258,7 +258,7 @@ class LiveControlWidget(QFrame):
         self.entry_triggerFPS.valueChanged.connect(self.liveController.set_trigger_fps)
 
         self.slider_resolutionScaling.valueChanged.connect(self.streamHandler.set_working_resolution_scaling)
-        self.slider_resolutionScaling.valueChanged.connect(self.update_image_properties)
+        self.slider_resolutionScaling.valueChanged.connect(self.update_image_properties_tracking)
         # self.dropdown_modeSelection.currentIndexChanged.connect(self.update_microscope_mode)
         self.dropdown_objectiveSelection.currentIndexChanged.connect(self.update_pixel_size)
         self.btn_live.clicked.connect(self.toggle_live)
@@ -355,7 +355,7 @@ class LiveControlWidget(QFrame):
     def update_pixel_size(self):
         self.objective = self.dropdown_objectiveSelection.currentText()
         print('new objective: {}'.format(self.objective))
-        new_pixel_size = OBJECTIVES['type'][self.objective]['PixelPermm']
+        new_pixel_size = OBJECTIVES[self.objective]['PixelPermm']
         self.trackingController.units_converter.update_pixel_size(new_pixel_size)
         
 
@@ -382,11 +382,11 @@ class LiveControlWidget(QFrame):
             print('Trigger mode to: {}'.format(self.triggerMode))
             self.camera.set_continuous_acquisition()
 
-    def update_image_properties(self):
+    def update_image_properties_tracking(self):
         # If the image resolution is changed on the fly then restart the image tracker.
         self.trackingController.start_flag = True
         # Also update the image sizes for use in tracking.
-        # self.trackingController.update_image_center_width()
+        self.trackingController.update_image_center_width()
     # def update_microscope_mode(self,index):
     #     self.liveController.turn_off_illumination()
     #     self.liveController.set_microscope_mode(self.dropdown_modeSelection.currentText())

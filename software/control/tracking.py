@@ -93,12 +93,12 @@ class Tracker_Image(object):
 			# thresh_image = image_processing.threshold_image(image, lower_HSV, upper_HSV)  #The threshold image as one channel
 
 			#@@@ Debugging
-			print('Track start: Using thresholded image...')
+			# print('Track start: Using thresholded image...')
 
 
 			self.isCentroidFound, self.centroid_image, self.bbox = image_processing.find_centroid_basic_Rect(thresh_image)
 			
-			print('Starting tracker with initial bbox: {}'.format(self.bbox))
+			# print('Starting tracker with initial bbox: {}'.format(self.bbox))
 			self.init_tracker(image, self.centroid_image, self.bbox)
 
 			self.trackerActive = True
@@ -110,11 +110,11 @@ class Tracker_Image(object):
 			# Find centroid using the tracking.
 
 			#@@@ Debugging
-			print('Continued track: Using Tracker...')
+			# print('Continued track: Using Tracker...')
 
 			objectFound, self.bbox = self.update_tracker(image, thresh_image) # (x,y,w,h)
 
-			print('Object found?: {}'.format(objectFound))
+			# print('Object found?: {}'.format(objectFound))
 
 			if(objectFound):
 
@@ -214,7 +214,6 @@ class Tracker_Image(object):
 			
 			self.origLoc = pts[0]
 
-			print('Origin location : {}'.format(self.origLoc))
 
 			isCentroidFound, centroid, new_bbox = image_processing.find_centroid_basic_Rect(thresh_image_cropped)
 
@@ -239,9 +238,10 @@ class Tracker_Image(object):
 		return centroid
 
 	def rectpts_from_bbox(self, bbox):
-
-		pts = np.array([[bbox[0], bbox[1]],[bbox[0] + bbox[2], bbox[1] + bbox[3]]], dtype = 'int')
-
+		if(self.bbox is not None):
+			pts = np.array([[bbox[0], bbox[1]],[bbox[0] + bbox[2], bbox[1] + bbox[3]]], dtype = 'int')
+		else:
+			pts = None
 		return pts
 
 	def update_searchArea(self, value):

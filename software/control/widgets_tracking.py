@@ -195,7 +195,11 @@ class TrackingControllerWidget(QFrame):
 
 		self.trackingController.update_image_offset((value_x, value_y))
 
-		# Changing the tracking set point also changes the cross-hair location displayed on the window
+		'''
+		Changing the tracking set point also changes the cross-hair location 
+		displayed on the window (so a user can position the object precisely 
+		where they want in the frame)
+		'''
 		self.ImageDisplayWindow.update_image_offset((value_x, value_y))
 
 

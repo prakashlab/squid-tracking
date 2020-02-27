@@ -63,14 +63,17 @@ class TrackingController(QObject):
         self.microcontroller = microcontroller
         self.internal_state = internal_state
 
+
         self.units_converter = Units_Converter()
 
-
+        # Set the reference image width based on the camera sensor size used for calibration
+        # This allows physical distances be calculated even if the image res is downsampled.
+        self.units_converter.set_ref_imWidth(RESOLUTION_WIDTH)
         
         self.image_axis = image_axis
         self.focus_axis = focus_axis
 
-       
+        self.image = None
 
         # Focus Tracker type
         self.focus_tracker = focus_tracker
@@ -195,7 +198,7 @@ class TrackingController(QObject):
 
             # Update image parameters
             # TO DO: Only call this when image resolution changes
-            self.update_image_center_width(image)
+            # DOnE!
 
 
             # initialize the tracker when a new track is started
@@ -214,9 +217,10 @@ class TrackingController(QObject):
                 # Get initial parameters of the tracking image stream that are immutable
                 self.set_image_props()
 
-                 # Calculate the initial image properties
-                self.update_image_center_width(image)
+                self.update_image_center_width()
+
                 self.update_tracking_setpoint()
+
             
             else:
 
@@ -297,14 +301,16 @@ class TrackingController(QObject):
 
                 # get motion commands
                 # Error is in mm.
+                print('Image error: {}, {}, {} mm'.format(x_error, y_error, z_error))
                 X_order, Y_order, Theta_order = self.get_motion_commands(x_error,y_error,z_error)
 
             else:
-                X_order, Y_order, Theta_order = 0,0,0            
                 # X_order, Y_order, Z_order is in stepper motor steps
+                X_order, Y_order, Theta_order = 0,0,0            
+                
             
             # @@@testing
-            # print(X_order, Y_order, Theta_order)
+            print('Tracking order to uController: {}, {}, {} steps'.format(X_order, Y_order, Theta_order))
             # We want to send to the microcontroller at a constant rate, even if an object is not found
 
             # Send the motion commands and instruct the multiplex send object to send data 
@@ -350,6 +356,12 @@ class TrackingController(QObject):
         self.X_objStage = deque(maxlen=self.dequeLen)
         self.Y_objStage = deque(maxlen=self.dequeLen)
         self.Z_objStage = deque(maxlen=self.dequeLen)
+
+        self.set_image_props()
+
+        self.update_image_center_width()
+
+        self.update_tracking_setpoint()
 
 
     def update_elapsed_time(self):
@@ -424,21 +436,29 @@ class TrackingController(QObject):
             self.color = False
 
 
-    def update_image_center_width(self, image):
-        self.image_center, self.image_width = image_processing.get_image_center_width(image)
-        # print(self.image_width)
-        # Update search area
+    def update_image_center_width(self):
+        if(self.image is not None):
+            self.image_center, self.image_width = image_processing.get_image_center_width(self.image)
+            
+            # Update search area
+            self.set_searchArea()
 
-        self.set_searchArea()
+            # The tracking set point is modified since it depends on the image center.
+            self.update_tracking_setpoint()
+            
+            print('New image width: {}'.format(self.image_width))
+
 
     def update_tracking_setpoint(self):
 
         self.image_setPoint = self.image_center + self.image_offset
         #@@@Testing
-        # print('New tracking set point :{}'.format(self.image_setPoint))
+        print('New tracking set point :{}'.format(self.image_setPoint))
 
     def update_image_offset(self, new_image_offset):
         self.image_offset = new_image_offset
+
+        self.update_tracking_setpoint()
         #@@@Testing
         # print('Updated image offset to :{}'.format(self.image_offset))
 
