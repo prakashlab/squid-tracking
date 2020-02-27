@@ -631,7 +631,7 @@ class ImageDisplay(QObject):
 # from gravity machine
 class ImageDisplayWindow(QMainWindow):
 
-    def __init__(self, window_title=''):
+    def __init__(self, window_title='', DrawCrossHairs = False):
         super().__init__()
         self.setWindowTitle(window_title)
         self.setWindowFlags(self.windowFlags() | Qt.CustomizeWindowHint)
@@ -656,7 +656,9 @@ class ImageDisplayWindow(QMainWindow):
         self.DrawCirc = False
         self.centroid = None
 
-        self.DrawCrossHairs = False
+        self.DrawCrossHairs = DrawCrossHairs
+
+        self.image_offset = np.array([0, 0])
 
 
         layout = QGridLayout()
@@ -668,6 +670,7 @@ class ImageDisplayWindow(QMainWindow):
         
         if(trackingStream):
 
+
             if(self.DrawRect):
                 cv2.rectangle(image, self.ptRect1, self.ptRect2,(0,0,0) , 2) #cv2.rectangle(img, (20,20), (300,300),(0,0,255) , 2)#
                 self.DrawRect=False
@@ -677,9 +680,14 @@ class ImageDisplayWindow(QMainWindow):
                 self.DrawCirc=False
 
             if(self.DrawCrossHairs):
-                cv2.Line(image, horLine_pt1, horLine_pt2, (255,255,255), thickness=1, lineType=8, shift=0) 
-                cv2.Line(image, verLine_pt1, verLine_pt2, (255,255,255), thickness=1, lineType=8, shift=0) 
-                self.DrawCrossHairs=False
+                # Only need to do this if the image size changes
+                self.update_image_center_width(image)
+
+                self.draw_crosshairs()
+
+
+                cv2.line(image, self.horLine_pt1, self.horLine_pt2, (255,255,255), thickness=1, lineType=8, shift=0) 
+                cv2.line(image, self.verLine_pt1, self.verLine_pt2, (255,255,255), thickness=1, lineType=8, shift=0) 
 
         self.graphics_widget.img.setImage(image,autoLevels=False)
         # print('In ImageDisplayWindow display image')
@@ -696,17 +704,26 @@ class ImageDisplayWindow(QMainWindow):
         self.DrawCirc=True
         self.centroid=(centroid[0],centroid[1])
         
-    def draw_crosshairs(self, image_center, image_width):
+    def draw_crosshairs(self):
         # Connected to Signal from Tracking object
-        cross_length = round(image_width/20)
+        cross_length = round(self.image_width/20)
 
-        horLine_pt1 = (round(image_center[0] - cross_length/2), image_center[1])
-        horLine_pt2 = (round(image_center[0] + cross_length/2), image_center[1])
+        self.horLine_pt1 = (int(self.tracking_center[0] - cross_length/2), int(self.tracking_center[1]))
+        self.horLine_pt2 = (int(self.tracking_center[0] + cross_length/2), int(self.tracking_center[1]))
 
-        verLine_pt1 = (round(image_center[0]), round(image_center[1] - cross_length/2))
-        verLine_pt2 = (round(image_center[0]), round(image_center[1] + cross_length/2))
+        self.verLine_pt1 = (int(self.tracking_center[0]), int(self.tracking_center[1] - cross_length/2))
+        self.verLine_pt2 = (int(self.tracking_center[0]), int(self.tracking_center[1] + cross_length/2))
 
-        self.DrawCrossHairs = True
+
+    def update_image_center_width(self,image):
+        self.image_center, self.image_width = image_processing.get_image_center_width(image)
+        
+        self.tracking_center = self.image_center + self.image_offset
+
+    def update_image_offset(self, new_image_offset):
+
+        self.image_offset = new_image_offset
+
 
 
 

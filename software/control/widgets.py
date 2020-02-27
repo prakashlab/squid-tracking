@@ -258,7 +258,7 @@ class LiveControlWidget(QFrame):
         self.entry_triggerFPS.valueChanged.connect(self.liveController.set_trigger_fps)
 
         self.slider_resolutionScaling.valueChanged.connect(self.streamHandler.set_working_resolution_scaling)
-        self.slider_resolutionScaling.valueChanged.connect(self.reset_image_tracker)
+        self.slider_resolutionScaling.valueChanged.connect(self.update_image_properties)
         # self.dropdown_modeSelection.currentIndexChanged.connect(self.update_microscope_mode)
         self.dropdown_objectiveSelection.currentIndexChanged.connect(self.update_pixel_size)
         self.btn_live.clicked.connect(self.toggle_live)
@@ -382,9 +382,11 @@ class LiveControlWidget(QFrame):
             print('Trigger mode to: {}'.format(self.triggerMode))
             self.camera.set_continuous_acquisition()
 
-    def reset_image_tracker(self):
+    def update_image_properties(self):
         # If the image resolution is changed on the fly then restart the image tracker.
         self.trackingController.start_flag = True
+        # Also update the image sizes for use in tracking.
+        self.trackingController.update_image_center_width()
     # def update_microscope_mode(self,index):
     #     self.liveController.turn_off_illumination()
     #     self.liveController.set_microscope_mode(self.dropdown_modeSelection.currentText())

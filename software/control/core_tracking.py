@@ -36,6 +36,7 @@ class TrackingController(QObject):
     # Signals
     centroid_image = Signal(np.ndarray) 
     Rect_pt1_pt2 = Signal(np.ndarray)
+    tracking_setPoint = Signal(np.ndarray)
     plot_data = Signal(np.ndarray)
     set_trackBusy = Signal(int)
     clear_trackBusy = Signal(int)
@@ -150,9 +151,13 @@ class TrackingController(QObject):
 
 
 
+
+
     # Triggered by signal from StreamHandler
     def on_new_frame(self,image, thresh_image = None):
         
+        self.image = image
+
         # @@@testing
         # print('In Tracking controller new frame')
 
@@ -188,15 +193,6 @@ class TrackingController(QObject):
             
             self.update_elapsed_time()
 
-            # TO DO: Update these only when the image size or set-point changes.
-
-            # Update geometric parameters of image
-            self.update_image_center_width(image)
-
-            self.update_tracking_setpoint()
-
-            # Set the search area for nearest-nbr search
-            self.set_searchArea()
 
             # initialize the tracker when a new track is started
             if self.tracking_frame_counter == 0 or self.objectFound == False:
@@ -212,7 +208,11 @@ class TrackingController(QObject):
                 self.resetPID = True
 
                 # Get initial parameters of the tracking image stream that are immutable
-                self.set_image_props(image)
+                self.set_image_props()
+
+                 # Calculate the initial image properties
+                self.update_image_center_width()
+                self.update_tracking_setpoint()
             
             else:
 
@@ -408,9 +408,9 @@ class TrackingController(QObject):
 
     # Image related functions
 
-    def set_image_props(self, image):
+    def set_image_props(self):
         try:
-            imW, imH, channels = np.shape(image)
+            imW, imH, channels = np.shape(self.image)
 
             if(channels>2):
                 self.color = True
@@ -420,9 +420,12 @@ class TrackingController(QObject):
             self.color = False
 
 
-    def update_image_center_width(self, image):
-        self.image_center, self.image_width = image_processing.get_image_center_width(image)
+    def update_image_center_width(self):
+        self.image_center, self.image_width = image_processing.get_image_center_width(self.image)
         # print(self.image_width)
+        # Update search area
+
+        self.set_searchArea()
 
     def update_tracking_setpoint(self):
 

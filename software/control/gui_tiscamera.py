@@ -30,6 +30,15 @@ class GravityMachineGUI(QMainWindow):
 		self.setWindowTitle('Gravity Machine')
 
 		#------------------------------------------------------------------
+		# load other windows
+		#------------------------------------------------------------------
+		self.imageDisplayWindow = core.ImageDisplayWindow('Main Display', DrawCrossHairs = True)
+		self.imageDisplayWindow.show()
+
+		self.imageDisplayWindow_ThresholdedImage = core.ImageDisplayWindow('Thresholded Image')
+		self.imageDisplayWindow_ThresholdedImage.show()
+
+		#------------------------------------------------------------------
 		# load objects
 		#------------------------------------------------------------------
 		if SIMULATION is True:
@@ -69,7 +78,7 @@ class GravityMachineGUI(QMainWindow):
 		self.navigationWidget = widgets_tracking.NavigationWidget(self.navigationController, self.internal_state)
 		#self.autofocusWidget = widgets.AutoFocusWidget(self.autofocusController)
 		self.recordingControlWidget = widgets.RecordingWidget(self.streamHandler,self.imageSaver)
-		self.trackingControlWidget = widgets_tracking.TrackingControllerWidget(self.streamHandler, self.trackingController, self.trackingDataSaver, self.internal_state)
+		self.trackingControlWidget = widgets_tracking.TrackingControllerWidget(self.streamHandler, self.trackingController, self.trackingDataSaver, self.internal_state, self.imageDisplayWindow)
 		
 		self.PID_Group_Widget = widgets_tracking.PID_Group_Widget(self.trackingController)
 
@@ -110,14 +119,7 @@ class GravityMachineGUI(QMainWindow):
 		self.centralWidget.setLayout(layout)
 		self.setCentralWidget(self.centralWidget)
 
-		#------------------------------------------------------------------
-		# load windows
-		#------------------------------------------------------------------
-		self.imageDisplayWindow = core.ImageDisplayWindow('Main Display')
-		self.imageDisplayWindow.show()
-
-		self.imageDisplayWindow_ThresholdedImage = core.ImageDisplayWindow('Thresholded Image')
-		self.imageDisplayWindow_ThresholdedImage.show()
+		
 
 		#------------------------------------------------------------------
 		# make connections
@@ -139,7 +141,6 @@ class GravityMachineGUI(QMainWindow):
 
 		self.trackingController.centroid_image.connect(self.imageDisplayWindow.draw_circle)
 		self.trackingController.Rect_pt1_pt2.connect(self.imageDisplayWindow.draw_rectangle)
-
 		# self.navigationController.xPos.connect(self.navigationWidget.label_Xpos.setNum)
 		# self.navigationController.yPos.connect(self.navigationWidget.label_Ypos.setNum)
 		# self.navigationController.zPos.connect(self.navigationWidget.label_Zpos.setNum)

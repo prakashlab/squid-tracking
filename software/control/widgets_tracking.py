@@ -28,7 +28,7 @@ class TrackingControllerWidget(QFrame):
 	Text boxes for base path and Experiment ID.
 
 	'''
-	def __init__(self, streamHandler, trackingController, trackingDataSaver, internal_state, main=None, *args, **kwargs):
+	def __init__(self, streamHandler, trackingController, trackingDataSaver, internal_state, ImageDisplayWindow, main=None, *args, **kwargs):
 		super().__init__(*args, **kwargs)
 
 		self.base_path_is_set = False
@@ -39,6 +39,8 @@ class TrackingControllerWidget(QFrame):
 		self.trackingDataSaver = trackingDataSaver
 
 		self.internal_state = internal_state
+
+		self.ImageDisplayWindow = ImageDisplayWindow
 
 		# self.add_components()
 		self.setFrameStyle(QFrame.Panel | QFrame.Raised)
@@ -192,6 +194,10 @@ class TrackingControllerWidget(QFrame):
 		value_y = self.tracking_setPoint_offset_y.value()
 
 		self.trackingController.update_image_offset((value_x, value_y))
+
+		# Changing the tracking set point also changes the cross-hair location displayed on the window
+		self.ImageDisplayWindow.update_image_offset((value_x, value_y))
+
 
 
 	def set_slider_defaults(self, LOWER =[0,0,0], UPPER = [255,255,255]):
