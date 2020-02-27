@@ -193,6 +193,10 @@ class TrackingController(QObject):
             
             self.update_elapsed_time()
 
+            # Update image parameters
+            # TO DO: Only call this when image resolution changes
+            self.update_image_center_width(image)
+
 
             # initialize the tracker when a new track is started
             if self.tracking_frame_counter == 0 or self.objectFound == False:
@@ -211,7 +215,7 @@ class TrackingController(QObject):
                 self.set_image_props()
 
                  # Calculate the initial image properties
-                self.update_image_center_width()
+                self.update_image_center_width(image)
                 self.update_tracking_setpoint()
             
             else:
@@ -420,8 +424,8 @@ class TrackingController(QObject):
             self.color = False
 
 
-    def update_image_center_width(self):
-        self.image_center, self.image_width = image_processing.get_image_center_width(self.image)
+    def update_image_center_width(self, image):
+        self.image_center, self.image_width = image_processing.get_image_center_width(image)
         # print(self.image_width)
         # Update search area
 

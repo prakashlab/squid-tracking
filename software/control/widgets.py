@@ -386,7 +386,7 @@ class LiveControlWidget(QFrame):
         # If the image resolution is changed on the fly then restart the image tracker.
         self.trackingController.start_flag = True
         # Also update the image sizes for use in tracking.
-        self.trackingController.update_image_center_width()
+        # self.trackingController.update_image_center_width()
     # def update_microscope_mode(self,index):
     #     self.liveController.turn_off_illumination()
     #     self.liveController.set_microscope_mode(self.dropdown_modeSelection.currentText())
