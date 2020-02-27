@@ -161,6 +161,7 @@ def find_centroid_basic_Rect(image):
     contours = cv2.findContours(image, cv2.RETR_TREE,cv2.CHAIN_APPROX_SIMPLE)[-2]
     centroid=False
     isCentroidFound=False
+    bbox = None
     rect = False
     if len(contours)>0:
         # Find contour with max area

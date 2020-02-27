@@ -166,8 +166,10 @@ class TrackingControllerWidget(QFrame):
 			# Start a new track. If 'Aquire' is true this also creates a track file.
 			# Internal state is changed after creating this file.
 			self.trackingDataSaver.start_new_track()
+			self.streamHandler.start_tracking()
 
 		else:
+			self.streamHandler.stop_tracking()
 			self.internal_state.data['track_obj_image'] = False
 			# Resets the track deques and counters
 

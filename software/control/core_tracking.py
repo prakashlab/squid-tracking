@@ -77,9 +77,9 @@ class TrackingController(QObject):
         self.track_focus = False
 
         # For testing
-        self.track_obj_image = True
+        self.track_obj_image = False
 
-        start_flag = True
+        self.start_flag = True
 
         self.objectFound = False
 
@@ -162,18 +162,19 @@ class TrackingController(QObject):
 
         X_stage, Y_stage, Theta_stage = self.internal_state.data['X_stage'], self.internal_state.data['Y_stage'], self.internal_state.data['Theta_stage']
 
-        tracking_triggered = self.internal_state.data['track_obj_image']
+        tracking_triggered = self.internal_state.data['track_obj_image_hrdware']
 
         self.stage_auto = self.internal_state.data['track_obj_stage']
 
         # If image tracking is triggered using hardware button
+        # Need to distinguish between Hardware button and Software button-based triggers
         if tracking_triggered and tracking_triggered != self.tracking_triggered_prev:
             ''' @@@@@ Then emit the start_tracking signal to change the track button 
             state of the Tracking Widget.
              EMIT (tracking_triggered)
             '''
             # This Toggles the state of the Track Button.
-            start_tracking_signal.emit()
+            self.start_tracking_signal.emit()
 
             
         self.tracking_triggered_prev = tracking_triggered
@@ -186,9 +187,11 @@ class TrackingController(QObject):
 
             
             self.update_elapsed_time()
+
+            # TO DO: Update these only when the image size or set-point changes.
+
             # Update geometric parameters of image
             self.update_image_center_width(image)
-
 
             self.update_tracking_setpoint()
 
@@ -203,7 +206,7 @@ class TrackingController(QObject):
                 initialize the tracker
                 '''
 
-                start_flag = True
+                self.start_flag = True
 
                 # initialize the PID controller
                 self.resetPID = True
@@ -213,28 +216,27 @@ class TrackingController(QObject):
             
             else:
 
-                start_flag = False
+                self.start_flag = False
                 self.resetPID = False
 
                 
-            self.objectFound, self.centroid, self.rect_pts = self.tracker_image.track(image, thresh_image, start_flag = start_flag)
+            self.objectFound, self.centroid, self.rect_pts = self.tracker_image.track(image, thresh_image, start_flag = self.start_flag)
             
             self.tracking_frame_counter += 1
-   
-            
+    
             #-----------------------------------------------------
             # Tests
             #-----------------------------------------------------
          
             # print(self.objectFound, self.centroid, self.rect_pts)
-            cv2.circle(image,(self.centroid[0], self.centroid[1]), 20, (255,0,0), 2)
-            self.ptRect1=(self.rect_pts[0][0], self.rect_pts[0][1])
-            self.ptRect2=(self.rect_pts[1][0], self.rect_pts[1][1])
-            cv2.rectangle(image, self.ptRect1, self.ptRect2,(0,0,0) , 2) #cv2.rectangle(img, (20,20), (300,300),(0,0,255) , 2)#
+            # cv2.circle(image,(self.centroid[0], self.centroid[1]), 20, (255,0,0), 2)
+            # self.ptRect1=(self.rect_pts[0][0], self.rect_pts[0][1])
+            # self.ptRect2=(self.rect_pts[1][0], self.rect_pts[1][1])
+            # cv2.rectangle(image, self.ptRect1, self.ptRect2,(0,0,0) , 2) #cv2.rectangle(img, (20,20), (300,300),(0,0,255) , 2)#
 
 
-            cv2.imshow('Image with centroid', image)
-            cv2.waitKey(1)
+            # cv2.imshow('Image with centroid', image)
+            # cv2.waitKey(1)
             #-----------------------------------------------------
 
 
@@ -298,7 +300,7 @@ class TrackingController(QObject):
                 # X_order, Y_order, Z_order is in stepper motor steps
             
             # @@@testing
-            print(X_order, Y_order, Theta_order)
+            # print(X_order, Y_order, Theta_order)
             # We want to send to the microcontroller at a constant rate, even if an object is not found
 
             # Send the motion commands and instruct the multiplex send object to send data 
@@ -320,6 +322,12 @@ class TrackingController(QObject):
         print('Initializing track...')
         
         self.tracking_frame_counter = 0
+
+        self.start_flag = True
+
+        self.objectFound = False
+
+        self.tracking_triggered_prev = False
 
         #Time
         self.begining_Time = time.time()           #Time begin the first time we click on the start_tracking button
@@ -414,22 +422,23 @@ class TrackingController(QObject):
 
     def update_image_center_width(self, image):
         self.image_center, self.image_width = image_processing.get_image_center_width(image)
-        print(self.image_width)
+        # print(self.image_width)
 
     def update_tracking_setpoint(self):
 
         self.image_setPoint = self.image_center + self.image_offset
         #@@@Testing
-        print('New tracking set point :{}'.format(self.image_setPoint))
+        # print('New tracking set point :{}'.format(self.image_setPoint))
 
     def update_image_offset(self, new_image_offset):
         self.image_offset = new_image_offset
         #@@@Testing
-        print('Updated image offset to :{}'.format(self.image_offset))
+        # print('Updated image offset to :{}'.format(self.image_offset))
 
     def set_searchArea(self):
 
         self.tracker_image.searchArea = int(self.image_width/Tracking.SEARCH_AREA_RATIO)
+        print('current search area : {}'.format(self.tracker_image.searchArea))
 
     def set_cropped_image_size(self, new_ratio):
 
@@ -437,7 +446,7 @@ class TrackingController(QObject):
         self.tracker_focus.cropped_imSize = int(self.image_width/new_ratio)
 
         # @@@ Testing
-        print('new cropped image size: {}'.format(self.tracker_focus.cropped_imSize))
+        # print('new cropped image size: {}'.format(self.tracker_focus.cropped_imSize))
 
     def get_latest_attr_value(self, key):
 
@@ -538,7 +547,7 @@ class microcontroller_Sender(QObject):
     def multiplex_Send(self, X_order, Y_order, Theta_order):
         # for debugging
         print("Sending data to uController")
-        print(X_order, Y_order, Theta_order)
+        # print(X_order, Y_order, Theta_order)
         # X_error, Y_error, Z_error (in full steps)
         self.sendData['X_order'] = X_order
         self.sendData['Y_order'] = Y_order

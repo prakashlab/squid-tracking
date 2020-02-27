@@ -29,7 +29,9 @@ class GravityMachineGUI(QMainWindow):
 		
 		self.setWindowTitle('Gravity Machine')
 
+		#------------------------------------------------------------------
 		# load objects
+		#------------------------------------------------------------------
 		if SIMULATION is True:
 			self.camera = camera.Camera_Simulation()
 			self.microcontroller = microcontroller.Microcontroller_Simulation()
@@ -41,7 +43,7 @@ class GravityMachineGUI(QMainWindow):
 
 		self.microcontroller_Rec = core_tracking.microcontroller_Receiver(self.microcontroller, self.internal_state)
 
-		self.streamHandler = core.StreamHandler()
+		self.streamHandler = core.StreamHandler(camera = self.camera)
 		self.liveController = core.LiveController(self.camera,self.microcontroller)
 		self.navigationController = core.NavigationController(self.microcontroller)
 		#self.autofocusController = core.AutoFocusController(self.camera,self.navigationController,self.liveController)
@@ -49,19 +51,8 @@ class GravityMachineGUI(QMainWindow):
 		self.trackingController = core_tracking.TrackingController(self.microcontroller,self.internal_state)
 		
 		self.trackingDataSaver = core_tracking.TrackingDataSaver(self.internal_state)
-
 		self.imageSaver = core.ImageSaver()
 		self.imageDisplay = core.ImageDisplay()
-
-
-
-
-		'''
-		# thread
-		self.thread_multiPoint = QThread()
-		self.thread_multiPoint.start()
-		self.multipointController.moveToThread(self.thread_multiPoint)
-		'''
 
 		# open the camera
 		# camera start streaming
@@ -70,9 +61,11 @@ class GravityMachineGUI(QMainWindow):
 		self.camera.set_callback(self.streamHandler.on_new_frame)
 		self.camera.enable_callback()
 
+		#------------------------------------------------------------------
 		# load widgets
+		#------------------------------------------------------------------
 		self.cameraSettingWidget = widgets.CameraSettingsWidget(self.camera,self.liveController)
-		self.liveControlWidget = widgets.LiveControlWidget(self.streamHandler,self.liveController, self.trackingController)
+		self.liveControlWidget = widgets.LiveControlWidget(self.streamHandler,self.liveController, self.trackingController, self.camera)
 		self.navigationWidget = widgets_tracking.NavigationWidget(self.navigationController, self.internal_state)
 		#self.autofocusWidget = widgets.AutoFocusWidget(self.autofocusController)
 		self.recordingControlWidget = widgets.RecordingWidget(self.streamHandler,self.imageSaver)
@@ -117,21 +110,35 @@ class GravityMachineGUI(QMainWindow):
 		self.centralWidget.setLayout(layout)
 		self.setCentralWidget(self.centralWidget)
 
-		# load window
+		#------------------------------------------------------------------
+		# load windows
+		#------------------------------------------------------------------
 		self.imageDisplayWindow = core.ImageDisplayWindow('Main Display')
 		self.imageDisplayWindow.show()
 
 		self.imageDisplayWindow_ThresholdedImage = core.ImageDisplayWindow('Thresholded Image')
 		self.imageDisplayWindow_ThresholdedImage.show()
 
+		#------------------------------------------------------------------
 		# make connections
+		#------------------------------------------------------------------
 		self.streamHandler.signal_new_frame_received.connect(self.liveController.on_new_frame)
 		self.streamHandler.image_to_display.connect(self.imageDisplay.enqueue)
+		
+		self.streamHandler.thresh_image_to_display.connect(self.imageDisplayWindow_ThresholdedImage.display_image)
+
 		self.streamHandler.packet_image_to_write.connect(self.imageSaver.enqueue)
 		self.streamHandler.packet_image_for_tracking.connect(self.trackingController.on_new_frame)
 		self.imageDisplay.image_to_display.connect(self.imageDisplayWindow.display_image) # may connect streamHandler directly to imageDisplayWindow
 		
+		self.streamHandler.signal_fps.connect(self.liveControlWidget.update_stream_fps)
+		self.streamHandler.signal_fps_display.connect(self.liveControlWidget.update_display_fps)
 
+		self.streamHandler.signal_working_resolution.connect(self.liveControlWidget.update_working_resolution)
+
+
+		self.trackingController.centroid_image.connect(self.imageDisplayWindow.draw_circle)
+		self.trackingController.Rect_pt1_pt2.connect(self.imageDisplayWindow.draw_rectangle)
 
 		# self.navigationController.xPos.connect(self.navigationWidget.label_Xpos.setNum)
 		# self.navigationController.yPos.connect(self.navigationWidget.label_Ypos.setNum)
@@ -149,20 +156,19 @@ class GravityMachineGUI(QMainWindow):
 
 		if reply == QMessageBox.Yes:
 
-			event.accept()
+			
 		# self.softwareTriggerGenerator.stop() @@@ => 
-	
+
+
 			self.liveController.stop_live()
-			
-			# self.streamHandler.stop()
-		
+			self.camera.close()
 			self.imageSaver.close()
-		
 			self.imageDisplay.close()
-			
 			self.imageDisplayWindow.close()
-			
 			self.imageDisplayWindow_ThresholdedImage.close()
+
+			event.accept()
+
 	
 			
 		else:

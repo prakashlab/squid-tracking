@@ -83,8 +83,9 @@ class Tracker_Image(object):
 
 	def track(self,image, thresh_image, start_flag = False):
 		
+	
 		# Try to find an object
-		if(start_flag or self.trackerActive == False):
+		if(start_flag == True or self.trackerActive == False):
 			# Find centroid based on simple image thresholding
 
 			# Threshold the image based on the set thresholding parameters
@@ -92,12 +93,12 @@ class Tracker_Image(object):
 			# thresh_image = image_processing.threshold_image(image, lower_HSV, upper_HSV)  #The threshold image as one channel
 
 			#@@@ Debugging
-			# print('Track start: Using thresholded image...')
+			print('Track start: Using thresholded image...')
 
 
 			self.isCentroidFound, self.centroid_image, self.bbox = image_processing.find_centroid_basic_Rect(thresh_image)
 			
-			
+			print('Starting tracker with initial bbox: {}'.format(self.bbox))
 			self.init_tracker(image, self.centroid_image, self.bbox)
 
 			self.trackerActive = True
@@ -109,15 +110,20 @@ class Tracker_Image(object):
 			# Find centroid using the tracking.
 
 			#@@@ Debugging
-			# print('Continued track: Using Tracker...')
+			print('Continued track: Using Tracker...')
 
-			self.bbox = self.update_tracker(image) # (x,y,w,h)
+			objectFound, self.bbox = self.update_tracker(image, thresh_image) # (x,y,w,h)
 
-			if(self.bbox is not None):
+			print('Object found?: {}'.format(objectFound))
+
+			if(objectFound):
 
 				self.isCentroidFound = True
 
 				self.centroid_image = self.centroid_from_bbox(self.bbox) + self.origLoc
+
+				self.bbox = np.array(self.bbox)
+				self.bbox[0], self.bbox[1] = self.bbox[0] + self.origLoc[0], self.bbox[1] + self.origLoc[1]
 
 				self.rect_pts = self.rectpts_from_bbox(self.bbox)
 			else:
@@ -155,7 +161,7 @@ class Tracker_Image(object):
 			self.tracker.init(image, bbox)
 
 		# Initialize Neural Net based Tracker
-		elif(self.tracker_type in NeuralNetTrackers.keys()):
+		elif(self.tracker_type in self.NEURALNETTRACKERS.keys()):
 			# Initialize the tracker with this centroid position
 			target_pos, target_sz = np.array([centroid[0], centroid[1]]), np.array([bbox[2], bbox[3]])
 
@@ -165,8 +171,8 @@ class Tracker_Image(object):
 			pass
 
 
-	def update_tracker(self, image):
-		# Input: image
+	def update_tracker(self, image, thresh_image):
+		# Input: image or thresh_image
 		# Output: new_bbox based on tracking
 
 		new_bbox = None
@@ -176,9 +182,11 @@ class Tracker_Image(object):
 			# (x,y,w,h)
 			ok, new_bbox = self.tracker.update(image)
 
+			return ok, new_bbox
+
 				
 
-		elif(self.tracker_type in NeuralNetTrackers.keys()):
+		elif(self.tracker_type in self.NEURALNETTRACKERS.keys()):
 
 			self.origLoc = np.array([0,0])
 
@@ -192,6 +200,8 @@ class Tracker_Image(object):
 
 				new_bbox = [int(l) for l in new_bbox]
 
+			return ok, new_bbox
+
 		else:
 			# If no tracker is specified, use basic thresholding and
 			# nearest neighbhour tracking. i.e Look for objects in a search region 
@@ -200,16 +210,20 @@ class Tracker_Image(object):
 			# Get the latest thresholded image from the queue
 			# thresh_image = 
 
-			pts,image = image_processing.crop(image, self.centroid_image, self.searchArea)
+			pts, thresh_image_cropped = image_processing.crop(thresh_image, self.centroid_image, self.searchArea)
 			
 			self.origLoc = pts[0]
 
-			isCentroidFound, centroid, new_bbox = image_processing.find_centroid_basic_Rect(image)
+			print('Origin location : {}'.format(self.origLoc))
 
+			isCentroidFound, centroid, new_bbox = image_processing.find_centroid_basic_Rect(thresh_image_cropped)
+
+			
+			return isCentroidFound, new_bbox
 
 		# @@@ Can add additional methods here for future tracker implementations
 
-		return new_bbox
+		
 
 
 	def centroid_from_bbox(self, bbox):

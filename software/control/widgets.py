@@ -161,12 +161,16 @@ class LiveControlWidget(QFrame):
 
 
     '''
-    def __init__(self, streamHandler, liveController, trackingController, main=None, *args, **kwargs):
+    def __init__(self, streamHandler, liveController, trackingController, camera, main=None, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.liveController = liveController
         self.streamHandler = streamHandler
         self.trackingController = trackingController
-        self.fps_display = 10
+        self.camera = camera
+
+        self.fps_display = FPS['display']['default']
+        self.fps_trigger = FPS['trigger_software']['default']
+
         self.objective = OBJECTIVES['default']
 
 
@@ -186,22 +190,28 @@ class LiveControlWidget(QFrame):
         # self.liveController.set_microscope_mode(self.dropdown_modeSelection.currentText())
 
 
+        self.btn_live = QPushButton("Live")
+        self.btn_live.setCheckable(True)
+        self.btn_live.setChecked(False)
+        self.btn_live.setDefault(False)
+
         # 0,1 : choose tracking objective
         self.dropdown_objectiveSelection = QComboBox()
         self.dropdown_objectiveSelection.addItems(list(OBJECTIVES['type'].keys()))
         self.dropdown_objectiveSelection.setCurrentText(OBJECTIVES['default'])
 
 
-        self.btn_live = QPushButton("Live")
-        self.btn_live.setCheckable(True)
-        self.btn_live.setChecked(False)
-        self.btn_live.setDefault(False)
+        self.triggerMode = None
+        self.dropdown_triggerMode = QComboBox()
+        self.dropdown_triggerMode.addItems([TriggerMode.SOFTWARE,TriggerMode.HARDWARE,TriggerMode.CONTINUOUS])
+        self.dropdown_objectiveSelection.setCurrentText(TriggerMode.SOFTWARE)
+
 
 
         # line 3: display fps
         self.entry_displayFPS = QDoubleSpinBox()
-        self.entry_displayFPS.setMinimum(1) 
-        self.entry_displayFPS.setMaximum(30) 
+        self.entry_displayFPS.setMinimum(FPS['display']['min']) 
+        self.entry_displayFPS.setMaximum(FPS['display']['max']) 
         self.entry_displayFPS.setSingleStep(1)
         self.entry_displayFPS.setValue(self.fps_display)
 
@@ -209,6 +219,20 @@ class LiveControlWidget(QFrame):
         self.actual_displayFPS = QLCDNumber()
         self.actual_displayFPS.setNumDigits(4)
         self.actual_displayFPS.display(0.0)
+
+
+        # line 3: display fps
+
+        self.entry_triggerFPS = QDoubleSpinBox()
+        self.entry_triggerFPS.setMinimum(FPS['trigger_software']['min']) 
+        self.entry_triggerFPS.setMaximum(FPS['trigger_software']['max']) 
+        self.entry_triggerFPS.setSingleStep(1)
+        self.entry_triggerFPS.setValue(self.fps_trigger)
+
+        # Display fps actual
+        self.actual_streamFPS = QLCDNumber()
+        self.actual_streamFPS.setNumDigits(4)
+        self.actual_streamFPS.display(0.0)
 
         # Display resolution slider
         self.slider_resolutionScaling = QSlider(Qt.Horizontal)
@@ -222,15 +246,26 @@ class LiveControlWidget(QFrame):
         self.display_workingResolution.setNumDigits(6)
         self.display_workingResolution.display(0.0)
 
+        # @@@ To implement: Multi-image channel support.
+        # Each image channel can be checked ON or OFF so that we can switch between multiple imaging modalities
+        # This will be a checkbox, where the tracking stream is checked by default.
+
 
 
         # connections
 
         self.entry_displayFPS.valueChanged.connect(self.streamHandler.set_display_fps)
+        self.entry_triggerFPS.valueChanged.connect(self.liveController.set_trigger_fps)
+
         self.slider_resolutionScaling.valueChanged.connect(self.streamHandler.set_working_resolution_scaling)
+        self.slider_resolutionScaling.valueChanged.connect(self.reset_image_tracker)
         # self.dropdown_modeSelection.currentIndexChanged.connect(self.update_microscope_mode)
         self.dropdown_objectiveSelection.currentIndexChanged.connect(self.update_pixel_size)
         self.btn_live.clicked.connect(self.toggle_live)
+
+        self.dropdown_triggerMode.currentIndexChanged.connect(self.update_trigger_mode)
+
+
 
         # layout
 
@@ -242,6 +277,20 @@ class LiveControlWidget(QFrame):
         objective_layout.addWidget(QLabel('Objective'))
         objective_layout.addWidget(self.dropdown_objectiveSelection)
 
+        triggerMode_layout = QHBoxLayout()
+        triggerMode_layout.addWidget(QLabel('Trigger mode'))
+        triggerMode_layout.addWidget(self.dropdown_triggerMode)
+
+
+
+        trigger_fps_group = QGroupBox('Trigger FPS')
+        trigger_fps_layout = QGridLayout()
+        
+        trigger_fps_layout.addWidget(QLabel('Set'),0,0)
+        trigger_fps_layout.addWidget(self.entry_triggerFPS, 0,1)
+        trigger_fps_layout.addWidget(QLabel('Actual'),0,2)
+        trigger_fps_layout.addWidget(self.actual_streamFPS, 0,3)
+        trigger_fps_group.setLayout(trigger_fps_layout)
 
         display_fps_group = QGroupBox('Display FPS')
         display_fps_layout = QGridLayout()
@@ -263,16 +312,17 @@ class LiveControlWidget(QFrame):
         # self.grid.addLayout(microscope_mode_layout,0,0)
         self.grid.addWidget(self.btn_live,0,0)
         self.grid.addLayout(objective_layout,0,1)
-        self.grid.addWidget(display_fps_group,0,2)
-        self.grid.addWidget(working_resolution_group,1,0,1,3)
+        self.grid.addWidget(trigger_fps_group,1,0,1,1)
+        self.grid.addLayout(triggerMode_layout,1,1,1,1)
+        self.grid.addWidget(display_fps_group,2,0,1,1)
+        self.grid.addWidget(working_resolution_group,2,1,1,1)
+
+
 
         self.setLayout(self.grid)
 
         # # line 0: trigger mode
-        # self.triggerMode = None
-        # self.dropdown_triggerManu = QComboBox()
-        # self.dropdown_triggerManu.addItems([TriggerMode.SOFTWARE,TriggerMode.HARDWARE,TriggerMode.CONTINUOUS])
-
+        
         # # line 1: fps
         # self.entry_triggerFPS = QDoubleSpinBox()
         # self.entry_triggerFPS.setMinimum(0.02) 
@@ -296,6 +346,12 @@ class LiveControlWidget(QFrame):
         self.actual_displayFPS.display(value)
 
 
+    # Slot connected to signal from streamHandler.
+    def update_stream_fps(self, value):
+
+        self.actual_streamFPS.display(value)
+
+
     def update_pixel_size(self):
         self.objective = self.dropdown_objectiveSelection.currentText()
         print('new objective: {}'.format(self.objective))
@@ -310,6 +366,25 @@ class LiveControlWidget(QFrame):
         else:
             self.liveController.stop_live()
 
+    def update_trigger_mode(self):
+        self.triggerMode = self.dropdown_triggerMode.currentText()
+
+        
+
+        if(self.triggerMode == TriggerMode.SOFTWARE):
+            print('Trigger mode to: {}'.format(self.triggerMode))
+            self.camera.set_software_triggered_acquisition()
+
+        elif(self.triggerMode == TriggerMode.HARDWARE):
+            print('Trigger mode to: {}'.format(self.triggerMode))
+            self.camera.set_hardware_triggered_acquisition()
+        else:
+            print('Trigger mode to: {}'.format(self.triggerMode))
+            self.camera.set_continuous_acquisition()
+
+    def reset_image_tracker(self):
+        # If the image resolution is changed on the fly then restart the image tracker.
+        self.trackingController.start_flag = True
     # def update_microscope_mode(self,index):
     #     self.liveController.turn_off_illumination()
     #     self.liveController.set_microscope_mode(self.dropdown_modeSelection.currentText())

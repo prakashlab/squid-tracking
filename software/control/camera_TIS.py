@@ -6,6 +6,7 @@ import time #@@@
 import numpy as np
 from scipy import misc
 import cv2
+import os
 
 try:
     import gi
@@ -194,7 +195,7 @@ class Camera(object):
 
 class Camera_Simulation(object):
 
-    def __init__(self,sn=None,width=640,height=480,framerate=30,color=False):
+    def __init__(self,sn=None,width=2000,height=2000,framerate=30,color=False):
         self.height = height
         self.width = width
         self.sample = None
@@ -212,6 +213,11 @@ class Camera_Simulation(object):
         self.GAIN_STEP = 10
         self.EXPOSURE_TIME_MS_MIN = 0.02
         self.EXPOSURE_TIME_MS_MAX = 4000
+
+        # Path for getting an image stream from disk
+        self.path = '/Users/deepak/Dropbox/GravityMachine/ExperimentResults/TestData/seacucmber4_auto_verylong_goodtrack/images'
+        self.FileList = os.listdir(self.path)
+    
 
     def open(self,index=0):
         pass
@@ -258,16 +264,34 @@ class Camera_Simulation(object):
     def set_hardware_triggered_acquisition(self):
         pass
 
+    # def send_trigger(self):
+
+
+    #     self.frame_ID = self.frame_ID + 1
+    #     self.timestamp = time.time()
+    #     if self.frame_ID == 1:
+    #         self.current_frame = np.random.randint(50,size=(2000,2000),dtype=np.uint8)
+    #         self.current_frame[901:1100,901:1100] = 200
+    #     else:
+    #         self.current_frame = np.roll(self.current_frame,10,axis=0)
+    #         pass 
+    #         # self.current_frame = np.random.randint(255,size=(768,1024),dtype=np.uint8)
+    #     if self.new_image_callback_external is not None:
+    #         self.new_image_callback_external(self)
+
     def send_trigger(self):
+
         self.frame_ID = self.frame_ID + 1
         self.timestamp = time.time()
-        if self.frame_ID == 1:
-            self.current_frame = np.random.randint(255,size=(2000,2000),dtype=np.uint8)
-            self.current_frame[901:1100,901:1100] = 200
-        else:
-            self.current_frame = np.roll(self.current_frame,10,axis=0)
-            pass 
-            # self.current_frame = np.random.randint(255,size=(768,1024),dtype=np.uint8)
+
+        if(self.frame_ID == len(self.FileList)):
+            self.frame_ID = 0
+
+        file = self.FileList[self.frame_ID]
+
+        image = cv2.imread(os.path.join(self.path, file),0)
+        self.current_frame = image
+
         if self.new_image_callback_external is not None:
             self.new_image_callback_external(self)
 

@@ -92,6 +92,20 @@ OBJECTIVES = {'type':{'10x':{'magnification':10, 'NA':0.17, 'PixelPermm':1122},
 cameras = {'DF':{'serial':[], 'px_format':(4000,3000), 'color_format': 'RGBx', 'fps': 120}, 
     'FL':{'serial':[], 'px_format':(4000,3000), 'color_format': 'RGBx', 'fps': 120}}
 
+IMAGING_CHANNELS = {'types':{'DF only':['DF'], 'DF+FL':['DF', 'FL'], 
+            '2-camera':['DF1', 'DF2'], '2-camera-FL':['DF1', 'DF2', 'FL']}, 
+            'default':'DF+FL'}
+
+
+TRACKING_STREAM = 'DF'
+
+FPS = {'display':{'min':1, 'max':30, 'default':15}, 
+        'trigger_hardware':{'min':1, 'max':cameras[TRACKING_STREAM]['fps'], 
+            'default':50}, 
+        'trigger_software':{'min':1, 'max':30, 'default':15}, 
+        'save':{'min':1, 'max':100, 'default':10}}
+
+
 liquidLens = {'type': 'optotune', 'Freq':{'default':2, 'min':0.1, 'max':20, 'step':0.1, 'units':'Hz'}, 
     'Amp':{'default':0.05, 'min':0, 'max':0.5, 'step':0.01, 'units':'mm'}, 'currentScaleFactor':1/(0.0003) }
 
@@ -102,7 +116,7 @@ OPTICAL_PATHS = {'modes':{'DF single':['DF'], 'DF_FL':['DF', 'FL'], 'DF_BF':['DF
 
 
 INTERNAL_STATE_VARIABLES = ['Time', 'X_objStage', 'Y_objStage', 'Z_objStage', 'X_stage', 'Y_stage',
-    'Theta_stage', 'X_image', 'Z_image', 'track_obj_image', 'track_focus', 'track_obj_stage', 
+    'Theta_stage', 'X_image', 'Z_image', 'track_obj_image','track_obj_image_hrdware', 'track_focus', 'track_obj_stage', 
     'Acquisition', 'homing_command', 'homing_state', 'liquidLens_Freq', 'liquidLens_Amp', 'FocusPhase', 'imaging channels', 'uScope mode', 
     'Objective', 'basePath', 'experimentID']
 
@@ -117,9 +131,9 @@ SEND_DATA = ['X_order', 'Y_order', 'Theta_order', 'track_obj_image', 'track_focu
 REC_DATA = ['FocusPhase', 'deltaX_stage', 'deltaY_stage', 'deltaTheta_stage', 'track_obj_image', 'track_obj_stage']
 
 INITIAL_VALUES = {'Time':0, 'X_objStage':0, 'Y_objStage':0, 'Z_objStage':0, 'X_stage':0, 'Y_stage':0,
-    'Theta_stage':0, 'X_image':0, 'Z_image':0, 'track_obj_image':False, 'track_focus':False, 
+    'Theta_stage':0, 'X_image':0, 'Z_image':0, 'track_obj_image':False, 'track_obj_image_hrdware':False, 'track_focus':False, 
     'track_obj_stage':False, 'Acquisition':False, 'homing_command':False, 'homing_state':False, 'liquidLens_Freq': liquidLens['Freq']['default'], 
-    'liquidLens_Amp': liquidLens['Amp']['default'] , 'FocusPhase':0, 'imaging channels':['DF', 'FL'], 
+    'liquidLens_Amp': liquidLens['Amp']['default'] , 'FocusPhase':0, 'imaging channels': IMAGING_CHANNELS['types']['DF+FL'], 
     'uScope mode': 'Tracking', 'Objective':'10x', 'basePath':'/', 'experimentID':'track'}
 
 PLOT_VARIABLES = {'X':'X_objStage','Y':'Y_objStage', 'Z':'Z_objStage', 'Theta':'Theta_stage'}
