@@ -248,6 +248,8 @@ class StreamHandler(QObject):
         if self.save_image_flag and time_now-self.timestamp_last_save >= 1/self.fps_save:
             if camera.is_color:
                 image = cv2.cvtColor(image,cv2.COLOR_RGB2BGR)
+            
+            print('Sending image for save')
             self.packet_image_to_write.emit(image, camera.frame_ID, self.camera.timestamp)
             
             self.fps_save_real = round(1/(time_now - self.timestamp_last_save),1)

@@ -392,10 +392,12 @@ class LiveControlWidget(QFrame):
     #     self.liveController.set_microscope_mode(self.dropdown_modeSelection.currentText())
 
 class RecordingWidget(QFrame):
-    def __init__(self, streamHandler, imageSaver, main=None, *args, **kwargs):
+    def __init__(self, streamHandler, imageSaver, internal_state, trackingDataSaver = None, main=None, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.imageSaver = imageSaver # for saving path control
         self.streamHandler = streamHandler
+        self.internal_state = internal_state 
+        self.trackingDataSaver = trackingDataSaver
         self.base_path_is_set = False
         self.add_components()
         self.setFrameStyle(QFrame.Panel | QFrame.Raised)
@@ -464,7 +466,14 @@ class RecordingWidget(QFrame):
     def set_saving_dir(self):
         dialog = QFileDialog()
         save_dir_base = dialog.getExistingDirectory(None, "Select Folder")
+        # Set base path for image saver
         self.imageSaver.set_base_path(save_dir_base)
+      
+        
+        # set the base path for the data saver
+        if(self.trackingDataSaver is not None):
+            self.trackingDataSaver.set_base_path(save_dir_base)
+        
         self.lineEdit_savingDir.setText(save_dir_base)
         self.base_path_is_set = True
 
@@ -476,12 +485,35 @@ class RecordingWidget(QFrame):
             msg.exec_()
             return
         if pressed:
+            self.internal_state.data['Acquisition'] = True
             self.lineEdit_experimentID.setEnabled(False)
             self.btn_setSavingDir.setEnabled(False)
-            self.imageSaver.start_new_experiment(self.lineEdit_experimentID.text())
+
+            
+            if(self.trackingDataSaver is not None):
+                self.trackingDataSaver.start_new_experiment(self.lineEdit_experimentID.text())
+            else:
+                pass
+
+            # If tracking mode
+            self.imageSaver.start_saving_images()
+
+            # In pure recording mode
+            # self.imageSaver.start_new_experiment(self.lineEdit_experimentID.text())
+
+
+            
             self.streamHandler.start_recording()
         else:
+            self.internal_state.data['Acquisition']= False
             self.streamHandler.stop_recording()
+            
+            # if(self.trackingDataSaver is not None):
+            #     self.trackingDataSaver.stop_DataSaver()
+            # print('Stopped data saver')
+
+            # self.imageSaver.stop_saving_images()
+            # print('Stopped image saver')
             self.lineEdit_experimentID.setEnabled(True)
             self.btn_setSavingDir.setEnabled(True)
 

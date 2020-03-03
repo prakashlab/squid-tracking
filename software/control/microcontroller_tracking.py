@@ -115,7 +115,7 @@ class Microcontroller_Simulation():
         self.deltaY_stage = 0
         self.deltaTheta_stage = 0
         
-        self.track_obj_image = 0
+        self.track_obj_image = 1
         self.track_focus = 0
 
         self.track_obj_stage = 1

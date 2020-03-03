@@ -137,7 +137,7 @@ INITIAL_VALUES = {'Time':0, 'X_objStage':0, 'Y_objStage':0, 'Z_objStage':0, 'X_s
     'Theta_stage':0, 'X_image':0, 'Z_image':0, 'track_obj_image':False, 'track_obj_image_hrdware':False, 'track_focus':False, 
     'track_obj_stage':False, 'Acquisition':False, 'homing_command':False, 'homing_state':False, 'liquidLens_Freq': liquidLens['Freq']['default'], 
     'liquidLens_Amp': liquidLens['Amp']['default'] , 'FocusPhase':0, 'imaging channels': IMAGING_CHANNELS['types']['DF+FL'], 
-    'uScope mode': 'Tracking', 'Objective':'10x', 'basePath':'/', 'experimentID':'track'}
+    'uScope mode': 'Tracking', 'Objective':DEFAULT_OBJECTIVE, 'basePath':'/', 'experimentID':'track'}
 
 PLOT_VARIABLES = {'X':'X_objStage','Y':'Y_objStage', 'Z':'Z_objStage', 'Theta':'Theta_stage'}
 

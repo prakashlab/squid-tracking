@@ -14,7 +14,7 @@ import csv
 class CSV_Register():
     
     def __init__(self,parent=None, header = None):
-        self.file_directory=None
+        self.file_directory = None
         self.header = header
         self.currFile = None
         self.writer = None
@@ -24,7 +24,9 @@ class CSV_Register():
         
         self.currFile = open(self.file_directory,'w')
         csv.register_dialect('myDialect', delimiter=',', quoting=csv.QUOTE_MINIMAL,lineterminator = '\n')
+        
         self.writer = csv.writer(self.currFile , dialect='myDialect')
+        print(self.writer)
         self.writer.writerows(self.header)
         
     def write_line(self,data):

@@ -246,15 +246,15 @@ class NavigationWidget(QFrame):
 
 		# Stage position display 
 
-		self.pos_X_label = pg.ValueLabel(siPrefix=True, suffix='m')
+		self.pos_X_label = pg.ValueLabel(siPrefix=False, suffix='mm')
 		self.pos_X_label.setValue(0)
 
 
-		self.pos_Y_label = pg.ValueLabel(siPrefix=True, suffix='m')
+		self.pos_Y_label = pg.ValueLabel(siPrefix=False, suffix='mm')
 		self.pos_Y_label.setValue(0)
 	
 
-		self.pos_Theta_label = pg.ValueLabel(siPrefix=True, suffix='m')
+		self.pos_Theta_label = pg.ValueLabel(siPrefix=False, suffix='mm')
 		self.pos_Theta_label.setValue(0)
 
 
@@ -341,9 +341,13 @@ class NavigationWidget(QFrame):
 		self.internal_state.data['Theta_stage'] = 10
 		print(self.internal_state.data['Theta_stage'])
 
+	# Triggered by microController_Receiever
 	def update_display(self):
 
 		print('In update display')
+		print(self.internal_state.data['X_stage'])
+		print(self.internal_state.data['Y_stage'])
+		print(self.internal_state.data['Theta_stage'])
 		self.pos_X_label.setValue(self.internal_state.data['X_stage'])
 		self.pos_Y_label.setValue(self.internal_state.data['Y_stage'])
 		self.pos_Theta_label.setValue(self.internal_state.data['Theta_stage'])
