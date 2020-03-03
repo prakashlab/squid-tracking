@@ -140,7 +140,7 @@ Install matplotlib
 
 
 
-If you got this far, you are now ready to run some really kickass experiments with gravity machine!
+<!-- f you got this far, you are now ready to run some really kickass experiments with gravity machine!
 
 
 
@@ -178,3 +178,4 @@ sudo pip3 install torchvision
 # Install v4l for help with debugging camera issues
 $ sudo apt-get update
 $ sudo apt-get install v4l-utils
+ -->
