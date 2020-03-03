@@ -46,7 +46,9 @@ class GravityMachineGUI(QMainWindow):
 		#------------------------------------------------------------------
 		if SIMULATION is True:
 			self.camera = camera.Camera_Simulation()
-			self.microcontroller = microcontroller_tracking.Microcontroller_Simulation()
+			# self.microcontroller = microcontroller_tracking.Microcontroller_Simulation()
+			self.microcontroller = microcontroller_tracking.Microcontroller()
+
 		else:
 			self.camera = camera.Camera(sn=17910085)
 			self.microcontroller = microcontroller.Microcontroller()

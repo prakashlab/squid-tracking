@@ -3,6 +3,7 @@ import serial
 import serial.tools.list_ports
 import time
 import numpy as np
+import warnings
 
 from control._def import *
 
@@ -12,25 +13,50 @@ class Microcontroller():
     def __init__(self,parent=None):
         self.serial = None
         self.platform_name = platform.system()
-        self.tx_buffer_length = 17
-        self.rx_buffer_length = 28
+        self.tx_buffer_length = 11
+        self.rx_buffer_length = 19
+
+        self.ReceivedData = {key:[] for key in REC_DATA}
 
         # AUTO-DETECT the Arduino! By Deepak
         arduino_ports = [
                 p.device
                 for p in serial.tools.list_ports.comports()
-                if 'Arduino' in p.description]
+                if 'Arduino' or'usbmodem' in p.description]
+
+        print(arduino_ports)
+
         if not arduino_ports:
             raise IOError("No Arduino found")
         if len(arduino_ports) > 1:
             warnings.warn('Multiple Arduinos found - using the first')
         else:
-            print('Using Arduino found at : {}'.format(arduino_ports[0]))
+            print('Using Arduino found at : {}'.format(arduino_ports[2]))
 
         # establish serial communication
-        self.serial = serial.Serial(arduino_ports[0],2000000)
+        self.serial = serial.Serial(arduino_ports[2],2000000)
         time.sleep(0.2)
         print('Serial Connection Open')
+
+        self.hand_shaking_protocol()
+
+    def hand_shaking_protocol(self):
+        # Read string from Arduino
+        print('try handshaking')
+        initial_number = ord(self.serial.read())
+        print(initial_number)
+        print('first number received')
+        if(initial_number == 1):
+            print('\n ------------Communication established with the Arduino------------\n')
+            cmd=bytearray(1)
+            cmd[0]=2
+            self.serialconn.write(cmd)
+
+        second_number = ord(self.serial.read())
+            
+        if(second_number == 2):
+            print('\n ------------Communication established both ways with the Arduino------------\n')
+        print('handshaking finished')
 
     def close(self):
         self.serial.close()
@@ -40,24 +66,13 @@ class Microcontroller():
         cmd = bytearray(self.tx_buffer_length)
         
         cmd[0],cmd[1] = self.split_int_2byte(round(command[0]*100))                #liquid_lens_freq
-        # cmd[2],cmd[3]=self.split_int_2byte(round(command[1]*1000))               #liquid_lens_ampl
-        # cmd[4],cmd[5]=self.split_int_2byte(round(command[2]*100))                #liquidLens_offset
         cmd[2] = int(command[1])                                                   # Focus-Tracking ON or OFF
         cmd[3] = int(command[2])                                                   #Homing
         cmd[4] = int(command[3])                                                   #tracking
         cmd[5],cmd[6] = self.split_signed_int_2byte(round(command[4]*100))         #Xerror
         cmd[7],cmd[8] = self.split_signed_int_2byte(round(command[5]*100))         #Yerror                           
         cmd[9],cmd[10] = self.split_signed_int_2byte(round(command[6]*100))        #Zerror
-        cmd[11],cmd[12] = self.split_int_2byte(round(0))#command[9]*10))               #averageDt (millisecond with two digit after coma) BUG
-        cmd[13] = int(command[8])                                               # LED intensity
-        # Adding Trigger flag for other Video Streams (Boolean)
-        # print('Trigger command sent {}'.format(command[9]))
-        cmd[14] = int(command[9])
-        # Adding Sampling Interval for other Video Streams
-        # Minimum 10 ms (0.01 s) Maximum: 3600 s (1 hour)
-        # Min value: 1 to 360000 
-        # print('Interval command sent {}'.format(command[10]))
-        cmd[15], cmd[16] = self.split_int_2byte(round(100*command[10]))
+      
         
         self.serial.write(cmd)
 
@@ -82,22 +97,24 @@ class Microcontroller():
             data.append(ord(self.serialconn.read()))
 
         
-        YfocusPhase = self.data2byte_to_int(data[0],data[1])*2*np.pi/65535.
-        Xpos_arduino = data[3]*2**24 + data[4]*2**16+data[5]*2**8 + data[6]
+        self.ReceivedData['FocusPhase']  = self.data2byte_to_int(data[0],data[1])*2*np.pi/65535.
+        self.ReceivedData['X_stage']  = data[3]*2**24 + data[4]*2**16+data[5]*2**8 + data[6]
         if data[2]==1:
-            Xpos_arduino =-Xpos_arduino
-        Ypos_arduino = data[8]*2**24 + data[9]*2**16+data[10]*2**8 + data[11]
+            self.ReceivedData['X_stage'] = -self.ReceivedData['X_stage']
+        self.ReceivedData['Y_stage'] = data[8]*2**24 + data[9]*2**16+data[10]*2**8 + data[11]
         if data[7]==1:
-            Ypos_arduino =-Ypos_arduino
-        Zpos_arduino = data[13]*2**24 + data[14]*2**16+data[15]*2**8 + data[16]
+            self.ReceivedData['Y_stage'] = -self.ReceivedData['Y_stage']
+        self.ReceivedData['Theta_stage'] = data[13]*2**24 + data[14]*2**16+data[15]*2**8 + data[16]
         if data[12]==1:
-            Zpos_arduino =-Zpos_arduino
-        manualMode = data[17]
-        LED_measured = self.data2byte_to_int(data[18], data[19])
-        timeStamp = data[20]*2**24 + data[21]*2**16+data[22]*2**8 + data[23]
-        tracking_triggered = bool(data[24])
-        trigger_FL = bool(data[25])
-        return [YfocusPhase,Xpos_arduino,Ypos_arduino,Zpos_arduino, LED_measured, tracking_triggered],manualMode
+            self.ReceivedData['Theta_stage'] = -self.ReceivedData['Theta_stage']
+        self.ReceivedData['track_obj_stage'] = data[17]
+
+        self.ReceivedData['track_obj_image'] = bool(data[18])
+
+        
+
+        return self.ReceivedData
+        # return YfocusPhase,Xpos_arduino,Ypos_arduino,Zpos_arduino, LED_measured, tracking_triggered,manualMode
         
         # return data
 
