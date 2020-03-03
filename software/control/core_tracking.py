@@ -548,9 +548,9 @@ class microcontroller_Receiver(QObject):
 				self.internal_state.data[key] = data[key]
 
 		# Find the actual stage position based prev position and the change.
-		self.internal_state.data['X_stage'] += self.trackingController.units_converter.X_step_to_mm(self.RecData['deltaX_stage'])
-		self.internal_state.data['Y_stage'] += self.trackingController.units_converter.X_step_to_mm(self.RecData['deltaY_stage'])
-		self.internal_state.data['Theta_stage'] += self.trackingController.units_converter.Z_step_to_mm(self.RecData['deltaTheta_stage'], self.internal_state.data['X_stage'])
+		self.internal_state.data['X_stage'] = self.trackingController.units_converter.X_step_to_mm(self.RecData['deltaX_stage'])
+		self.internal_state.data['Y_stage'] = self.trackingController.units_converter.X_step_to_mm(self.RecData['deltaY_stage'])
+		self.internal_state.data['Theta_stage'] = self.trackingController.units_converter.Z_step_to_mm(self.RecData['deltaTheta_stage'], self.internal_state.data['X_stage'])
 
 		# Emit the stage position so it can be displayed (only need to display the position when it changes)
 

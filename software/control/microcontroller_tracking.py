@@ -12,8 +12,8 @@ class Microcontroller():
     def __init__(self,parent=None):
         self.serial = None
         self.platform_name = platform.system()
-        self.tx_buffer_length = 4
-        self.rx_buffer_length = 4
+        self.tx_buffer_length = 17
+        self.rx_buffer_length = 28
 
         # AUTO-DETECT the Arduino! By Deepak
         arduino_ports = [
@@ -38,7 +38,7 @@ class Microcontroller():
 
     def send_command(self,command):
         cmd = bytearray(self.tx_buffer_length)
-        '''
+        
         cmd[0],cmd[1] = self.split_int_2byte(round(command[0]*100))                #liquid_lens_freq
         # cmd[2],cmd[3]=self.split_int_2byte(round(command[1]*1000))               #liquid_lens_ampl
         # cmd[4],cmd[5]=self.split_int_2byte(round(command[2]*100))                #liquidLens_offset
@@ -58,7 +58,7 @@ class Microcontroller():
         # Min value: 1 to 360000 
         # print('Interval command sent {}'.format(command[10]))
         cmd[15], cmd[16] = self.split_int_2byte(round(100*command[10]))
-        '''
+        
         self.serial.write(cmd)
 
     def read_received_packet(self):
@@ -81,7 +81,7 @@ class Microcontroller():
         for i in range(self.rx_buffer_length):
             data.append(ord(self.serialconn.read()))
 
-        '''
+        
         YfocusPhase = self.data2byte_to_int(data[0],data[1])*2*np.pi/65535.
         Xpos_arduino = data[3]*2**24 + data[4]*2**16+data[5]*2**8 + data[6]
         if data[2]==1:
@@ -98,8 +98,8 @@ class Microcontroller():
         tracking_triggered = bool(data[24])
         trigger_FL = bool(data[25])
         return [YfocusPhase,Xpos_arduino,Ypos_arduino,Zpos_arduino, LED_measured, tracking_triggered],manualMode
-        '''
-        return data
+        
+        # return data
 
 # Define a micro controller emulator
 
