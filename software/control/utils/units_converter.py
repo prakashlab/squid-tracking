@@ -112,16 +112,17 @@ class Units_Converter:
         Ymm = Ystep/self.CountPermm_Y
         return Ymm
      
-    def X_microstep_to_mm(self, Xstep):                #Arduino card send the data for X and Y in Microstep
-        Xmm = Xstep*self.mmPerRev_X/(self.StepsPerRev_X*16)
+    def X_step_to_mm(self, Xstep):                #Arduino card send the data for X and Y in Microstep
+        Xmm = Xstep*self.mmPerRev_X/(self.StepsPerRev_X)
         return Xmm
 
-    def Y_microstep_to_mm(self, Ystep):
-        Ymm=Ystep*self.mmPerRev_Y/(self.StepsPerRev_Y*16)
+    def Y_step_to_mm(self, Ystep):
+        Ymm=Ystep*self.mmPerRev_Y/(self.StepsPerRev_Y)
         return Ymm
 
+
     def Z_step_to_mm(self, Zstep, Xpos_mm):
-        Zmm=Zstep*mmPerRev_Z(Xpos_mm)/self.StepsPerRev_Z
+        Zmm = Zstep*self.mmPerRev_Z(Xpos_mm)/self.StepsPerRev_Z
         return Zmm
 
     #---------------------------------------------------

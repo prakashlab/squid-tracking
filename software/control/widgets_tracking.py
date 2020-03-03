@@ -246,15 +246,15 @@ class NavigationWidget(QFrame):
 
 		# Stage position display 
 
-		self.pos_X_label = pg.ValueLabel(siPrefix=False, suffix='mm')
+		self.pos_X_label = pg.ValueLabel(siPrefix=True)
 		self.pos_X_label.setValue(0)
 
 
-		self.pos_Y_label = pg.ValueLabel(siPrefix=False, suffix='mm')
+		self.pos_Y_label = pg.ValueLabel(siPrefix=True)
 		self.pos_Y_label.setValue(0)
 	
 
-		self.pos_Theta_label = pg.ValueLabel(siPrefix=False, suffix='mm')
+		self.pos_Theta_label = pg.ValueLabel(siPrefix=True)
 		self.pos_Theta_label.setValue(0)
 
 
@@ -345,11 +345,11 @@ class NavigationWidget(QFrame):
 	def update_display(self):
 
 		print('In update display')
-		print(self.internal_state.data['X_stage'])
-		print(self.internal_state.data['Y_stage'])
-		print(self.internal_state.data['Theta_stage'])
-		self.pos_X_label.setValue(self.internal_state.data['X_stage'])
-		self.pos_Y_label.setValue(self.internal_state.data['Y_stage'])
+		# print(self.internal_state.data['X_stage'])
+		# print(self.internal_state.data['Y_stage'])
+		# print(self.internal_state.data['Theta_stage'])
+		self.pos_X_label.setValue(self.internal_state.data['X_stage']*1e-3)
+		self.pos_Y_label.setValue(self.internal_state.data['Y_stage']*1e-3)
 		self.pos_Theta_label.setValue(self.internal_state.data['Theta_stage'])
 
 	def homing_button_click(self):

@@ -317,9 +317,11 @@ class TrackingController(QObject):
 			# We want to send to the microcontroller at a constant rate, even if an object is not found
 
 			# Send the motion commands and instruct the multiplex send object to send data 
-			# to the microcontroller
+			# to the microcontroller. This order is in Full Steps. 
 			self.multiplex_send_signal.emit(X_order, Y_order, Theta_order)
 
+
+			print(X_order, Y_order, Theta_order)
 
 			# Update the Internal State Model
 			self.update_internal_state()
@@ -524,11 +526,12 @@ class microcontroller_Receiver(QObject):
 	'''
 	update_display = Signal()
 
-	def __init__(self, microcontroller, internal_state):
+	def __init__(self, microcontroller, internal_state, trackingController):
 		QObject.__init__(self)
 
 		self.microcontroller = microcontroller
 		self.internal_state = internal_state
+		self.trackingController = trackingController
 
 		self.RecData = {key:[] for key in REC_DATA}
 
@@ -545,9 +548,9 @@ class microcontroller_Receiver(QObject):
 				self.internal_state.data[key] = data[key]
 
 		# Find the actual stage position based prev position and the change.
-		self.internal_state.data['X_stage']+=self.RecData['deltaX_stage']
-		self.internal_state.data['Y_stage']+=self.RecData['deltaY_stage']
-		self.internal_state.data['Theta_stage']+=self.RecData['deltaTheta_stage']
+		self.internal_state.data['X_stage'] += self.trackingController.units_converter.X_step_to_mm(self.RecData['deltaX_stage'])
+		self.internal_state.data['Y_stage'] += self.trackingController.units_converter.X_step_to_mm(self.RecData['deltaY_stage'])
+		self.internal_state.data['Theta_stage'] += self.trackingController.units_converter.Z_step_to_mm(self.RecData['deltaTheta_stage'], self.internal_state.data['X_stage'])
 
 		# Emit the stage position so it can be displayed (only need to display the position when it changes)
 

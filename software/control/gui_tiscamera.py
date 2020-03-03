@@ -53,12 +53,7 @@ class GravityMachineGUI(QMainWindow):
 		
 		self.internal_state = core_tracking.InternalState()
 
-		# Microcontroller Receiver object
-		self.microcontroller_Rec = core_tracking.microcontroller_Receiver(self.microcontroller, self.internal_state)
-
-		# Microcontroller Send object
-		self.microcontroller_Sender = core_tracking.microcontroller_Sender(self.microcontroller, self.internal_state)
-
+		
 		self.streamHandler = core.StreamHandler(camera = self.camera)
 		self.liveController = core.LiveController(self.camera,self.microcontroller)
 		self.navigationController = core.NavigationController(self.microcontroller)
@@ -66,6 +61,7 @@ class GravityMachineGUI(QMainWindow):
 		#self.multipointController = core.MultiPointController(self.camera,self.navigationController,self.liveController,self.autofocusController)
 		self.trackingController = core_tracking.TrackingController(self.microcontroller,self.internal_state)
 		
+
 		self.trackingDataSaver = core_tracking.TrackingDataSaver(self.internal_state)
 		self.imageSaver = core_tracking.ImageSaver(self.internal_state, imaging_channel = TRACKING_STREAM)
 		self.imageDisplay = core.ImageDisplay()
@@ -77,6 +73,11 @@ class GravityMachineGUI(QMainWindow):
 		self.camera.set_callback(self.streamHandler.on_new_frame)
 		self.camera.enable_callback()
 
+		# Microcontroller Receiver object
+		self.microcontroller_Rec = core_tracking.microcontroller_Receiver(self.microcontroller, self.internal_state, self.trackingController)
+
+		# Microcontroller Send object
+		self.microcontroller_Sender = core_tracking.microcontroller_Sender(self.microcontroller, self.internal_state)
 
 
 		#------------------------------------------------------------------

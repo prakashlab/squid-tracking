@@ -141,6 +141,7 @@ class Microcontroller_Simulation():
         self.deltaY_stage = delta
         self.Ypos += delta
 
+
     def move_Theta(self,delta):
         self.deltaTheta_stage = delta
         self.Thetapos += delta
@@ -161,6 +162,9 @@ class Microcontroller_Simulation():
 
     def read_received_packet(self):
         self.RecData = {'FocusPhase':self.FocusPhase, 'deltaX_stage': self.deltaX_stage, 'deltaY_stage':self.deltaY_stage, 'deltaTheta_stage':self.deltaTheta_stage, 'track_obj_image':self.track_obj_image, 'track_obj_stage' : self.track_obj_stage}
+        self.deltaX_stage = 0
+        self.deltaY_stage = 0
+        self.deltaTheta_stage = 0
         return self.RecData
 
 
