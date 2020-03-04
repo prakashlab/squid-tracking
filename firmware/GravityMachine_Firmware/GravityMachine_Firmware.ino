@@ -547,6 +547,8 @@ void loop()
 {
   ManualModePrev = ManualMode;
   ManualMode = digitalRead(ManualPin);
+  // testing
+  ManualMode = false;
   currMillisRec = millis();
   sensitivityChange=LOW;
 
@@ -683,6 +685,7 @@ void loop()
   // Serial sending block (Send data to computer)
   //-------------------------------------------------------------------------------
   // uController only sends data when image is triggered.
+ 
   if (sendData){
     
     buffer_tx[0] = byte(phase_code_lastTrigger%256);
@@ -691,6 +694,8 @@ void loop()
     // When only open-loop position is available
 //    CurrPos_X_code = CurrPos_X;  //right sens of the motor
     // When a closed-loop encoder is implemented
+    // Testing
+    x_EncoderTicks = CurrPos_X;
     CurrPos_X_code = x_EncoderTicks;  //right sens of the motor
     if (CurrPos_X_code>0){
       buffer_tx[2] = byte(int(0));
@@ -705,6 +710,8 @@ void loop()
     buffer_tx[6] = byte(CurrPos_X_code%256);
 
     // CurrPos_Y_code= CurrPos_Y;  //right sens of the motor
+    
+    y_EncoderTicks = CurrPos_Y;
     CurrPos_Y_code = y_EncoderTicks;
 
     if (CurrPos_Y_code>0){
@@ -719,6 +726,7 @@ void loop()
     buffer_tx[10] = byte(CurrPos_Y_code>>8);
     buffer_tx[11] = byte(CurrPos_Y_code%256);
     
+    theta_EncoderTicks = CurrPos_Theta;
     
     CurrPos_Theta_code=theta_EncoderTicks;
     if(CurrPos_Theta_code>0) 
@@ -735,8 +743,8 @@ void loop()
     buffer_tx[14] = byte(CurrPos_Theta_code>>16);
     buffer_tx[15] = byte(CurrPos_Theta_code>>8);
     buffer_tx[16] = byte(CurrPos_Theta_code%256);
-
-    buffer_tx[17] = byte(ManualMode);
+    
+    buffer_tx[17] = byte(!ManualMode);
 
     // tracking trigger
     buffer_tx[18] = byte(!digitalRead(triggerTrack));
@@ -783,7 +791,8 @@ void loop()
 
   //Data reception: the data is read at the frequency of the computer
    
-   if(SerialUSB.available()){
+   if(SerialUSB.available())
+   {
       buffer_rx_ptr=0;
       int cyclesElapsed = 0;
       while(buffer_rx_ptr < CMD_LENGTH ){ 
@@ -870,7 +879,8 @@ void loop()
       }
     }
 
-
+    Homing = 0;
+    
     if (Homing==1 || inProgress == true)
   {
 

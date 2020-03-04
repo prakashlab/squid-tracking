@@ -81,6 +81,9 @@ RESOLUTION_WIDTH = 1920
 TRACKERS = ['nearest-nbr', 'csrt', 'daSIAMRPN']
 DEFAULT_TRACKER = 'csrt'
 
+# Time interval for reading micro Controller
+UCONTROLLER_READ_INTERVAL = 25 
+
 CROPPED_IMG_RATIO = 10
 
 FocusTracking = {'Cropped image ratio':{'default':10}}
@@ -131,7 +134,7 @@ MOTION_COMMANDS = ['X_order', 'Y_order', 'Theta_order']
 
 SEND_DATA = ['liquidLens_Freq', 'track_focus' , 'homing_state', 'track_obj_image' , 'X_order', 'Y_order', 'Theta_order']
 
-REC_DATA = ['FocusPhase', 'X_stage', 'Y_stage', 'Theta_stage', 'track_obj_image', 'track_obj_stage']
+REC_DATA = ['FocusPhase', 'X_stage', 'Y_stage', 'Theta_stage', 'track_obj_image_hrdware', 'track_obj_stage']
 
 INITIAL_VALUES = {'Time':0, 'X_objStage':0, 'Y_objStage':0, 'Z_objStage':0, 'X_stage':0, 'Y_stage':0,
     'Theta_stage':0, 'X_image':0, 'Z_image':0, 'track_obj_image':False, 'track_obj_image_hrdware':False, 'track_focus':False, 

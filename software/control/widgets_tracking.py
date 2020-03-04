@@ -338,13 +338,13 @@ class NavigationWidget(QFrame):
 	def zero_Theta_stage(self):
 
 		
-		self.internal_state.data['Theta_stage'] = 10
+		self.internal_state.data['Theta_stage'] = 0
 		print(self.internal_state.data['Theta_stage'])
 
 	# Triggered by microController_Receiever
 	def update_display(self):
 
-		print('In update display')
+		# print('In update display')
 		# print(self.internal_state.data['X_stage'])
 		# print(self.internal_state.data['Y_stage'])
 		# print(self.internal_state.data['Theta_stage'])

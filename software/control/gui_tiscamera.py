@@ -137,7 +137,8 @@ class GravityMachineGUI(QMainWindow):
 		#------------------------------------------------------------------
 		self.streamHandler.signal_new_frame_received.connect(self.liveController.on_new_frame)
 
-		self.streamHandler.signal_new_frame_received.connect(self.microcontroller_Rec.getData_microcontroller)
+		# uController is now handled by an in-built timer
+		# self.streamHandler.signal_new_frame_received.connect(self.microcontroller_Rec.getData_microcontroller)
 		
 		self.streamHandler.image_to_display.connect(self.imageDisplay.enqueue)
 		

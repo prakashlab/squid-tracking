@@ -184,6 +184,7 @@ class TrackingController(QObject):
 			'''
 			# This Toggles the state of the Track Button.
 			self.start_tracking_signal.emit()
+			self.internal_state.data['track_obj_image_hrdware'] = False
 
 			
 		self.tracking_triggered_prev = tracking_triggered
@@ -535,12 +536,20 @@ class microcontroller_Receiver(QObject):
 
 		self.RecData = {key:[] for key in REC_DATA}
 
+		# Define a timer to read the Arduino at regular intervals
+		self.timer_read_uController = QTimer()
+		self.timer_read_uController.setInterval(UCONTROLLER_READ_INTERVAL)
+		self.timer_read_uController.timeout.connect(self.getData_microcontroller)
+		self.timer_read_uController.start()
+
 	# This function is triggered by the "rec new image signal" from StreamHandler
 	def getData_microcontroller(self):
 		# for debugging
-		print("Receiving data from uController")
+		# print("Receiving data from uController")
 
 		data = self.microcontroller.read_received_packet()
+
+		# print('Read packed ... parsing')
 		for key in REC_DATA:
 			self.RecData[key] = data[key]
 			# Update internal state
@@ -548,13 +557,15 @@ class microcontroller_Receiver(QObject):
 				self.internal_state.data[key] = data[key]
 
 		# Find the actual stage position based prev position and the change.
-		self.internal_state.data['X_stage'] = self.trackingController.units_converter.X_step_to_mm(self.RecData['deltaX_stage'])
-		self.internal_state.data['Y_stage'] = self.trackingController.units_converter.X_step_to_mm(self.RecData['deltaY_stage'])
-		self.internal_state.data['Theta_stage'] = self.trackingController.units_converter.Z_step_to_mm(self.RecData['deltaTheta_stage'], self.internal_state.data['X_stage'])
+		self.internal_state.data['X_stage'] = self.trackingController.units_converter.X_step_to_mm(self.RecData['X_stage'])
+		self.internal_state.data['Y_stage'] = self.trackingController.units_converter.X_step_to_mm(self.RecData['Y_stage'])
+		self.internal_state.data['Theta_stage'] = self.trackingController.units_converter.Z_step_to_mm(self.RecData['Theta_stage'], self.internal_state.data['X_stage'])
 
 		# Emit the stage position so it can be displayed (only need to display the position when it changes)
 
 		self.update_display.emit()
+
+
 
 
 
@@ -574,7 +585,8 @@ class microcontroller_Sender(QObject):
 		self.microcontroller = microcontroller
 		self.internal_state = internal_state
 
-		self.sendData = {key:[] for key in SEND_DATA}
+		self.sendData_dict = {key:[] for key in SEND_DATA}
+
 		
 
 	def multiplex_Send(self, X_order, Y_order, Theta_order):
@@ -582,15 +594,17 @@ class microcontroller_Sender(QObject):
 		print("Sending data to uController")
 		# print(X_order, Y_order, Theta_order)
 		# X_error, Y_error, Z_error (in full steps)
-		self.sendData['X_order'] = X_order
-		self.sendData['Y_order'] = Y_order
-		self.sendData['Theta_order'] = Theta_order
+		self.sendData_dict['X_order'] = X_order
+		self.sendData_dict['Y_order'] = Y_order
+		self.sendData_dict['Theta_order'] = Theta_order
 
 		# Update the local copy with the state of non-motion-related data to be sent to uController.
 		self.get_sendData()
 		
+		sendData = [self.sendData_dict[key] for key in self.sendData_dict.keys()]
+		
 		# Send command to the microcontroller
-		self.microcontroller.send_command(self.sendData)
+		self.microcontroller.send_command(sendData)
 
 
 	def get_sendData(self):
@@ -598,7 +612,7 @@ class microcontroller_Sender(QObject):
 		for key in SEND_DATA:
 			if(key not in MOTION_COMMANDS):
 				try:
-					self.sendData[key] = self.internal_state.data[key]
+					self.sendData_dict[key] = self.internal_state.data[key]
 				except:
 					print('{} not found in Internal State model'.format(key))
 
