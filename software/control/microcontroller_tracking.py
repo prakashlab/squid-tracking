@@ -22,7 +22,7 @@ class Microcontroller():
         arduino_ports = [
                 p.device
                 for p in serial.tools.list_ports.comports()
-                if 'Arduino' or'usbmodem' in p.description]
+                if 'Arduino' in p.description]
 
         print(arduino_ports)
 
@@ -31,10 +31,10 @@ class Microcontroller():
         if len(arduino_ports) > 1:
             warnings.warn('Multiple Arduinos found - using the first')
         else:
-            print('Using Arduino found at : {}'.format(arduino_ports[2]))
+            print('Using Arduino found at : {}'.format(arduino_ports[0]))
 
         # establish serial communication
-        self.serial = serial.Serial(arduino_ports[2],2000000)
+        self.serial = serial.Serial(arduino_ports[0],2000000)
         time.sleep(0.2)
         print('Serial Connection Open')
 
@@ -50,7 +50,7 @@ class Microcontroller():
             print('\n ------------Communication established with the Arduino------------\n')
             cmd=bytearray(1)
             cmd[0]=2
-            self.serialconn.write(cmd)
+            self.serial.write(cmd)
 
         second_number = ord(self.serial.read())
             
@@ -78,9 +78,9 @@ class Microcontroller():
 
     def read_received_packet(self):
         # wait to receive data
-        while self.serialconn.in_waiting==0:
+        while self.serial.in_waiting==0:
             pass
-        while self.serialconn.in_waiting % self.rx_buffer_length != 0:
+        while self.serial.in_waiting % self.rx_buffer_length != 0:
             pass
 
         num_bytes_in_rx_buffer = self.serial.in_waiting
@@ -94,7 +94,7 @@ class Microcontroller():
         # read the buffer
         data=[]
         for i in range(self.rx_buffer_length):
-            data.append(ord(self.serialconn.read()))
+            data.append(ord(self.serial.read()))
 
         
         self.ReceivedData['FocusPhase']  = self.data2byte_to_int(data[0],data[1])*2*np.pi/65535.
