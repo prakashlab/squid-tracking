@@ -168,8 +168,8 @@ const double pi = 3.1415926535897;
 //--------------------------------------------------
 // Serial communication
 //--------------------------------------------------
-# define CMD_LENGTH 17
-# define DATA_TX_LENGTH 28
+# define CMD_LENGTH 11
+# define DATA_TX_LENGTH 19
 //=================================================================================
 // Stage Movement/Physical Variables
 //=================================================================================
@@ -1382,7 +1382,7 @@ void loop()
   // reset the sensitivity of the joystick on 16 step when go to autoMode
   //-------------------------------------------------------------------------------
     
-  if (ManualMode==LOW and ManualModePrev==HIGH  && StageLocked == false){
+  if (ManualMode == LOW and ManualModePrev == HIGH  && StageLocked == false){
     microSteps_X=16;
     microSteps_Theta=16;
     microSteps_Z=16;
@@ -1515,39 +1515,22 @@ void loop()
 
     buffer_tx[17] = byte(ManualMode);
 
-    // light intensity
-    buffer_tx[18] = byte(lightMeasured%256);
-    buffer_tx[19] = byte(lightMeasured>>8);
-
-    // time stamp
-    buffer_tx[20] = byte(timestamp_lastTrigger>>24);
-    buffer_tx[21] = byte(timestamp_lastTrigger>>16);
-    buffer_tx[22] = byte(timestamp_lastTrigger>>8);
-    buffer_tx[23] = byte(timestamp_lastTrigger%256);
-
     // tracking trigger
-    buffer_tx[24] = byte(!digitalRead(triggerTrack));
-
-//    // FL trigger (for debugging)
-    buffer_tx[25] = byte(int(startTriggering_FL));
-//    
-   
-//    buffer_tx[26] =  byte(int(sample_interval_FL/100)%256);
-//    buffer_tx[27] =  byte(int(sample_interval_FL/100)>>8);
+    buffer_tx[18] = byte(!digitalRead(triggerTrack));
   
     
-    // 16 bit crc
-    calculateCRC_tx = false;
-    if(calculateCRC_tx) {
-      uint16_t crc = crc_ccitt(buffer_tx,24);
-      // uint16_t crc = crc_xmodem(buffer_tx,24);
-      buffer_tx[25] = byte(crc>>8);
-      buffer_tx[26] = byte(crc%256);
-    }
-    else{
-      buffer_tx[0] = 0;
-      buffer_tx[0] = 0;
-    }    
+//    // 16 bit crc
+//    calculateCRC_tx = false;
+//    if(calculateCRC_tx) {
+//      uint16_t crc = crc_ccitt(buffer_tx,24);
+//      // uint16_t crc = crc_xmodem(buffer_tx,24);
+//      buffer_tx[25] = byte(crc>>8);
+//      buffer_tx[26] = byte(crc%256);
+//    }
+//    else{
+//      buffer_tx[0] = 0;
+//      buffer_tx[0] = 0;
+//    }    
 
     digitalWrite(sendSerial_indicator_pin,HIGH);
     SerialUSB.write(buffer_tx,DATA_TX_LENGTH);
@@ -1632,11 +1615,7 @@ void loop()
         }
         Step_Theta= Step_Theta/100;
         
-        DeltaT = float( int(buffer_rx[11])+(int(buffer_rx[12]) << 8))/10;                     // Delta T received in ms 
-
-        lightOutput = int(buffer_rx[13]);              // Intensity sent to the LED        
-
-        startTriggering_FL = int(buffer_rx[14]);
+      
 
         
 //        sample_interval_FL_prev = sample_interval_FL;
