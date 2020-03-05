@@ -69,7 +69,7 @@ class TrackingController(QObject):
 
 		# Set the reference image width based on the camera sensor size used for calibration
 		# This allows physical distances be calculated even if the image res is downsampled.
-		self.units_converter.set_ref_imWidth(RESOLUTION_WIDTH)
+		self.units_converter.set_calib_imWidth(CALIB_IMG_WIDTH)
 		
 		self.image_axis = image_axis
 		self.focus_axis = focus_axis
@@ -557,9 +557,9 @@ class microcontroller_Receiver(QObject):
 				self.internal_state.data[key] = data[key]
 
 		# Find the actual stage position based prev position and the change.
-		self.internal_state.data['X_stage'] = self.trackingController.units_converter.X_step_to_mm(self.RecData['X_stage'])
-		self.internal_state.data['Y_stage'] = self.trackingController.units_converter.X_step_to_mm(self.RecData['Y_stage'])
-		self.internal_state.data['Theta_stage'] = self.trackingController.units_converter.Z_step_to_mm(self.RecData['Theta_stage'], self.internal_state.data['X_stage'])
+		self.internal_state.data['X_stage'] = self.trackingController.units_converter.X_count_to_mm(self.RecData['X_stage'])
+		self.internal_state.data['Y_stage'] = self.trackingController.units_converter.Y_count_to_mm(self.RecData['Y_stage'])
+		self.internal_state.data['Theta_stage'] = self.trackingController.units_converter.Theta_count_to_rad(self.RecData['Theta_stage'])
 
 		# Emit the stage position so it can be displayed (only need to display the position when it changes)
 
@@ -587,11 +587,13 @@ class microcontroller_Sender(QObject):
 
 		self.sendData_dict = {key:[] for key in SEND_DATA}
 
+		self.sendData_array = []
+
 		
 
-	def multiplex_Send(self, X_order, Y_order, Theta_order):
-		# for debugging
-		print("Sending data to uController")
+	def multiplex_sendData(self, X_order, Y_order, Theta_order):
+		
+		# Assemble data from different sources into a send command.
 		# print(X_order, Y_order, Theta_order)
 		# X_error, Y_error, Z_error (in full steps)
 		self.sendData_dict['X_order'] = X_order
@@ -601,12 +603,10 @@ class microcontroller_Sender(QObject):
 		# Update the local copy with the state of non-motion-related data to be sent to uController.
 		self.get_sendData()
 		
-		sendData = [self.sendData_dict[key] for key in self.sendData_dict.keys()]
+		self.sendData_array = [self.sendData_dict[key] for key in self.sendData_dict.keys()]
 		
-		# Send command to the microcontroller
-		self.microcontroller.send_command(sendData)
-
-
+		self.sendData()
+		
 	def get_sendData(self):
 
 		for key in SEND_DATA:
@@ -615,6 +615,16 @@ class microcontroller_Sender(QObject):
 					self.sendData_dict[key] = self.internal_state.data[key]
 				except:
 					print('{} not found in Internal State model'.format(key))
+
+	def sendData(self):
+		print("Sending data to uController")
+		# Send command to the microcontroller
+		self.microcontroller.send_command(self.sendData_array)
+
+		# Reset the Stage-zeroing command.
+		self.internal_state.data['Zero_stage'] = 0
+
+
 
 
 

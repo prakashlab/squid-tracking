@@ -13,7 +13,7 @@ class Microcontroller():
     def __init__(self,parent=None):
         self.serial = None
         self.platform_name = platform.system()
-        self.tx_buffer_length = 11
+        self.tx_buffer_length = 12
         self.rx_buffer_length = 19
 
         self.ReceivedData = {key:[] for key in REC_DATA}
@@ -66,7 +66,7 @@ class Microcontroller():
         
         print('Sending data to uController')
         print(command)
-        
+
         cmd = bytearray(self.tx_buffer_length)
         
         cmd[0],cmd[1] = split_int_2byte(round(command[0]*100))                #liquid_lens_freq
@@ -76,8 +76,10 @@ class Microcontroller():
         cmd[5],cmd[6] = split_signed_int_2byte(round(command[4]*100))         #Xerror
         cmd[7],cmd[8] = split_signed_int_2byte(round(command[5]*100))         #Yerror                           
         cmd[9],cmd[10] = split_signed_int_2byte(round(command[6]*100))        #Zerror
-      
+        cmd[11] = int(command[7])                                             # Stage-zero command    
         
+        print('Zero stage : {}'.format(cmd[11]))
+
         self.serial.write(cmd)
 
     def read_received_packet(self):

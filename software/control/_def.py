@@ -27,11 +27,47 @@ class AF:
     def __init__(self):
         pass
 
-class Motion:
-    STEPS_PER_MM_XY = 1600
-    STEPS_PER_MM_Z = 5333
+class Motors:
+    STEPS_PER_REV_X = 200
+    MM_PER_REV_X = 1
+
+    STEPS_PER_REV_Y = 200
+    MM_PER_REV_Y = 1
+
+    STEPS_PER_REV_THETA_MOTOR = 200
+
+    GEAR_RATIO_THETA = 99+1044/float(2057) 
+    
+    STEPS_PER_REV_THETA_SHAFT = GEAR_RATIO_THETA*STEPS_PER_REV_THETA_MOTOR
+
     def __init__(self):
         pass
+
+class Encoders:
+
+    COUNTS_PER_MM_X = 500 # 1um per count RLS miniature linear encoder
+    COUNTS_PER_MM_Y = 500
+
+    COUNTS_PER_REV_THETA_MOTOR = 600
+
+    COUNTS_PER_REV_THETA = COUNTS_PER_REV_THETA_MOTOR*Motors.GEAR_RATIO_THETA
+
+
+    def __init__(self):
+        pass
+
+
+class Chamber:
+    # Chamber dimensions in mm
+    WIDTH = 5
+    R_I = 85
+    R_O = 110
+    LENGTH = (R_O - R_I)
+    R_CENTER = (R_I + R_O)/2
+
+    def __init__(self):
+        pass
+
 
 class Acquisition:
     CROP_WIDTH = 3000
@@ -76,7 +112,7 @@ class Tracking:
 #         pass
 
 # Width of Image used for Pixel Size Calibration. 
-RESOLUTION_WIDTH = 1920
+CALIB_IMG_WIDTH = 1920
 
 TRACKERS = ['nearest-nbr', 'csrt', 'daSIAMRPN']
 DEFAULT_TRACKER = 'csrt'
@@ -123,7 +159,7 @@ OPTICAL_PATHS = {'modes':{'DF single':['DF'], 'DF_FL':['DF', 'FL'], 'DF_BF':['DF
 
 INTERNAL_STATE_VARIABLES = ['Time', 'X_objStage', 'Y_objStage', 'Z_objStage', 'X_stage', 'Y_stage',
     'Theta_stage', 'X_image', 'Z_image', 'track_obj_image','track_obj_image_hrdware', 'track_focus', 'track_obj_stage', 
-    'Acquisition', 'homing_command', 'homing_state', 'liquidLens_Freq', 'liquidLens_Amp', 'FocusPhase', 'imaging channels', 'uScope mode', 
+    'Acquisition', 'homing_command', 'homing_state', 'Zero_stage', 'liquidLens_Freq', 'liquidLens_Amp', 'FocusPhase', 'imaging channels', 'uScope mode', 
     'Objective', 'basePath', 'experimentID']
 
 # Based on the number of imaging channels, there will also be 1 or more image names saved.
@@ -132,13 +168,13 @@ SAVE_DATA = ['Time', 'X_objStage', 'Y_objStage', 'Z_objStage', 'Theta_stage', 'X
 
 MOTION_COMMANDS = ['X_order', 'Y_order', 'Theta_order']
 
-SEND_DATA = ['liquidLens_Freq', 'track_focus' , 'homing_state', 'track_obj_image' , 'X_order', 'Y_order', 'Theta_order']
+SEND_DATA = ['liquidLens_Freq', 'track_focus' , 'homing_state', 'track_obj_image' , 'X_order', 'Y_order', 'Theta_order', 'Zero_stage']
 
 REC_DATA = ['FocusPhase', 'X_stage', 'Y_stage', 'Theta_stage', 'track_obj_image_hrdware', 'track_obj_stage']
 
 INITIAL_VALUES = {'Time':0, 'X_objStage':0, 'Y_objStage':0, 'Z_objStage':0, 'X_stage':0, 'Y_stage':0,
     'Theta_stage':0, 'X_image':0, 'Z_image':0, 'track_obj_image':False, 'track_obj_image_hrdware':False, 'track_focus':False, 
-    'track_obj_stage':False, 'Acquisition':False, 'homing_command':False, 'homing_state':False, 'liquidLens_Freq': liquidLens['Freq']['default'], 
+    'track_obj_stage':False, 'Acquisition':False, 'homing_command':False, 'homing_state':False, 'Zero_stage':0, 'liquidLens_Freq': liquidLens['Freq']['default'], 
     'liquidLens_Amp': liquidLens['Amp']['default'] , 'FocusPhase':0, 'imaging channels': IMAGING_CHANNELS['types']['DF+FL'], 
     'uScope mode': 'Tracking', 'Objective':DEFAULT_OBJECTIVE, 'basePath':'/', 'experimentID':'track'}
 

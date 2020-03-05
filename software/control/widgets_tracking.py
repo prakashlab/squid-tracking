@@ -232,10 +232,12 @@ class TrackingControllerWidget(QFrame):
 
 
 class NavigationWidget(QFrame):
-	def __init__(self, navigationController, internal_state, main=None, *args, **kwargs):
+	
+	def __init__(self, navigationController, internal_state, microcontroller_Sender,  main=None, *args, **kwargs):
 		super().__init__(*args, **kwargs)
 		self.navigationController = navigationController
 		self.internal_state = internal_state
+		self.microcontroller_Sender = microcontroller_Sender
 		self.add_components()
 		self.setFrameStyle(QFrame.Panel | QFrame.Raised)
 
@@ -329,25 +331,33 @@ class NavigationWidget(QFrame):
 
 	def zero_X_stage(self):
 
-		self.internal_state.data['X_stage'] = 0
+		self.internal_state.data['Zero_stage'] = 1
+
+		self.microcontroller_Sender.multiplex_sendData(0,0,0)
+	
 
 	def zero_Y_stage(self):
 
-		self.internal_state.data['Y_stage'] = 0
+		self.internal_state.data['Zero_stage'] = 2
+
+		self.microcontroller_Sender.multiplex_sendData(0,0,0)
+		
+
+		
 
 	def zero_Theta_stage(self):
 
+		self.internal_state.data['Zero_stage'] = 3
+
+		self.microcontroller_Sender.multiplex_sendData(0,0,0)
 		
-		self.internal_state.data['Theta_stage'] = 0
-		print(self.internal_state.data['Theta_stage'])
+
+	
 
 	# Triggered by microController_Receiever
 	def update_display(self):
 
-		# print('In update display')
-		# print(self.internal_state.data['X_stage'])
-		# print(self.internal_state.data['Y_stage'])
-		# print(self.internal_state.data['Theta_stage'])
+		
 		self.pos_X_label.setValue(self.internal_state.data['X_stage']*1e-3)
 		self.pos_Y_label.setValue(self.internal_state.data['Y_stage']*1e-3)
 		self.pos_Theta_label.setValue(self.internal_state.data['Theta_stage'])

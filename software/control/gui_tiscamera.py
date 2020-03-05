@@ -87,7 +87,7 @@ class GravityMachineGUI(QMainWindow):
 		#------------------------------------------------------------------
 		self.cameraSettingWidget = widgets.CameraSettingsWidget(self.camera,self.liveController)
 		self.liveControlWidget = widgets.LiveControlWidget(self.streamHandler,self.liveController, self.trackingController, self.camera)
-		self.navigationWidget = widgets_tracking.NavigationWidget(self.navigationController, self.internal_state)
+		self.navigationWidget = widgets_tracking.NavigationWidget(self.navigationController, self.internal_state, self.microcontroller_Sender)
 		#self.autofocusWidget = widgets.AutoFocusWidget(self.autofocusController)
 		self.recordingControlWidget = widgets.RecordingWidget(self.streamHandler,self.imageSaver, self.internal_state, self.trackingDataSaver)
 		self.trackingControlWidget = widgets_tracking.TrackingControllerWidget(self.streamHandler, self.trackingController, self.trackingDataSaver, self.internal_state, self.imageDisplayWindow)
@@ -158,7 +158,7 @@ class GravityMachineGUI(QMainWindow):
 		self.trackingController.Rect_pt1_pt2.connect(self.imageDisplayWindow.draw_rectangle)
 		
 
-		self.trackingController.multiplex_send_signal.connect(self.microcontroller_Sender.multiplex_Send)
+		self.trackingController.multiplex_send_signal.connect(self.microcontroller_Sender.multiplex_sendData)
 
 		self.trackingController.save_data_signal.connect(self.trackingDataSaver.enqueue)
 		

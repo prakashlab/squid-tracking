@@ -168,7 +168,7 @@ const double pi = 3.1415926535897;
 //--------------------------------------------------
 // Serial communication
 //--------------------------------------------------
-# define CMD_LENGTH 11
+# define CMD_LENGTH 12
 # define DATA_TX_LENGTH 19
 //=================================================================================
 // Stage Movement/Physical Variables
@@ -231,6 +231,9 @@ bool Xpos, Xneg, Ypos, Yneg, Zpos, Zneg, Thetapos, Thetaneg, ManualInput, Manual
 bool  _xLim_1=LOW, _xLim_2 = LOW, _yLim_1 = LOW, _yLim_2 = LOW, _zLim_1 = LOW, _zLim_2 = LOW, _xLim = LOW;
 bool _xLim_1_prev = LOW, _xLim_2_prev = LOW, _yLim_1_prev = LOW, _yLim_2_prev = LOW,_zLim_1_prev = LOW,_zLim_2_prev = LOW;
 bool _xFlip = LOW, _yFlip=LOW, _zFlip = LOW, _xLimPos=LOW, _xLimNeg = LOW, _yLimPos=LOW, _yLimNeg = LOW, _zLimPos=LOW, _zLimNeg = LOW ;
+
+// Stage-zeroing state variables
+int Zero_stage =0;
 
 
 volatile bool x_EncoderASet;
@@ -846,6 +849,24 @@ void loop()
           Step_Theta = Step_Theta - 65536;
         }
         Step_Theta= Step_Theta/100;
+
+        Zero_stage = int(buffer_rx[11]); 
+
+
+        if(Zero_stage == 1)
+        {
+          Zero_Stage_X();
+        }
+        else if(Zero_stage == 2)
+        {
+          Zero_Stage_Y();
+        }
+        else if(Zero_stage == 3)
+        {
+          Zero_Stage_Theta();
+          
+        }
+  
         
       
 
@@ -877,8 +898,17 @@ void loop()
           }
         }
       }
+
+
+     
+      
     }
 
+  
+    
+
+    
+   // For testing
     Homing = 0;
     
     if (Homing==1 || inProgress == true)
@@ -977,6 +1007,38 @@ void updateNumTimerCycles()
 {
   numTimerCycles_FL = 1000000*sample_interval_FL/(100*timerPeriod);
   
+}
+
+// Stage-zeroing functions
+void Zero_Stage_X()
+{
+
+  x_EncoderTicks = 0;
+  CurrPos_X = 0;
+  CurrPos_X_Stepper = 0;
+  PrevPos_X_Stepper = 0;
+  stepperX.setCurrentPosition(0);
+
+  
+}
+void Zero_Stage_Y()
+{
+  y_EncoderTicks = 0;
+  CurrPos_Y = 0;
+  CurrPos_Y_Stepper = 0;
+  PrevPos_Y_Stepper = 0;
+  stepperY.setCurrentPosition(0);
+
+
+}
+void Zero_Stage_Theta()
+{
+  theta_EncoderTicks = 0;
+  CurrPos_Theta = 0;
+  CurrPos_Theta_Stepper = 0;
+  PrevPos_Theta_Stepper = 0;
+  stepperTHETA.setCurrentPosition(0);
+
 }
 
 
