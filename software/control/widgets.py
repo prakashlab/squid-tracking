@@ -62,33 +62,6 @@ class CameraSettingsWidget(QFrame):
         self.entry_analogGain_Preset.setValue(0)
         # self.liveController.set_analog_gain_preset(0)
 
-        # self.entry_exposureTimeFLPreset = QDoubleSpinBox()
-        # self.entry_exposureTimeFLPreset.setMinimum(self.camera.EXPOSURE_TIME_MS_MIN)
-        # self.entry_exposureTimeFLPreset.setMaximum(self.camera.EXPOSURE_TIME_MS_MAX)
-        # self.entry_exposureTimeFLPreset.setSingleStep(1)
-        # self.entry_exposureTimeFLPreset.setValue(100)
-        # self.liveController.set_exposure_time_fl_preset(100)
-
-        # self.entry_analogGainFLPreset = QDoubleSpinBox()
-        # self.entry_analogGainFLPreset.setMinimum(self.camera.GAIN_MIN) 
-        # self.entry_analogGainFLPreset.setMaximum(self.camera.GAIN_MAX) 
-        # self.entry_analogGainFLPreset.setSingleStep(self.camera.GAIN_STEP)
-        # self.entry_analogGainFLPreset.setValue(10)
-        # self.liveController.set_analog_gain_fl_preset(10)
-
-        # self.entry_exposureTimeFLPreviewPreset = QDoubleSpinBox()
-        # self.entry_exposureTimeFLPreviewPreset.setMinimum(self.camera.EXPOSURE_TIME_MS_MIN)
-        # self.entry_exposureTimeFLPreviewPreset.setMaximum(self.camera.EXPOSURE_TIME_MS_MAX)
-        # self.entry_exposureTimeFLPreviewPreset.setSingleStep(1)
-        # self.entry_exposureTimeFLPreviewPreset.setValue(20)
-        # self.liveController.set_exposure_time_fl_preview_preset(20)
-
-        # self.entry_analogGainFLPreviewPreset = QDoubleSpinBox()
-        # self.entry_analogGainFLPreviewPreset.setMinimum(self.camera.GAIN_MIN) 
-        # self.entry_analogGainFLPreviewPreset.setMaximum(self.camera.GAIN_MAX) 
-        # self.entry_analogGainFLPreviewPreset.setSingleStep(self.camera.GAIN_STEP)
-        # self.entry_analogGainFLPreviewPreset.setValue(24)
-        # self.liveController.set_analog_gain_fl_preview_preset(24)
 
         self.btn_Preset = QPushButton("Preset")
         self.btn_Preset.setDefault(False)
@@ -344,8 +317,6 @@ class LiveControlWidget(QFrame):
 
     def update_trigger_mode(self):
         self.triggerMode = self.dropdown_triggerMode.currentText()
-
-        
 
         if(self.triggerMode == TriggerMode.SOFTWARE):
             print('Trigger mode to: {}'.format(self.triggerMode))
