@@ -210,7 +210,7 @@ class Camera_Simulation(object):
 
         self.GAIN_MAX = 480
         self.GAIN_MIN = 0
-        self.GAIN_STEP = 10
+        self.GAIN_STEP = 1
         self.EXPOSURE_TIME_MS_MIN = 0.02
         self.EXPOSURE_TIME_MS_MAX = 4000
 

@@ -32,6 +32,9 @@ class GravityMachineGUI(QMainWindow):
 		
 		self.setWindowTitle('Gravity Machine')
 
+		self.imaging_channels = CAMERAS.keys()
+
+
 		#------------------------------------------------------------------
 		# load other windows
 		#------------------------------------------------------------------
@@ -45,19 +48,21 @@ class GravityMachineGUI(QMainWindow):
 		# load objects
 		#------------------------------------------------------------------
 		if SIMULATION is True:
-			self.camera = camera.Camera_Simulation()
+			# Define a camera object for each unique image-stream.
+			self.camera = {key:camera.Camera_Simulation() for key in self.imaging_channels}
 			# self.microcontroller = microcontroller_tracking.Microcontroller_Simulation()
 			self.microcontroller = microcontroller_tracking.Microcontroller()
 
 		else:
-			self.camera = camera.Camera(sn=17910085)
-			self.microcontroller = microcontroller.Microcontroller()
+			self.camera = {key:camera.Camera(sn=CAMERAS[key]['serial']) for key in self.imaging_channels}
+			self.microcontroller = microcontroller_tracking.Microcontroller()
 		
 		self.internal_state = core_tracking.InternalState()
 
 		
-		self.streamHandler = core.StreamHandler(camera = self.camera)
-		self.liveController = core.LiveController(self.camera,self.microcontroller)
+		# Tracking-related objects
+		self.streamHandler = core.StreamHandler(camera = self.camera[TRACKING])
+		self.liveController = core.LiveController(self.camera[TRACKING],self.microcontroller)
 		self.navigationController = core.NavigationController(self.microcontroller)
 		#self.autofocusController = core.AutoFocusController(self.camera,self.navigationController,self.liveController)
 		#self.multipointController = core.MultiPointController(self.camera,self.navigationController,self.liveController,self.autofocusController)
@@ -65,15 +70,15 @@ class GravityMachineGUI(QMainWindow):
 		
 
 		self.trackingDataSaver = core_tracking.TrackingDataSaver(self.internal_state)
-		self.imageSaver = core_tracking.ImageSaver(self.internal_state, imaging_channel = TRACKING_STREAM)
+		self.imageSaver = core_tracking.ImageSaver(self.internal_state, imaging_channel = TRACKING)
 		self.imageDisplay = core.ImageDisplay()
 
 		# open the camera
 		# camera start streaming
-		self.camera.open()
-		self.camera.set_software_triggered_acquisition() #self.camera.set_continuous_acquisition()
-		self.camera.set_callback(self.streamHandler.on_new_frame)
-		self.camera.enable_callback()
+		self.camera[TRACKING].open()
+		self.camera[TRACKING].set_software_triggered_acquisition() #self.camera.set_continuous_acquisition()
+		self.camera[TRACKING].set_callback(self.streamHandler.on_new_frame)
+		self.camera[TRACKING].enable_callback()
 
 		# Microcontroller Receiver object
 		self.microcontroller_Rec = core_tracking.microcontroller_Receiver(self.microcontroller, self.internal_state, self.trackingController)
@@ -85,8 +90,11 @@ class GravityMachineGUI(QMainWindow):
 		#------------------------------------------------------------------
 		# load widgets
 		#------------------------------------------------------------------
-		self.cameraSettingWidget = widgets.CameraSettingsWidget(self.camera,self.liveController)
-		self.liveControlWidget = widgets.LiveControlWidget(self.streamHandler,self.liveController, self.trackingController, self.camera)
+		self.cameraSettingWidget = {key: widgets.CameraSettingsWidget(self.camera[key],self.liveController) for key in self.imaging_channels}
+
+
+		# self.cameraSettingWidget = widgets.CameraSettingsWidget(self.camera,self.liveController)
+		self.liveControlWidget = widgets.LiveControlWidget(self.streamHandler,self.liveController, self.trackingController, self.camera[TRACKING])
 		self.navigationWidget = widgets_tracking.NavigationWidget(self.navigationController, self.internal_state, self.microcontroller_Sender)
 		#self.autofocusWidget = widgets.AutoFocusWidget(self.autofocusController)
 		self.recordingControlWidget = widgets.RecordingWidget(self.streamHandler,self.imageSaver, self.internal_state, self.trackingDataSaver)
@@ -98,6 +106,12 @@ class GravityMachineGUI(QMainWindow):
 
 		self.recordTabWidget = QTabWidget()
 		self.recordTabWidget.addTab(self.recordingControlWidget, "Simple Recording")
+		
+		self.cameraSettings_Tab = QTabWidget()
+
+		for key in self.imaging_channels:
+			self.cameraSettings_Tab.addTab(self.cameraSettingWidget[key],key)
+
 		# self.recordTabWidget.addTab(self.trackingControlWidget, "Tracking")
 		#self.recordTabWidget.addTab(self.multiPointWidget, "Multipoint Acquisition")
 
@@ -124,6 +138,8 @@ class GravityMachineGUI(QMainWindow):
 		layout.addWidget(self.recordTabWidget,1,1)
 
 		layout.addWidget(self.plotWidget,2,1)
+
+		layout.addWidget(self.cameraSettings_Tab,3,1,1,1)
 		
 		# transfer the layout to the central widget
 		self.centralWidget = QWidget()
@@ -171,7 +187,8 @@ class GravityMachineGUI(QMainWindow):
 		#self.autofocusController.image_to_display.connect(self.imageDisplayWindow.display_image)
 		#self.multipointController.image_to_display.connect(self.imageDisplayWindow.display_image)
 
-		self.camera.start_streaming()
+		for key in self.imaging_channels:
+			self.camera[key].start_streaming()
 
 	def closeEvent(self, event):
 
@@ -186,7 +203,8 @@ class GravityMachineGUI(QMainWindow):
 
 
 			self.liveController.stop_live()
-			self.camera.close()
+			for key in self.imaging_channels:
+				self.camera[key].close()
 			self.imageSaver.stop_saving_images()
 			self.trackingDataSaver.stop_DataSaver()
 			self.imageDisplay.close()

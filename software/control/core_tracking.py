@@ -745,8 +745,8 @@ class TrackingDataSaver(QObject):
 	# Stop signal from Acquisition Widget
 	def stop_DataSaver(self):
 		
-		self.queue.join()
-		self.thread.join()
+		# self.queue.join()
+		# self.thread.join()
 		self.stop_signal_received = True
 
 

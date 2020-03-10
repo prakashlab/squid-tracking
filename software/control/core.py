@@ -632,8 +632,8 @@ class ImageDisplay(QObject):
         self.stop_signal_received = True
         self.thread.join()
 
-    def __del__(self):
-        self.wait()
+    # def __del__(self):
+        # self.wait()
 
 # from gravity machine
 class ImageDisplayWindow(QMainWindow):

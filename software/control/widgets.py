@@ -48,68 +48,60 @@ class CameraSettingsWidget(QFrame):
         self.entry_analogGain.setValue(0)
         self.camera.set_analog_gain(0)
 
-        self.entry_exposureTimeBFPreset = QDoubleSpinBox()
-        self.entry_exposureTimeBFPreset.setMinimum(self.camera.EXPOSURE_TIME_MS_MIN)
-        self.entry_exposureTimeBFPreset.setMaximum(self.camera.EXPOSURE_TIME_MS_MAX)
-        self.entry_exposureTimeBFPreset.setSingleStep(1)
-        self.entry_exposureTimeBFPreset.setValue(20)
-        self.liveController.set_exposure_time_bfdf_preset(20)
+        self.entry_exposureTime_Preset = QDoubleSpinBox()
+        self.entry_exposureTime_Preset.setMinimum(self.camera.EXPOSURE_TIME_MS_MIN)
+        self.entry_exposureTime_Preset.setMaximum(self.camera.EXPOSURE_TIME_MS_MAX)
+        self.entry_exposureTime_Preset.setSingleStep(1)
+        self.entry_exposureTime_Preset.setValue(20)
+        # self.liveController.set_exposure_time_preset(20)
 
-        self.entry_analogGainBFPreset = QDoubleSpinBox()
-        self.entry_analogGainBFPreset.setMinimum(self.camera.GAIN_MIN) 
-        self.entry_analogGainBFPreset.setMaximum(self.camera.GAIN_MAX) 
-        self.entry_analogGainBFPreset.setSingleStep(self.camera.GAIN_STEP)
-        self.entry_analogGainBFPreset.setValue(0)
-        self.liveController.set_analog_gain_bfdf_preset(0)
+        self.entry_analogGain_Preset = QDoubleSpinBox()
+        self.entry_analogGain_Preset.setMinimum(self.camera.GAIN_MIN) 
+        self.entry_analogGain_Preset.setMaximum(self.camera.GAIN_MAX) 
+        self.entry_analogGain_Preset.setSingleStep(self.camera.GAIN_STEP)
+        self.entry_analogGain_Preset.setValue(0)
+        # self.liveController.set_analog_gain_preset(0)
 
-        self.entry_exposureTimeFLPreset = QDoubleSpinBox()
-        self.entry_exposureTimeFLPreset.setMinimum(self.camera.EXPOSURE_TIME_MS_MIN)
-        self.entry_exposureTimeFLPreset.setMaximum(self.camera.EXPOSURE_TIME_MS_MAX)
-        self.entry_exposureTimeFLPreset.setSingleStep(1)
-        self.entry_exposureTimeFLPreset.setValue(100)
-        self.liveController.set_exposure_time_fl_preset(100)
+        # self.entry_exposureTimeFLPreset = QDoubleSpinBox()
+        # self.entry_exposureTimeFLPreset.setMinimum(self.camera.EXPOSURE_TIME_MS_MIN)
+        # self.entry_exposureTimeFLPreset.setMaximum(self.camera.EXPOSURE_TIME_MS_MAX)
+        # self.entry_exposureTimeFLPreset.setSingleStep(1)
+        # self.entry_exposureTimeFLPreset.setValue(100)
+        # self.liveController.set_exposure_time_fl_preset(100)
 
-        self.entry_analogGainFLPreset = QDoubleSpinBox()
-        self.entry_analogGainFLPreset.setMinimum(self.camera.GAIN_MIN) 
-        self.entry_analogGainFLPreset.setMaximum(self.camera.GAIN_MAX) 
-        self.entry_analogGainFLPreset.setSingleStep(self.camera.GAIN_STEP)
-        self.entry_analogGainFLPreset.setValue(10)
-        self.liveController.set_analog_gain_fl_preset(10)
+        # self.entry_analogGainFLPreset = QDoubleSpinBox()
+        # self.entry_analogGainFLPreset.setMinimum(self.camera.GAIN_MIN) 
+        # self.entry_analogGainFLPreset.setMaximum(self.camera.GAIN_MAX) 
+        # self.entry_analogGainFLPreset.setSingleStep(self.camera.GAIN_STEP)
+        # self.entry_analogGainFLPreset.setValue(10)
+        # self.liveController.set_analog_gain_fl_preset(10)
 
-        self.entry_exposureTimeFLPreviewPreset = QDoubleSpinBox()
-        self.entry_exposureTimeFLPreviewPreset.setMinimum(self.camera.EXPOSURE_TIME_MS_MIN)
-        self.entry_exposureTimeFLPreviewPreset.setMaximum(self.camera.EXPOSURE_TIME_MS_MAX)
-        self.entry_exposureTimeFLPreviewPreset.setSingleStep(1)
-        self.entry_exposureTimeFLPreviewPreset.setValue(20)
-        self.liveController.set_exposure_time_fl_preview_preset(20)
+        # self.entry_exposureTimeFLPreviewPreset = QDoubleSpinBox()
+        # self.entry_exposureTimeFLPreviewPreset.setMinimum(self.camera.EXPOSURE_TIME_MS_MIN)
+        # self.entry_exposureTimeFLPreviewPreset.setMaximum(self.camera.EXPOSURE_TIME_MS_MAX)
+        # self.entry_exposureTimeFLPreviewPreset.setSingleStep(1)
+        # self.entry_exposureTimeFLPreviewPreset.setValue(20)
+        # self.liveController.set_exposure_time_fl_preview_preset(20)
 
-        self.entry_analogGainFLPreviewPreset = QDoubleSpinBox()
-        self.entry_analogGainFLPreviewPreset.setMinimum(self.camera.GAIN_MIN) 
-        self.entry_analogGainFLPreviewPreset.setMaximum(self.camera.GAIN_MAX) 
-        self.entry_analogGainFLPreviewPreset.setSingleStep(self.camera.GAIN_STEP)
-        self.entry_analogGainFLPreviewPreset.setValue(24)
-        self.liveController.set_analog_gain_fl_preview_preset(24)
+        # self.entry_analogGainFLPreviewPreset = QDoubleSpinBox()
+        # self.entry_analogGainFLPreviewPreset.setMinimum(self.camera.GAIN_MIN) 
+        # self.entry_analogGainFLPreviewPreset.setMaximum(self.camera.GAIN_MAX) 
+        # self.entry_analogGainFLPreviewPreset.setSingleStep(self.camera.GAIN_STEP)
+        # self.entry_analogGainFLPreviewPreset.setValue(24)
+        # self.liveController.set_analog_gain_fl_preview_preset(24)
 
-        self.btn_brightFieldPreset = QPushButton("BF/DF Preset")
-        self.btn_brightFieldPreset.setDefault(False)
-        self.btn_fluorescencePreset = QPushButton("FL Preset")
-        self.btn_fluorescencePreset.setDefault(False)
-        self.btn_fluorescencePreviewPreset = QPushButton("FL Preview Preset")
-        self.btn_fluorescencePreviewPreset.setDefault(False)
+        self.btn_Preset = QPushButton("Preset")
+        self.btn_Preset.setDefault(False)
+   
 
         # connection
-        self.btn_brightFieldPreset.clicked.connect(self.load_bf_preset)
-        self.btn_fluorescencePreset.clicked.connect(self.load_fl_preset)
-        self.btn_fluorescencePreviewPreset.clicked.connect(self.load_fl_preview_preset)
+        self.btn_Preset.clicked.connect(self.load_preset)
+        
         self.entry_exposureTime.valueChanged.connect(self.camera.set_exposure_time)
         self.entry_analogGain.valueChanged.connect(self.camera.set_analog_gain)
-        self.entry_exposureTimeBFPreset.valueChanged.connect(self.liveController.set_exposure_time_bfdf_preset)
-        self.entry_analogGainBFPreset.valueChanged.connect(self.liveController.set_analog_gain_bfdf_preset)
-        self.entry_exposureTimeFLPreset.valueChanged.connect(self.liveController.set_exposure_time_fl_preset)
-        self.entry_analogGainFLPreset.valueChanged.connect(self.liveController.set_analog_gain_fl_preset)
-        self.entry_exposureTimeFLPreviewPreset.valueChanged.connect(self.liveController.set_exposure_time_fl_preview_preset)
-        self.entry_analogGainFLPreviewPreset.valueChanged.connect(self.liveController.set_analog_gain_fl_preview_preset)
-
+        self.entry_exposureTime_Preset.valueChanged.connect(self.liveController.set_exposure_time_bfdf_preset)
+        self.entry_analogGain_Preset.valueChanged.connect(self.liveController.set_analog_gain_bfdf_preset)
+        
         # layout
         grid_ctrl = QGridLayout()
         grid_ctrl.addWidget(QLabel('Exposure Time (ms)'), 0,0)
@@ -118,15 +110,10 @@ class CameraSettingsWidget(QFrame):
         grid_ctrl.addWidget(self.entry_analogGain, 1,1)
 
         grid_ctrl_preset = QGridLayout()
-        grid_ctrl_preset.addWidget(self.entry_exposureTimeBFPreset, 0,0)
-        grid_ctrl_preset.addWidget(self.entry_analogGainBFPreset, 0,1)
-        grid_ctrl_preset.addWidget(self.btn_brightFieldPreset, 0,2)
-        grid_ctrl_preset.addWidget(self.entry_exposureTimeFLPreset, 1,0)
-        grid_ctrl_preset.addWidget(self.entry_analogGainFLPreset, 1,1)
-        grid_ctrl_preset.addWidget(self.btn_fluorescencePreset, 1,2)
-        grid_ctrl_preset.addWidget(self.entry_exposureTimeFLPreviewPreset, 2,0)
-        grid_ctrl_preset.addWidget(self.entry_analogGainFLPreviewPreset, 2,1)
-        grid_ctrl_preset.addWidget(self.btn_fluorescencePreviewPreset, 2,2)
+        grid_ctrl_preset.addWidget(self.entry_exposureTime_Preset, 0,0)
+        grid_ctrl_preset.addWidget(self.entry_analogGain_Preset, 0,1)
+        grid_ctrl_preset.addWidget(self.btn_Preset, 0,2)
+      
 
         self.grid = QGridLayout()
         self.grid.addLayout(grid_ctrl,0,0)
@@ -134,23 +121,12 @@ class CameraSettingsWidget(QFrame):
 
         self.setLayout(self.grid)
 
-    def load_bf_preset(self):
-        self.entry_exposureTime.setValue(self.entry_exposureTimeBFPreset.value())
+    def load_preset(self):
+        self.entry_exposureTime.setValue(self.entry_exposureTime_Preset.value())
         self.entry_exposureTime.repaint() # update doesn't work
-        self.entry_analogGain.setValue(self.entry_analogGainBFPreset.value())
+        self.entry_analogGain.setValue(self.entry_analogGain_Preset.value())
         self.entry_analogGain.repaint()
 
-    def load_fl_preset(self):
-        self.entry_exposureTime.setValue(self.entry_exposureTimeFLPreset.value())
-        self.entry_exposureTime.repaint() # update doesn't work
-        self.entry_analogGain.setValue(self.entry_analogGainFLPreset.value())
-        self.entry_analogGain.repaint()
-
-    def load_fl_preview_preset(self):
-        self.entry_exposureTime.setValue(self.entry_exposureTimeFLPreviewPreset.value())
-        self.entry_exposureTime.repaint() # update doesn't work
-        self.entry_analogGain.setValue(self.entry_analogGainFLPreviewPreset.value())
-        self.entry_analogGain.repaint()
 
 class LiveControlWidget(QFrame):
     '''
@@ -204,7 +180,7 @@ class LiveControlWidget(QFrame):
         self.triggerMode = None
         self.dropdown_triggerMode = QComboBox()
         self.dropdown_triggerMode.addItems([TriggerMode.SOFTWARE,TriggerMode.HARDWARE,TriggerMode.CONTINUOUS])
-        self.dropdown_objectiveSelection.setCurrentText(TriggerMode.SOFTWARE)
+        self.dropdown_triggerMode.setCurrentText(TriggerMode.SOFTWARE)
 
 
 
