@@ -30,6 +30,8 @@ if __name__ == "__main__":
 	win.setStyleSheet(qss)
 
 	win.show()
+
 	app.exec_() #
 
 	sys.exit()
+

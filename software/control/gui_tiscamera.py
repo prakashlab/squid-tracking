@@ -20,7 +20,7 @@ import control.core as core
 import control.core_tracking as core_tracking
 import control.microcontroller_tracking as microcontroller_tracking
 
-SIMULATION = True
+SIMULATION = False
 
 class GravityMachineGUI(QMainWindow):
 
@@ -54,7 +54,8 @@ class GravityMachineGUI(QMainWindow):
 			self.microcontroller = microcontroller_tracking.Microcontroller()
 
 		else:
-			self.camera = {key:camera.Camera(sn=CAMERAS[key]['serial']) for key in self.imaging_channels}
+			self.camera = {key:camera.Camera(serial=CAMERAS[key]['serial'], width = CAMERAS[key]['px_format'][0], 
+				height = CAMERAS[key]['px_format'][1], framerate = CAMERAS[key]['fps']) for key in self.imaging_channels}
 			self.microcontroller = microcontroller_tracking.Microcontroller()
 		
 		self.internal_state = core_tracking.InternalState()
@@ -186,7 +187,15 @@ class GravityMachineGUI(QMainWindow):
 		# self.navigationController.zPos.connect(self.navigationWidget.label_Zpos.setNum)
 		#self.autofocusController.image_to_display.connect(self.imageDisplayWindow.display_image)
 		#self.multipointController.image_to_display.connect(self.imageDisplayWindow.display_image)
+		print('Starting image streams')
 
+		# self.start_imageStreams()
+		self.camera[TRACKING].start_streaming()
+
+
+		print('Started image streams!')
+
+	def start_imageStreams(self):
 		for key in self.imaging_channels:
 			self.camera[key].start_streaming()
 

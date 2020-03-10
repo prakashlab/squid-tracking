@@ -21,7 +21,7 @@ CameraProperty = namedtuple("CameraProperty", "status value min max default step
 
 class Camera(object):
 
-    def __init__(self,sn=None,width=640,height=480,framerate=30,color=False):
+    def __init__(self,serial=None,width=640,height=480,framerate=30,color=False):
         Gst.init(sys.argv)
         self.height = height
         self.width = width
@@ -33,6 +33,7 @@ class Camera(object):
         self.new_image_callback_external = None
         self.image_locked = False
         self.is_streaming = False
+        self.is_color = color
 
         self.GAIN_MAX = 480
         self.GAIN_MIN = 0
@@ -135,6 +136,7 @@ class Camera(object):
         return self.current_frame
 
     def _on_new_buffer(self, appsink):
+
         # Function that is called when a new sample from camera is available
         self.newsample = True
         # print('new buffer received: ' + str(time.time())) #@@@
@@ -169,8 +171,10 @@ class Camera(object):
 
     def _set_property(self, PropertyName, value):
         try:
-            print('setting ' + PropertyName + 'to ' + str(value))
-            self.source.set_tcam_property(PropertyName,GObject.Value(type(value),value))
+            print('setting ' + PropertyName + ' to ' + str(value))
+            self.source.set_tcam_property(PropertyName, GObject.Value(type(value),value))
+            print('Successfully set ' + PropertyName + ' to ' + str(value))
+
         except GLib.Error as error:
             print("Error set Property {0}: {1}",PropertyName, format(err))
             raise
@@ -192,6 +196,7 @@ class Camera(object):
              bpp),
             buffer=buf.extract_dup(0, buf.get_size()),
             dtype=numpy.uint8)
+
 
 class Camera_Simulation(object):
 
@@ -217,9 +222,9 @@ class Camera_Simulation(object):
         # Path for getting an image stream from disk
         # self.path = '/Users/deepak/Dropbox/GravityMachine/ExperimentResults/TestData/seacucmber4_auto_verylong_goodtrack/images'
         
-        self.path = '/Users/deepak/Dropbox/GravityMachine/ExperimentResults/TestData/Stentor'
+        # self.path = '/Users/deepak/Dropbox/GravityMachine/ExperimentResults/TestData/Stentor'
 
-        self.FileList = os.listdir(self.path)
+        # self.FileList = os.listdir(self.path)
     
 
     def open(self,index=0):

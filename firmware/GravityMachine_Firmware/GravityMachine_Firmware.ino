@@ -1785,7 +1785,7 @@ void liquid_lens_handler_timer_500us(){
       digitalWrite(triggerLED,HIGH);
     }
     // We want this trigger signal to be longer duration.
-    if (counter_timer_FL==500) 
+    if (counter_timer_FL==5) 
     {
       digitalWrite(triggerCamera_FL,LOW);
       digitalWrite(triggerLED,LOW);

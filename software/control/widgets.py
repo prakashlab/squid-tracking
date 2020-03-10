@@ -39,14 +39,14 @@ class CameraSettingsWidget(QFrame):
         self.entry_exposureTime.setMaximum(self.camera.EXPOSURE_TIME_MS_MAX) 
         self.entry_exposureTime.setSingleStep(1)
         self.entry_exposureTime.setValue(20)
-        self.camera.set_exposure_time(20)
+        # self.camera.set_exposure_time(20)
 
         self.entry_analogGain = QDoubleSpinBox()
         self.entry_analogGain.setMinimum(self.camera.GAIN_MIN) 
         self.entry_analogGain.setMaximum(self.camera.GAIN_MAX) 
         self.entry_analogGain.setSingleStep(self.camera.GAIN_STEP)
-        self.entry_analogGain.setValue(0)
-        self.camera.set_analog_gain(0)
+        self.entry_analogGain.setValue(10)
+        self.camera.set_analog_gain(10)
 
         self.entry_exposureTime_Preset = QDoubleSpinBox()
         self.entry_exposureTime_Preset.setMinimum(self.camera.EXPOSURE_TIME_MS_MIN)
