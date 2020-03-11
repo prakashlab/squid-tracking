@@ -40,11 +40,10 @@ class GravityMachineGUI(QMainWindow):
 		#------------------------------------------------------------------
 		# load other windows
 		#------------------------------------------------------------------
-		self.imageDisplayWindow = core.ImageDisplayWindow('Main Display', DrawCrossHairs = True)
-		self.imageDisplayWindow.show()
+		self.imageDisplayWindow = core.ImageDisplayWindow('Main Display', DrawCrossHairs = True, rotate_image_angle=90)
+		
 
-		self.imageDisplayWindow_ThresholdedImage = core.ImageDisplayWindow('Thresholded Image')
-		self.imageDisplayWindow_ThresholdedImage.show()
+		self.imageDisplayWindow_ThresholdedImage = core.ImageDisplayWindow('Thresholded Image', rotate_image_angle=90)
 
 		#------------------------------------------------------------------
 		# load objects
@@ -189,6 +188,12 @@ class GravityMachineGUI(QMainWindow):
 		# self.navigationController.zPos.connect(self.navigationWidget.label_Zpos.setNum)
 		#self.autofocusController.image_to_display.connect(self.imageDisplayWindow.display_image)
 		#self.multipointController.image_to_display.connect(self.imageDisplayWindow.display_image)
+
+		# Show sub-windows:
+		self.imageDisplayWindow.show()
+		self.imageDisplayWindow_ThresholdedImage.show()
+
+
 		print('Starting image streams')
 
 		# self.start_imageStreams()

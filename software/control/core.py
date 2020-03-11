@@ -639,7 +639,7 @@ class ImageDisplay(QObject):
 # from gravity machine
 class ImageDisplayWindow(QMainWindow):
 
-    def __init__(self, window_title='', DrawCrossHairs = False):
+    def __init__(self, window_title='', DrawCrossHairs = False, rotate_image_angle = 0, flip_image = None):
         super().__init__()
         self.setWindowTitle(window_title)
         self.setWindowFlags(self.windowFlags() | Qt.CustomizeWindowHint)
@@ -668,6 +668,9 @@ class ImageDisplayWindow(QMainWindow):
 
         self.image_offset = np.array([0, 0])
 
+        # Image rotations and flipping
+        self.rotate_image_angle = rotate_image_angle
+        self.flip_image = flip_image
 
         layout = QGridLayout()
         layout.addWidget(self.graphics_widget, 0, 0) 
@@ -696,6 +699,33 @@ class ImageDisplayWindow(QMainWindow):
 
                 cv2.line(image, self.horLine_pt1, self.horLine_pt2, (255,255,255), thickness=1, lineType=8, shift=0) 
                 cv2.line(image, self.verLine_pt1, self.verLine_pt2, (255,255,255), thickness=1, lineType=8, shift=0) 
+        
+        if(self.rotate_image_angle != 0):
+            '''
+                # ROTATE_90_CLOCKWISE
+                # ROTATE_90_COUNTERCLOCKWISE
+            '''
+            if(self.rotate_image_angle == 90):
+                image = cv2.rotate(image,cv2.ROTATE_90_CLOCKWISE)
+            elif(self.rotate_image_angle == -90):
+                image = cv2.rotate(image,cv2.ROTATE_90_COUNTERCLOCKWISE)
+
+        if(self.flip_image is not None):
+            '''
+                flipcode = 0: flip vertically
+                flipcode > 0: flip horizontally
+                flipcode < 0: flip vertically and horizontally
+            '''
+            if(self.flip_image == 'Vertical'):
+                image = cv2.flip(image, 0)
+            elif(self.flip_image == 'Horizontal'):
+                image = cv2.flip(image, 1)
+            elif(self.flip_image == 'Both'):
+                image = cv2.flip(image, -1)
+
+
+     
+
 
         self.graphics_widget.img.setImage(image,autoLevels=False)
         # print('In ImageDisplayWindow display image')

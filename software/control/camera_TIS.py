@@ -220,11 +220,11 @@ class Camera_Simulation(object):
         self.EXPOSURE_TIME_MS_MAX = 4000
 
         # Path for getting an image stream from disk
-        # self.path = '/Users/deepak/Dropbox/GravityMachine/ExperimentResults/TestData/seacucmber4_auto_verylong_goodtrack/images'
+        self.path = '/Users/deepak/Dropbox/GravityMachine/ExperimentResults/TestData/seacucmber4_auto_verylong_goodtrack/images'
         
         # self.path = '/Users/deepak/Dropbox/GravityMachine/ExperimentResults/TestData/Stentor'
-
-        # self.FileList = os.listdir(self.path)
+        if(os.path.exists(self.path)):
+            self.FileList = os.listdir(self.path)
     
 
     def open(self,index=0):
@@ -279,7 +279,7 @@ class Camera_Simulation(object):
         self.timestamp = time.time()
         if self.frame_ID == 1:
             self.current_frame = np.random.randint(50,size=(2000,2000),dtype=np.uint8)
-            self.current_frame[500:600,950:1050] = 200
+            self.current_frame[500:600,500:600] = 200
         else:
             # self.current_frame = np.roll(self.current_frame,10,axis=0)
             pass 

@@ -169,6 +169,7 @@ class TrackingController(QObject):
 
 		FocusPhase = self.internal_state.data['FocusPhase']
 
+		# Stage positions in mm
 		X_stage, Y_stage, Theta_stage = self.internal_state.data['X_stage'], self.internal_state.data['Y_stage'], self.internal_state.data['Theta_stage']
 
 		tracking_triggered = self.internal_state.data['track_obj_image_hrdware']
@@ -275,6 +276,8 @@ class TrackingController(QObject):
 				# x_error, z_error are in mm
 				x_error, z_error = self.units_converter.px_to_mm(self.posError_image[0], self.image_width), self.units_converter.px_to_mm(self.posError_image[1], self.image_width), 
 
+				# Flip the sign of Z-error since image coordinates and physical coordinates are reversed.
+				z_error = -z_error
 
 				# get the object location along the optical axis. 
 				# Is the object position necessary for this? Alternatively we can pass the centroid
@@ -381,9 +384,10 @@ class TrackingController(QObject):
 		self.Theta_stage.append(Theta)
 
 	def update_image_position(self):
-		# Object position relative to image center
-		self.X_image.append(self.centroid[0] - self.image_center[0])
-		self.Z_image.append(self.centroid[1] - self.image_center[1])
+		# Object position relative to image center (in mm)
+		self.X_image.append(self.units_converter.px_to_mm(self.centroid[0] - self.image_center[0], self.image_width))
+		self.Z_image.append(self.units_converter.px_to_mm(self.centroid[1] - self.image_center[1], self.image_width))
+
 
 	def update_obj_position(self):
 

@@ -248,15 +248,15 @@ class NavigationWidget(QFrame):
 
 		# Stage position display 
 
-		self.pos_X_label = pg.ValueLabel(siPrefix=True)
+		self.pos_X_label = pg.ValueLabel(siPrefix=True, suffix = 'm')
 		self.pos_X_label.setValue(0)
 
 
-		self.pos_Y_label = pg.ValueLabel(siPrefix=True)
+		self.pos_Y_label = pg.ValueLabel(siPrefix=True, suffix = 'm')
 		self.pos_Y_label.setValue(0)
 	
 
-		self.pos_Theta_label = pg.ValueLabel(siPrefix=True)
+		self.pos_Theta_label = pg.ValueLabel(siPrefix=True, suffix = 'rad')
 		self.pos_Theta_label.setValue(0)
 
 
