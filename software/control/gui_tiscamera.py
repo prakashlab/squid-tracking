@@ -9,6 +9,8 @@ from qtpy.QtCore import *
 from qtpy.QtWidgets import *
 from qtpy.QtGui import *
 
+QApplication.setAttribute(Qt.AA_EnableHighDpiScaling, True) #enable highdpi scaling
+QApplication.setAttribute(Qt.AA_UseHighDpiPixmaps, True) #use highdpi icons
 
 # Definitions
 from control._def import *
@@ -20,7 +22,7 @@ import control.core as core
 import control.core_tracking as core_tracking
 import control.microcontroller_tracking as microcontroller_tracking
 
-SIMULATION = False
+SIMULATION = True
 
 class GravityMachineGUI(QMainWindow):
 
