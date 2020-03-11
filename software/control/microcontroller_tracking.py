@@ -13,7 +13,7 @@ class Microcontroller():
     def __init__(self,parent=None):
         self.serial = None
         self.platform_name = platform.system()
-        self.tx_buffer_length = 11
+        self.tx_buffer_length = 12
         self.rx_buffer_length = 19
 
         self.ReceivedData = {key:[] for key in REC_DATA}
@@ -22,7 +22,7 @@ class Microcontroller():
         arduino_ports = [
                 p.device
                 for p in serial.tools.list_ports.comports()
-                if 'Arduino' or'usbmodem' in p.description]
+                if 'Arduino' in p.description]
 
         print(arduino_ports)
 
@@ -50,7 +50,7 @@ class Microcontroller():
             print('\n ------------Communication established with the Arduino------------\n')
             cmd=bytearray(1)
             cmd[0]=2
-            self.serialconn.write(cmd)
+            self.serial.write(cmd)
 
         second_number = ord(self.serial.read())
             
@@ -63,41 +63,59 @@ class Microcontroller():
 
 
     def send_command(self,command):
+        
+        print('Sending data to uController')
+        print(command)
+
         cmd = bytearray(self.tx_buffer_length)
         
-        cmd[0],cmd[1] = self.split_int_2byte(round(command[0]*100))                #liquid_lens_freq
+        cmd[0],cmd[1] = split_int_2byte(round(command[0]*100))                #liquid_lens_freq
         cmd[2] = int(command[1])                                                   # Focus-Tracking ON or OFF
         cmd[3] = int(command[2])                                                   #Homing
         cmd[4] = int(command[3])                                                   #tracking
-        cmd[5],cmd[6] = self.split_signed_int_2byte(round(command[4]*100))         #Xerror
-        cmd[7],cmd[8] = self.split_signed_int_2byte(round(command[5]*100))         #Yerror                           
-        cmd[9],cmd[10] = self.split_signed_int_2byte(round(command[6]*100))        #Zerror
-      
+        cmd[5],cmd[6] = split_signed_int_2byte(round(command[4]*100))         #Xerror
+        cmd[7],cmd[8] = split_signed_int_2byte(round(command[5]*100))         #Yerror                           
+        cmd[9],cmd[10] = split_signed_int_2byte(round(command[6]*100))        #Zerror
+        cmd[11] = int(command[7])                                             # Stage-zero command    
         
+        print('Zero stage : {}'.format(cmd[11]))
+
         self.serial.write(cmd)
 
     def read_received_packet(self):
+
+        # self.serial.reset_input_buffer()
         # wait to receive data
-        while self.serialconn.in_waiting==0:
+        while self.serial.in_waiting==0:
+            print(self.serial.in_waiting)
+            print('wait for data to arrive:1')
             pass
-        while self.serialconn.in_waiting % self.rx_buffer_length != 0:
+
+        while self.serial.in_waiting % self.rx_buffer_length != 0:
+            print(self.serial.in_waiting)
+            print('wait for data to arrive:2')
             pass
+        
 
         num_bytes_in_rx_buffer = self.serial.in_waiting
 
+        # print("number of bytes in the Rx buffer: " + str(num_bytes_in_rx_buffer))
+
         # get rid of old data
         if num_bytes_in_rx_buffer > self.rx_buffer_length:
-            print('getting rid of old data')
+            # print('getting rid of old data')
             for i in range(num_bytes_in_rx_buffer-self.rx_buffer_length):
                 self.serial.read()
+
+        
         
         # read the buffer
         data=[]
         for i in range(self.rx_buffer_length):
-            data.append(ord(self.serialconn.read()))
+            data.append(ord(self.serial.read()))
 
         
-        self.ReceivedData['FocusPhase']  = self.data2byte_to_int(data[0],data[1])*2*np.pi/65535.
+        self.ReceivedData['FocusPhase']  = data2byte_to_int(data[0],data[1])*2*np.pi/65535.
         self.ReceivedData['X_stage']  = data[3]*2**24 + data[4]*2**16+data[5]*2**8 + data[6]
         if data[2]==1:
             self.ReceivedData['X_stage'] = -self.ReceivedData['X_stage']
@@ -109,7 +127,16 @@ class Microcontroller():
             self.ReceivedData['Theta_stage'] = -self.ReceivedData['Theta_stage']
         self.ReceivedData['track_obj_stage'] = data[17]
 
-        self.ReceivedData['track_obj_image'] = bool(data[18])
+        self.ReceivedData['track_obj_image_hrdware'] = bool(data[18])
+
+        # print('Focus phase: {}'.format(self.ReceivedData['FocusPhase']))
+        # print('X-stage: {}'.format(self.ReceivedData['X_stage']))
+        # print('Y-stage: {}'.format(self.ReceivedData['Y_stage']))
+        # print('Theta-stage: {}'.format(self.ReceivedData['Theta_stage']))
+        # print('Track stage: {}'.format(self.ReceivedData['track_obj_stage']))
+        # print('Track image: {}'.format(self.ReceivedData['track_obj_image_hrdware']))
+
+
 
         
 
