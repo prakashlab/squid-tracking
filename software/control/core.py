@@ -34,7 +34,7 @@ from datetime import datetime
 class StreamHandler(QObject):
     ''' Signals 
     '''
-    image_to_display = Signal(np.ndarray, bool)
+    image_to_display = Signal(np.ndarray, str)
     thresh_image_to_display = Signal(np.ndarray)
     packet_image_to_write = Signal(np.ndarray, int, float)
     packet_image_for_tracking = Signal(np.ndarray, np.ndarray)
@@ -56,7 +56,7 @@ class StreamHandler(QObject):
 
     '''
 
-    def __init__(self, camera = None , crop_width=3000,crop_height=3000,working_resolution_scaling = 0.5, trackingStream = True):
+    def __init__(self, camera = None , crop_width=3000,crop_height=3000,working_resolution_scaling = 1, imaging_channel = TRACKING):
         QObject.__init__(self)
         self.fps_display = 1
         self.fps_save = 1
@@ -81,7 +81,7 @@ class StreamHandler(QObject):
         self.save_image_flag = False
 
         # If current image stream is used for tracking.
-        self.trackingStream = trackingStream
+        self.imaging_channel = imaging_channel
 
         self.track_flag = False
 
@@ -205,16 +205,21 @@ class StreamHandler(QObject):
         # save a copy of full-res image for saving (make sure to do a deep copy)
         # @@@@@@@@@
 
-        # image_resized = cv2.resize(image,(round(self.crop_width*self.working_resolution_scaling), round(self.crop_height*self.working_resolution_scaling)),cv2.INTER_LINEAR)
-        image_resized = imutils.resize(image, self.working_image_width)
+        
+        if(self.imaging_channel == TRACKING):
+            # image_resized = cv2.resize(image,(round(self.crop_width*self.working_resolution_scaling), round(self.crop_height*self.working_resolution_scaling)),cv2.INTER_LINEAR)
+            image_resized = imutils.resize(image, self.working_image_width)
 
-        # Threshold the image based on the color-thresholds
-        image_thresh = 255*np.array(self.threshold_image(image_resized, color = camera.is_color), dtype = 'uint8')
+            # Threshold the image based on the color-thresholds
+            image_thresh = 255*np.array(self.threshold_image(image_resized, color = camera.is_color), dtype = 'uint8')
 
+        else:
+
+            image_resized = np.copy(image)
         
         # Deepak: For now tracking with every image from camera
         time_now = time.time() 
-        if self.track_flag and self.trackingStream:
+        if self.track_flag and self.imaging_channel == TRACKING:
             # track is a blocking operation - it needs to be
             # @@@ will cropping before emitting the signal lead to speedup?
 
@@ -225,25 +230,23 @@ class StreamHandler(QObject):
         time_now = time.time()
         if time_now - self.timestamp_last_display >= 1/self.fps_display:
 
-            
-
             if camera.is_color:
                 image_resized = cv2.cvtColor(image_resized,cv2.COLOR_RGB2BGR)
 
-            self.image_to_display.emit(image_resized, self.trackingStream)
+            # print('Displaying image for {} channel'.format(self.imaging_channel))
             
-            # Send thresholded image to display
-            self.thresh_image_to_display.emit(image_thresh)
+            self.image_to_display.emit(image_resized, self.imaging_channel)
+            
+            if(self.imaging_channel == TRACKING):
+                # Send thresholded image to display (only for tracking stream)
+                self.thresh_image_to_display.emit(image_thresh)
+                self.signal_working_resolution.emit(self.working_image_width)
             
             self.timestamp_last_display = time_now
 
             self.get_real_display_fps()
 
-            self.signal_working_resolution.emit(self.working_image_width)
-
-
             
-
         # send image to write
         time_now = time.time()
         if self.save_image_flag and time_now-self.timestamp_last_save >= 1/self.fps_save:
@@ -587,7 +590,7 @@ class NavigationController(QObject):
 
 class ImageDisplay(QObject):
 
-    image_to_display = Signal(np.ndarray, bool)
+    image_to_display = Signal(np.ndarray, str)
 
     def __init__(self):
         QObject.__init__(self)
@@ -604,11 +607,11 @@ class ImageDisplay(QObject):
                 return
             # process the queue
             try:
-                [image, frame_ID, timestamp, trackingStream] = self.queue.get(timeout=0.1)
+                [image, frame_ID, timestamp, imaging_channel] = self.queue.get(timeout=0.1)
            
                 self.image_lock.acquire(True)
-                # Send image and trackingStream
-                self.image_to_display.emit(image, trackingStream)
+                # Send image and imaging_channel
+                self.image_to_display.emit(image, imaging_channel)
                
                 self.image_lock.release()
                 self.queue.task_done()
@@ -621,7 +624,7 @@ class ImageDisplay(QObject):
     def enqueue(self,image, trackingStream = False):
         try:
             # print('In image display queue')
-            self.queue.put_nowait([image, None, None, trackingStream])
+            self.queue.put_nowait([image, None, None, imaging_channel])
             # when using self.queue.put(str_) instead of try + nowait, program can be slowed down despite multithreading because of the block and the GIL
         
         except:
@@ -677,9 +680,9 @@ class ImageDisplayWindow(QMainWindow):
         self.widget.setLayout(layout)
         self.setCentralWidget(self.widget)
 
-    def display_image(self,image, trackingStream = False):
+    def display_image(self,image, imaging_channel = TRACKING):
         
-        if(trackingStream):
+        if(imaging_channel == TRACKING):
 
 
             if(self.DrawRect):

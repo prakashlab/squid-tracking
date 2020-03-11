@@ -551,7 +551,7 @@ void loop()
   ManualModePrev = ManualMode;
   ManualMode = digitalRead(ManualPin);
 
-//  ManualMode = LOW;
+  ManualMode = LOW;
   
   currMillisRec = millis();
   sensitivityChange=LOW;
@@ -699,7 +699,7 @@ void loop()
 //    CurrPos_X_code = CurrPos_X;  //right sens of the motor
     // When a closed-loop encoder is implemented
     // Testing
-//    x_EncoderTicks = CurrPos_X;
+    x_EncoderTicks = CurrPos_X;
     CurrPos_X_code = x_EncoderTicks;  //right sens of the motor
     if (CurrPos_X_code>0){
       buffer_tx[2] = byte(int(0));
@@ -715,7 +715,7 @@ void loop()
 
     // CurrPos_Y_code= CurrPos_Y;  //right sens of the motor
     
-//    y_EncoderTicks = CurrPos_Y;
+    y_EncoderTicks = CurrPos_Y;
     CurrPos_Y_code = y_EncoderTicks;
 
     if (CurrPos_Y_code>0){
@@ -730,7 +730,7 @@ void loop()
     buffer_tx[10] = byte(CurrPos_Y_code>>8);
     buffer_tx[11] = byte(CurrPos_Y_code%256);
     
-//    theta_EncoderTicks = CurrPos_Theta;
+    theta_EncoderTicks = CurrPos_Theta;
     
     CurrPos_Theta_code = theta_EncoderTicks;
     if(CurrPos_Theta_code>0) 
