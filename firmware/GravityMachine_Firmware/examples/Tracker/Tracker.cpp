@@ -168,7 +168,7 @@ const double pi = 3.1415926535897;
 //--------------------------------------------------
 // Serial communication
 //--------------------------------------------------
-# define CMD_LENGTH 11
+# define CMD_LENGTH 12
 # define DATA_TX_LENGTH 19
 //=================================================================================
 // Stage Movement/Physical Variables
@@ -231,6 +231,9 @@ bool Xpos, Xneg, Ypos, Yneg, Zpos, Zneg, Thetapos, Thetaneg, ManualInput, Manual
 bool  _xLim_1=LOW, _xLim_2 = LOW, _yLim_1 = LOW, _yLim_2 = LOW, _zLim_1 = LOW, _zLim_2 = LOW, _xLim = LOW;
 bool _xLim_1_prev = LOW, _xLim_2_prev = LOW, _yLim_1_prev = LOW, _yLim_2_prev = LOW,_zLim_1_prev = LOW,_zLim_2_prev = LOW;
 bool _xFlip = LOW, _yFlip=LOW, _zFlip = LOW, _xLimPos=LOW, _xLimNeg = LOW, _yLimPos=LOW, _yLimNeg = LOW, _zLimPos=LOW, _zLimNeg = LOW ;
+
+// Stage-zeroing state variables
+int Zero_stage =0;
 
 
 volatile bool x_EncoderASet;
@@ -349,6 +352,80 @@ AccelStepper stepperTHETA(AccelStepper::DRIVER, STEP_THETA, DIR_THETA);
 // Z stepper
 AccelStepper stepperZ(AccelStepper::DRIVER, STEP_Z, DIR_Z);
 
+// -------------------------------------------------------------------------------
+//                 Update camera trigger and acquisition parameters
+//-------------------------------------------------------------------------------
+
+void updateNumTimerCycles()
+{
+  numTimerCycles_FL = 1000000*sample_interval_FL/(100*timerPeriod);
+  
+}
+
+// Stage-zeroing functions
+void Zero_Stage_X()
+{
+
+  x_EncoderTicks = 0;
+  CurrPos_X = 0;
+  CurrPos_X_Stepper = 0;
+  PrevPos_X_Stepper = 0;
+  stepperX.setCurrentPosition(0);
+
+  
+}
+void Zero_Stage_Y()
+{
+  y_EncoderTicks = 0;
+  CurrPos_Y = 0;
+  CurrPos_Y_Stepper = 0;
+  PrevPos_Y_Stepper = 0;
+  stepperY.setCurrentPosition(0);
+
+
+}
+void Zero_Stage_Theta()
+{
+  theta_EncoderTicks = 0;
+  CurrPos_Theta = 0;
+  CurrPos_Theta_Stepper = 0;
+  PrevPos_Theta_Stepper = 0;
+  stepperTHETA.setCurrentPosition(0);
+
+}
+
+
+//-------------------------------------------------------------------------------
+//                       Homing functions
+//-------------------------------------------------------------------------------
+// Reset the encoders position
+void setEncoderZero()
+{
+    x_EncoderTicks = 0;
+    y_EncoderTicks = 0;
+    theta_EncoderTicks = 0;
+    z_EncoderTicks = 0;
+}
+
+// Reset the current Stepper position to the new zero position
+void setStepperZero()
+{
+    stepperX.setCurrentPosition(0);
+    stepperY.setCurrentPosition(0);
+    stepperZ.setCurrentPosition(0);
+    
+    CurrPos_X_Stepper = 0;
+    CurrPos_Y_Stepper = 0;
+    CurrPos_Z_Stepper = 0;
+    
+    PrevPos_X_Stepper = 0;
+    PrevPos_Y_Stepper = 0;
+    PrevPos_Z_Stepper = 0;
+    
+    CurrPos_X = 0;
+    CurrPos_Y = 0;
+    CurrPos_Z = 0;
+}
 
 //-------------------------------------------------------------------------------
 // Update the pin and the msi variable for a given microstepping and a given motor
@@ -394,49 +471,6 @@ void setMS123(int microstep,char motor){
     ms1_Z = MS1; ms2_Z = MS2; ms3_Z = MS3;
     digitalWrite(MS1_Z, ms1_Z);digitalWrite(MS2_Z, ms2_Z);digitalWrite(MS3_Z, ms3_Z);
   }
-}
-
-// -------------------------------------------------------------------------------
-//                 Update camera trigger and acquisition parameters
-//-------------------------------------------------------------------------------
-
-void updateNumTimerCycles()
-{
-  numTimerCycles_FL = 1000000*sample_interval_FL/(100*timerPeriod);
-  
-}
-
-
-//-------------------------------------------------------------------------------
-//                       Homing functions
-//-------------------------------------------------------------------------------
-// Reset the encoders position
-void setEncoderZero()
-{
-    x_EncoderTicks = 0;
-    y_EncoderTicks = 0;
-    theta_EncoderTicks = 0;
-    z_EncoderTicks = 0;
-}
-
-// Reset the current Stepper position to the new zero position
-void setStepperZero()
-{
-    stepperX.setCurrentPosition(0);
-    stepperY.setCurrentPosition(0);
-    stepperZ.setCurrentPosition(0);
-    
-    CurrPos_X_Stepper = 0;
-    CurrPos_Y_Stepper = 0;
-    CurrPos_Z_Stepper = 0;
-    
-    PrevPos_X_Stepper = 0;
-    PrevPos_Y_Stepper = 0;
-    PrevPos_Z_Stepper = 0;
-    
-    CurrPos_X = 0;
-    CurrPos_Y = 0;
-    CurrPos_Z = 0;
 }
 
 // Reset homing State variables
@@ -745,6 +779,7 @@ int MS123_to_microstepp(bool MS1, bool MS2, bool MS3)   //microSteppingLUT
   }
 }
 
+
 //-------------------------------------------------------------------------------
 //              Function for the joystick's sensitivity slider (X & Z)
 //-------------------------------------------------------------------------------
@@ -857,7 +892,6 @@ void setMicroStepsYfocus(int YfocusSensitivity)
    setMS123(microSteps_Y,'Y');
 
 }
-
 
 int Decoder(bool EncoderAPrev, bool EncoderBPrev, bool EncoderASet, bool EncoderBSet)
 {
@@ -1107,7 +1141,7 @@ void liquid_lens_handler_timer_500us(){
       digitalWrite(triggerLED,HIGH);
     }
     // We want this trigger signal to be longer duration.
-    if (counter_timer_FL==500) 
+    if (counter_timer_FL==5) 
     {
       digitalWrite(triggerCamera_FL,LOW);
       digitalWrite(triggerLED,LOW);
@@ -1124,7 +1158,6 @@ void liquid_lens_handler_timer_500us(){
 void HandleOptotuneSYNCInterrupt() {
   phase = pi/2.0;
 }
-
 
 //%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 //-------------------------------------------------------------------------------
@@ -1324,6 +1357,9 @@ void loop()
 {
   ManualModePrev = ManualMode;
   ManualMode = digitalRead(ManualPin);
+
+  ManualMode = LOW;
+  
   currMillisRec = millis();
   sensitivityChange=LOW;
 
@@ -1460,6 +1496,7 @@ void loop()
   // Serial sending block (Send data to computer)
   //-------------------------------------------------------------------------------
   // uController only sends data when image is triggered.
+ 
   if (sendData){
     
     buffer_tx[0] = byte(phase_code_lastTrigger%256);
@@ -1468,6 +1505,8 @@ void loop()
     // When only open-loop position is available
 //    CurrPos_X_code = CurrPos_X;  //right sens of the motor
     // When a closed-loop encoder is implemented
+    // Testing
+    x_EncoderTicks = CurrPos_X;
     CurrPos_X_code = x_EncoderTicks;  //right sens of the motor
     if (CurrPos_X_code>0){
       buffer_tx[2] = byte(int(0));
@@ -1482,6 +1521,8 @@ void loop()
     buffer_tx[6] = byte(CurrPos_X_code%256);
 
     // CurrPos_Y_code= CurrPos_Y;  //right sens of the motor
+    
+    y_EncoderTicks = CurrPos_Y;
     CurrPos_Y_code = y_EncoderTicks;
 
     if (CurrPos_Y_code>0){
@@ -1496,8 +1537,9 @@ void loop()
     buffer_tx[10] = byte(CurrPos_Y_code>>8);
     buffer_tx[11] = byte(CurrPos_Y_code%256);
     
+    theta_EncoderTicks = CurrPos_Theta;
     
-    CurrPos_Theta_code=theta_EncoderTicks;
+    CurrPos_Theta_code = theta_EncoderTicks;
     if(CurrPos_Theta_code>0) 
     {
       buffer_tx[12] = byte(int(0));
@@ -1512,8 +1554,8 @@ void loop()
     buffer_tx[14] = byte(CurrPos_Theta_code>>16);
     buffer_tx[15] = byte(CurrPos_Theta_code>>8);
     buffer_tx[16] = byte(CurrPos_Theta_code%256);
-
-    buffer_tx[17] = byte(ManualMode);
+    
+    buffer_tx[17] = byte(!ManualMode);
 
     // tracking trigger
     buffer_tx[18] = byte(!digitalRead(triggerTrack));
@@ -1560,7 +1602,8 @@ void loop()
 
   //Data reception: the data is read at the frequency of the computer
    
-   if(SerialUSB.available()){
+   if(SerialUSB.available())
+   {
       buffer_rx_ptr=0;
       int cyclesElapsed = 0;
       while(buffer_rx_ptr < CMD_LENGTH ){ 
@@ -1614,6 +1657,24 @@ void loop()
           Step_Theta = Step_Theta - 65536;
         }
         Step_Theta= Step_Theta/100;
+
+        Zero_stage = int(buffer_rx[11]); 
+
+
+        if(Zero_stage == 1)
+        {
+          Zero_Stage_X();
+        }
+        else if(Zero_stage == 2)
+        {
+          Zero_Stage_Y();
+        }
+        else if(Zero_stage == 3)
+        {
+          Zero_Stage_Theta();
+          
+        }
+  
         
       
 
@@ -1645,9 +1706,19 @@ void loop()
           }
         }
       }
+
+
+     
+      
     }
 
+  
+    
 
+    
+   // For testing
+//    Homing = 0;
+    
     if (Homing==1 || inProgress == true)
   {
 

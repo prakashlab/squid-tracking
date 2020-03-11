@@ -339,12 +339,16 @@ class LiveControlWidget(QFrame):
     #     self.liveController.set_microscope_mode(self.dropdown_modeSelection.currentText())
 
 class RecordingWidget(QFrame):
-    def __init__(self, streamHandler, imageSaver, internal_state, trackingDataSaver = None, main=None, *args, **kwargs):
+    def __init__(self, streamHandler, imageSaver, internal_state, trackingDataSaver = None, imaging_channels = TRACKING, main=None, *args, **kwargs):
         super().__init__(*args, **kwargs)
+        
+        # In general imageSaver, streamHandler are dicts corresponding to each image_channel
         self.imageSaver = imageSaver # for saving path control
         self.streamHandler = streamHandler
         self.internal_state = internal_state 
         self.trackingDataSaver = trackingDataSaver
+        self.imaging_channels = imaging_channels
+
         self.base_path_is_set = False
         self.add_components()
         self.setFrameStyle(QFrame.Panel | QFrame.Raised)
@@ -359,6 +363,13 @@ class RecordingWidget(QFrame):
         self.lineEdit_savingDir.setText('Choose a base saving directory')
 
         self.lineEdit_experimentID = QLineEdit()
+
+        # Check-boxes to select the image channels to save
+        
+        self.checkbox = {key: QCheckBox(key) for key in self.imaging_channels}
+        
+    
+
 
         self.entry_saveFPS = QDoubleSpinBox()
         self.entry_saveFPS.setMinimum(0.02) 
