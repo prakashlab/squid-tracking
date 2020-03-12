@@ -840,6 +840,7 @@ class TrackingDataSaver(QObject):
 
 		# Update the internal_state to indicate that object should be tracked using image proc
 		self.internal_state.data['track_obj_image'] = True
+		
 		print('Set track_obj_image to : {}'.format(self.internal_state.data['track_obj_image']))
 		
 

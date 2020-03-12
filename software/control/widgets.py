@@ -349,6 +349,9 @@ class RecordingWidget(QFrame):
         self.trackingDataSaver = trackingDataSaver
         self.imaging_channels = imaging_channels
 
+        self.tracking_flag = False
+        self.recordingOnly_flag = False
+
         self.base_path_is_set = False
         self.add_components()
         self.setFrameStyle(QFrame.Panel | QFrame.Raised)
@@ -364,25 +367,41 @@ class RecordingWidget(QFrame):
 
         self.lineEdit_experimentID = QLineEdit()
 
+        self.checkbox = {}
+        self.entry_saveFPS = {}
+        self.actual_saveFPS = {}
+        self.entry_timeLimit = {}
+
         # Check-boxes to select the image channels to save
+        for channel in self.imaging_channels:
+
+            self.checkbox[channel] = QCheckBox(channel)
+
+            # SpinBox for specifying save FPS of each stream
+
+            self.entry_saveFPS[channel] = QDoubleSpinBox()
+            self.entry_saveFPS[channel].setMinimum(0.02) 
+            self.entry_saveFPS[channel].setMaximum(200) 
+            self.entry_saveFPS[channel].setSingleStep(1)
+            self.entry_saveFPS[channel].setValue(1)
+            self.streamHandler[channel].set_save_fps(1)
+
+            # LCD for displaying the actual save FPS
+            self.actual_saveFPS[channel] = QLCDNumber()
+            self.actual_saveFPS[channel].setNumDigits(4)
+            self.actual_saveFPS[channel].display(0.0)
+
+            # SpinBox for specifying recording time limit for each stream
+            self.entry_timeLimit[channel] = QSpinBox()
+            self.entry_timeLimit[channel].setMinimum(-1) 
+            self.entry_timeLimit[channel].setMaximum(60*60*24*30) 
+            self.entry_timeLimit[channel].setSingleStep(1)
+            self.entry_timeLimit[channel].setValue(-1)
+
         
-        self.checkbox = {key: QCheckBox(key) for key in self.imaging_channels}
-        
-    
 
-
-        self.entry_saveFPS = QDoubleSpinBox()
-        self.entry_saveFPS.setMinimum(0.02) 
-        self.entry_saveFPS.setMaximum(200) 
-        self.entry_saveFPS.setSingleStep(1)
-        self.entry_saveFPS.setValue(1)
-        self.streamHandler.set_save_fps(1)
-
-        self.entry_timeLimit = QSpinBox()
-        self.entry_timeLimit.setMinimum(-1) 
-        self.entry_timeLimit.setMaximum(60*60*24*30) 
-        self.entry_timeLimit.setSingleStep(1)
-        self.entry_timeLimit.setValue(-1)
+        self.radioButton_tracking = QRadioButton("Track+Record")
+        self.radioButton_recording = QRadioButton("Record")
 
         self.btn_record = QPushButton("Record")
         self.btn_record.setCheckable(True)
@@ -398,17 +417,45 @@ class RecordingWidget(QFrame):
         grid_line2.addWidget(QLabel('Experiment ID'), 0,0)
         grid_line2.addWidget(self.lineEdit_experimentID,0,1)
 
-        grid_line3 = QGridLayout()
-        grid_line3.addWidget(QLabel('Saving FPS'), 0,0)
-        grid_line3.addWidget(self.entry_saveFPS, 0,1)
-        grid_line3.addWidget(QLabel('Time Limit (s)'), 0,2)
-        grid_line3.addWidget(self.entry_timeLimit, 0,3)
-        grid_line3.addWidget(self.btn_record, 0,4)
+
+        self.tracking_recording_group = QGroupBox()
+
+        tracking_recording_layout = QHBoxLayout()
+        tracking_recording_layout.addWidget(self.btn_record)
+        tracking_recording_layout.addWidget(self.radioButton_tracking)
+        tracking_recording_layout.addWidget(self.radioButton_recording)
+
+        self.tracking_recording_group.setLayout(tracking_recording_layout)
+
+
+        
+        imaging_channel_box = QGroupBox('Imaging channels')
+
+        box_layout = QGridLayout()
+
+        box_layout.addWidget(QLabel('Channel'), 0,0,1,1)
+        box_layout.addWidget(QLabel('Save FPS'), 0,1,1,1)
+        box_layout.addWidget(QLabel('Actual FPS'), 0,2,1,1)
+        box_layout.addWidget(QLabel('Time limit'), 0,3,1,1)
+
+        for row, channel in enumerate(self.imaging_channels):
+            box_layout.addWidget(self.checkbox[channel], row+1, 0, 1, 1)
+            box_layout.addWidget(self.entry_saveFPS[channel], row+1, 1, 1, 1)
+            box_layout.addWidget(self.actual_saveFPS[channel], row+1, 2, 1, 1)
+            box_layout.addWidget(self.entry_timeLimit[channel], row+1, 3, 1, 1)
+
 
         self.grid = QGridLayout()
-        self.grid.addLayout(grid_line1,0,0)
-        self.grid.addLayout(grid_line2,1,0)
-        self.grid.addLayout(grid_line3,2,0)
+        
+        self.grid.addLayout(box_layout,0,0,1,1)
+       
+        self.grid.addLayout(grid_line1,1,0,1,1)
+        self.grid.addLayout(grid_line2,2,0,1,1)
+
+        # self.grid.addWidget(self.btn_record,3,0,1,1)
+        self.grid.addWidget(self.tracking_recording_group,3,0,1,1)
+        
+
         self.setLayout(self.grid)
 
         # add and display a timer - to be implemented
@@ -417,9 +464,16 @@ class RecordingWidget(QFrame):
         # connections
         self.btn_setSavingDir.clicked.connect(self.set_saving_dir)
         self.btn_record.clicked.connect(self.toggle_recording)
-        self.entry_saveFPS.valueChanged.connect(self.streamHandler.set_save_fps)
-        self.entry_timeLimit.valueChanged.connect(self.imageSaver.set_recording_time_limit)
-        self.imageSaver.stop_recording.connect(self.stop_recording)
+
+        self.radioButton_recording.clicked.connect(self.set_tracking_recording_flag)
+        self.radioButton_tracking.clicked.connect(self.set_tracking_recording_flag)
+
+
+
+        for channel in self.imaging_channels:
+            self.entry_saveFPS[channel].valueChanged.connect(self.streamHandler[channel].set_save_fps)
+            self.entry_timeLimit[channel].valueChanged.connect(self.imageSaver[channel].set_recording_time_limit)
+            self.imageSaver[channel].stop_recording.connect(self.stop_recording)
 
     def set_saving_dir(self):
         dialog = QFileDialog()
@@ -447,40 +501,56 @@ class RecordingWidget(QFrame):
             self.lineEdit_experimentID.setEnabled(False)
             self.btn_setSavingDir.setEnabled(False)
 
+            for channel in self.imaging_channels:
+                self.checkbox[channel].setEnabled(False)
+
             
-            if(self.trackingDataSaver is not None):
+            if(self.trackingDataSaver is not None and self.recordingOnly_flag==False):
                 self.trackingDataSaver.start_new_experiment(self.lineEdit_experimentID.text())
             else:
                 pass
 
-            # If tracking mode
-            self.imageSaver.start_saving_images()
+            for channel in self.imaging_channels:
 
-            # In pure recording mode
-            # self.imageSaver.start_new_experiment(self.lineEdit_experimentID.text())
-
-
-            
-            self.streamHandler.start_recording()
+                if(self.checkbox[channel].isChecked()):
+                    if(self.recordingOnly_flag == True):
+                         # In pure recording mode
+                        self.imageSaver.start_new_experiment(self.lineEdit_experimentID.text())
+                    else:
+                        # If tracking mode
+                        self.imageSaver[channel].start_saving_images()
+                   
+                    self.streamHandler[channel].start_recording()
         else:
             self.internal_state.data['Acquisition']= False
-            self.streamHandler.stop_recording()
             
-            # if(self.trackingDataSaver is not None):
-            #     self.trackingDataSaver.stop_DataSaver()
-            # print('Stopped data saver')
-
-            # self.imageSaver.stop_saving_images()
-            # print('Stopped image saver')
+            for channel in self.imaging_channels:
+                self.streamHandler[channel].stop_recording()
+                self.checkbox[channel].setEnabled(True)
+            
             self.lineEdit_experimentID.setEnabled(True)
             self.btn_setSavingDir.setEnabled(True)
+
+                
 
     # stop_recording can be called by imageSaver
     def stop_recording(self):
         self.lineEdit_experimentID.setEnabled(True)
         self.btn_record.setChecked(False)
-        self.streamHandler.stop_recording()
+        for channel in self.imaging_channels:
+                self.streamHandler[channel].stop_recording()
+                self.checkbox[channel].setEnabled(True)
         self.btn_setSavingDir.setEnabled(True)
+
+    def set_tracking_recording_flag(self):
+
+        if(self.radioButton_tracking.isChecked()):
+            self.recordingOnly_flag = False
+            print('Set mode to Tracking+Rec')
+        elif(self.radioButton_recording.isChecked()):
+            self.recordingOnly_flag = True
+            print('Set mode to Recording only')
+
 
 '''
 #%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
