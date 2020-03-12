@@ -14,7 +14,7 @@ Install Scipy
 
 Install Python Image Library
 
-	pip3 install PIL
+	pip3 install pillow
 ---------------------------------------------------------------------------------------------------
 <!-- ## CUDA install: 
 Important note: Need to ensure that UEFI secure boot is configured correctly. In particular, this needs to be enabled during Ubuntu installation and the key should be 'Enrolled' during the first reboot. Not doing this can cause lots of downstream issues installing NVIDIA drivers.
@@ -84,7 +84,8 @@ The above command with the compiler specified works! -->
 
 
 Install OpenCV (Direct)
-	pip3 install python-opencv
+	pip3 install opencv-python
+	pip3 install opencv-contrib-python
 
 (alternative to above step) Install OpenCV from source: gives more control
 
@@ -121,10 +122,10 @@ Install imutils
 	pip3 install imutils
 
 <!-- Install gi
-	sudo apt-get install python3-gi
+	sudo apt-get install python3-gi -->
 
 Install Serial
-	pip3 install pyserial -->
+	pip3 install pyserial
 
 
 Import cmocean
@@ -179,3 +180,6 @@ sudo pip3 install torchvision
 $ sudo apt-get update
 $ sudo apt-get install v4l-utils
  -->
+
+Install QtPy as a wrapper over PyQt5
+	sudo pip3 install qtpy

@@ -12,9 +12,13 @@ Install Scipy
 
 	pip3 install scipy
 
+Install pandas
+
+	pip3 install pandas
+
 Install Python Image Library
 
-	pip3 install PIL
+	pip3 install pillow
 ---------------------------------------------------------------------------------------------------
 ## CUDA install: 
 Important note: Need to ensure that UEFI secure boot is configured correctly. In particular, this needs to be enabled during Ubuntu installation and the key should be 'Enrolled' during the first reboot. Not doing this can cause lots of downstream issues installing NVIDIA drivers.
@@ -84,7 +88,8 @@ The above command with the compiler specified works!
 
 
 Install OpenCV (Direct)
-	pip3 install python-opencv
+	pip3 install opencv-python
+	pip3 install opencv-contrib-python
 
 (alternative to above step) Install OpenCV from source: gives more control
 
@@ -148,6 +153,9 @@ There are specific dependencies to make sure the Qt GUI works
 
 Make sure that only PyQt5 is installed and not alongside earlier versions
 
+Install QtPy as a wrapper over PyQt5
+	sudo pip3 install qtpy
+
 Install opengl for 3D graphics
 
 	sudo apt-get install python3-pyqt5.qtopengl
@@ -178,3 +186,6 @@ sudo pip3 install torchvision
 # Install v4l for help with debugging camera issues
 $ sudo apt-get update
 $ sudo apt-get install v4l-utils
+
+Install pyserial
+	sudo pip3 install pyserial
