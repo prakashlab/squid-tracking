@@ -15,6 +15,9 @@
 #include <DueTimer.h>
 #include <Wire.h>
 
+// If we want to run in open-loop mode, uncomment this line or set it with a build flag:
+//#define RUN_OPEN_LOOP
+
 //=================================================================================
 // Mathematical constants
 //=================================================================================
@@ -1358,7 +1361,9 @@ void loop()
   ManualModePrev = ManualMode;
   ManualMode = digitalRead(ManualPin);
 
+  #ifdef RUN_OPEN_LOOP
   ManualMode = LOW;
+  #endif
   
   currMillisRec = millis();
   sensitivityChange=LOW;
@@ -1506,7 +1511,10 @@ void loop()
 //    CurrPos_X_code = CurrPos_X;  //right sens of the motor
     // When a closed-loop encoder is implemented
     // Testing
+    #ifdef RUN_OPEN_LOOP
     x_EncoderTicks = CurrPos_X;
+    #endif
+    
     CurrPos_X_code = x_EncoderTicks;  //right sens of the motor
     if (CurrPos_X_code>0){
       buffer_tx[2] = byte(int(0));
@@ -1522,7 +1530,9 @@ void loop()
 
     // CurrPos_Y_code= CurrPos_Y;  //right sens of the motor
     
+    #ifdef RUN_OPEN_LOOP
     y_EncoderTicks = CurrPos_Y;
+    #endif
     CurrPos_Y_code = y_EncoderTicks;
 
     if (CurrPos_Y_code>0){
@@ -1537,7 +1547,9 @@ void loop()
     buffer_tx[10] = byte(CurrPos_Y_code>>8);
     buffer_tx[11] = byte(CurrPos_Y_code%256);
     
+    #ifdef RUN_OPEN_LOOP
     theta_EncoderTicks = CurrPos_Theta;
+    #endif
     
     CurrPos_Theta_code = theta_EncoderTicks;
     if(CurrPos_Theta_code>0) 
