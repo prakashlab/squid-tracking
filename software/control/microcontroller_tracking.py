@@ -31,10 +31,10 @@ class Microcontroller():
         if len(arduino_ports) > 1:
             warnings.warn('Multiple Arduinos found - using the first')
         else:
-            print('Using Arduino found at : {}'.format(arduino_ports[2]))
+            print('Using Arduino found at : {}'.format(arduino_ports[0]))
 
         # establish serial communication
-        self.serial = serial.Serial(arduino_ports[2],2000000)
+        self.serial = serial.Serial(arduino_ports[0],2000000)
         time.sleep(0.2)
         print('Serial Connection Open')
 
