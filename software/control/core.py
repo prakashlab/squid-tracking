@@ -56,7 +56,7 @@ class StreamHandler(QObject):
 
     '''
 
-    def __init__(self, camera = None , crop_width=3000,crop_height=3000,working_resolution_scaling = 1, imaging_channel = TRACKING):
+    def __init__(self, camera = None , crop_width=3000,crop_height=3000, working_resolution_scaling = WORKING_RES_DEFAULT, imaging_channel = TRACKING):
         QObject.__init__(self)
         self.fps_display = 1
         self.fps_save = 1
@@ -345,79 +345,6 @@ class StreamHandler(QObject):
     #     pass
     #     # self.camera.stop()
 
-class ImageSaver(QObject):
-
-    stop_recording = Signal()
-
-    def __init__(self,image_format='bmp'):
-        QObject.__init__(self)
-        self.base_path = './'
-        self.experiment_ID = ''
-        self.image_format = image_format
-        self.max_num_image_per_folder = 1000
-        self.queue = Queue(10) # max 10 items in the queue
-        self.image_lock = Lock()
-        self.stop_signal_received = False
-        self.thread = Thread(target=self.process_queue)
-        self.thread.start()
-        self.counter = 0
-        self.recording_start_time = 0
-        self.recording_time_limit = -1
-
-    def process_queue(self):
-        while True:
-            # stop the thread if stop signal is received
-            if self.stop_signal_received:
-                return
-            # process the queue
-            try:
-                [image,frame_ID,timestamp] = self.queue.get(timeout=0.1)
-                self.image_lock.acquire(True)
-                folder_ID = int(self.counter/self.max_num_image_per_folder)
-                file_ID = int(self.counter%self.max_num_image_per_folder)
-                # create a new folder
-                if file_ID == 0:
-                    os.mkdir(os.path.join(self.base_path,self.experiment_ID,str(folder_ID)))
-                saving_path = os.path.join(self.base_path,self.experiment_ID,str(folder_ID),str(file_ID) + '.' + self.image_format)
-                
-                cv2.imwrite(saving_path,image)
-                self.counter = self.counter + 1
-                self.queue.task_done()
-                self.image_lock.release()
-            except:
-                pass
-                            
-    def enqueue(self,image,frame_ID,timestamp):
-        try:
-            self.queue.put_nowait([image,frame_ID,timestamp])
-            if ( self.recording_time_limit>0 ) and ( time.time()-self.recording_start_time >= self.recording_time_limit ):
-                self.stop_recording.emit()
-            # when using self.queue.put(str_), program can be slowed down despite multithreading because of the block and the GIL
-        except:
-            print('imageSaver queue is full, image discarded')
-
-    def set_base_path(self,path):
-        self.base_path = path
-
-    def set_recording_time_limit(self,time_limit):
-        self.recording_time_limit = time_limit
-
-    def start_new_experiment(self,experiment_ID):
-        # generate unique experiment ID
-        self.experiment_ID = experiment_ID + '_' + datetime.now().strftime('%Y-%m-%d %H-%M-%-S.%f')
-        self.recording_start_time = time.time()
-        # create a new folder
-        try:
-            os.mkdir(os.path.join(self.base_path,self.experiment_ID))
-        except:
-            pass
-        # reset the counter
-        self.counter = 0
-
-    def close(self):
-        self.queue.join()
-        self.stop_signal_received = True
-        self.thread.join()
 
 class LiveController(QObject):
 

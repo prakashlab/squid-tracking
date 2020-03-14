@@ -111,12 +111,16 @@ class GravityMachineGUI(QMainWindow):
 		self.liveControlWidget = widgets.LiveControlWidget(self.streamHandler[TRACKING],self.liveController, self.trackingController, self.camera[TRACKING])
 		self.navigationWidget = widgets_tracking.NavigationWidget(self.navigationController, self.internal_state, self.microcontroller_Sender)
 		#self.autofocusWidget = widgets.AutoFocusWidget(self.autofocusController)
-		self.recordingControlWidget = widgets.RecordingWidget(self.streamHandler,self.imageSaver, self.internal_state, self.trackingDataSaver, self.imaging_channels)
 		self.trackingControlWidget = widgets_tracking.TrackingControllerWidget(self.streamHandler[TRACKING], self.trackingController, self.trackingDataSaver, self.internal_state, self.imageDisplayWindow[TRACKING])
 		
+
+
 		self.PID_Group_Widget = widgets_tracking.PID_Group_Widget(self.trackingController)
 
 		self.FocusTracking_Widget = widgets_tracking.FocusTracking_Widget(self.trackingController, self.internal_state)
+
+
+		self.recordingControlWidget = widgets.RecordingWidget(self.streamHandler,self.imageSaver, self.internal_state, self.trackingControlWidget, self.trackingDataSaver, self.imaging_channels)
 
 		self.recordTabWidget = QTabWidget()
 		self.recordTabWidget.addTab(self.recordingControlWidget, "Acquisition control")
@@ -247,6 +251,7 @@ class GravityMachineGUI(QMainWindow):
 			
 			self.imageDisplayWindow_ThresholdedImage.close()
 
+			self.microcontroller_Rec.stop()
 
 			event.accept()
 

@@ -163,7 +163,7 @@ class TrackingController(QObject):
 		self.image = image
 
 		# @@@testing
-		print('In Tracking controller new frame')
+		# print('In Tracking controller new frame')
 
 		# Get the required values from internal state
 
@@ -199,7 +199,7 @@ class TrackingController(QObject):
 			
 			self.update_elapsed_time()
 
-			print('In track function')
+			# print('In track function')
 
 			# Update image parameters
 			# TO DO: Only call this when image resolution changes
@@ -308,7 +308,7 @@ class TrackingController(QObject):
 
 				# get motion commands
 				# Error is in mm.
-				print('Image error: {}, {}, {} mm'.format(x_error, y_error, z_error))
+				# print('Image error: {}, {}, {} mm'.format(x_error, y_error, z_error))
 				X_order, Y_order, Theta_order = self.get_motion_commands(x_error,y_error,z_error)
 
 			else:
@@ -317,7 +317,7 @@ class TrackingController(QObject):
 				
 			
 			# @@@testing
-			print('Tracking order to uController: {}, {}, {} steps'.format(X_order, Y_order, Theta_order))
+			# print('Tracking order to uController: {}, {}, {} steps'.format(X_order, Y_order, Theta_order))
 			# We want to send to the microcontroller at a constant rate, even if an object is not found
 
 			# Send the motion commands and instruct the multiplex send object to send data 
@@ -325,7 +325,7 @@ class TrackingController(QObject):
 			self.multiplex_send_signal.emit(X_order, Y_order, Theta_order)
 
 
-			print(X_order, Y_order, Theta_order)
+			# print(X_order, Y_order, Theta_order)
 
 			# Update the Internal State Model
 			self.update_internal_state()
@@ -366,11 +366,7 @@ class TrackingController(QObject):
 		self.Y_objStage = deque(maxlen=self.dequeLen)
 		self.Z_objStage = deque(maxlen=self.dequeLen)
 
-		self.set_image_props()
-
-		self.update_image_center_width()
-
-		self.update_tracking_setpoint()
+		
 
 
 	def update_elapsed_time(self):
@@ -456,14 +452,14 @@ class TrackingController(QObject):
 			# The tracking set point is modified since it depends on the image center.
 			self.update_tracking_setpoint()
 			
-			print('New image width: {}'.format(self.image_width))
+			# print('New image width: {}'.format(self.image_width))
 
 
 	def update_tracking_setpoint(self):
 
 		self.image_setPoint = self.image_center + self.image_offset
 		#@@@Testing
-		print('New tracking set point :{}'.format(self.image_setPoint))
+		# print('New tracking set point :{}'.format(self.image_setPoint))
 
 	def update_image_offset(self, new_image_offset):
 		self.image_offset = new_image_offset
@@ -475,7 +471,7 @@ class TrackingController(QObject):
 	def set_searchArea(self):
 
 		self.tracker_image.searchArea = int(self.image_width/Tracking.SEARCH_AREA_RATIO)
-		print('current search area : {}'.format(self.tracker_image.searchArea))
+		# print('current search area : {}'.format(self.tracker_image.searchArea))
 
 	def set_cropped_image_size(self, new_ratio):
 
@@ -546,28 +542,57 @@ class microcontroller_Receiver(QObject):
 		self.timer_read_uController.timeout.connect(self.getData_microcontroller)
 		self.timer_read_uController.start()
 
+		self.stop_signal_received = False
+
+		self.time_now = 0
+		self.time_prev = 0
+
+		# self.read_Thread = Thread(target = self.getData_microcontroller)
+		# self.read_Thread.start()
+
 	# This function is triggered by the "rec new image signal" from StreamHandler
 	def getData_microcontroller(self):
 		# for debugging
+		# while True:
+
+		# 	if self.stop_signal_received:
+		# 		return
+		# 	self.time_now = time.time()
+
+			# if(self.time_now - self.time_prev >= UCONTROLLER_READ_INTERVAL):
+				
+				# print(self.time_now)
+				# print("Receiving data from uController")
+
 		# print("Receiving data from uController")
+		data = self.microcontroller.read_received_packet_nowait()
 
-		data = self.microcontroller.read_received_packet()
+		if(data is not None):
 
-		# print('Read packed ... parsing')
-		for key in REC_DATA:
-			self.RecData[key] = data[key]
-			# Update internal state
-			if(key in INTERNAL_STATE_VARIABLES):
-				self.internal_state.data[key] = data[key]
+			# print('Read packet ... parsing')
+			for key in REC_DATA:
+				self.RecData[key] = data[key]
+				# Update internal state
+				if(key in INTERNAL_STATE_VARIABLES):
+					self.internal_state.data[key] = data[key]
 
-		# Find the actual stage position based prev position and the change.
-		self.internal_state.data['X_stage'] = self.trackingController.units_converter.X_count_to_mm(self.RecData['X_stage'])
-		self.internal_state.data['Y_stage'] = self.trackingController.units_converter.Y_count_to_mm(self.RecData['Y_stage'])
-		self.internal_state.data['Theta_stage'] = self.trackingController.units_converter.Theta_count_to_rad(self.RecData['Theta_stage'])
+			# Find the actual stage position based prev position and the change.
+			self.internal_state.data['X_stage'] = self.trackingController.units_converter.X_count_to_mm(self.RecData['X_stage'])
+			self.internal_state.data['Y_stage'] = self.trackingController.units_converter.Y_count_to_mm(self.RecData['Y_stage'])
+			self.internal_state.data['Theta_stage'] = self.trackingController.units_converter.Theta_count_to_rad(self.RecData['Theta_stage'])
 
-		# Emit the stage position so it can be displayed (only need to display the position when it changes)
+			# Emit the stage position so it can be displayed (only need to display the position when it changes)
 
-		self.update_display.emit()
+			# print('Updating display')
+			self.update_display.emit()
+
+		else:
+			pass
+
+	def stop(self):
+
+		self.stop_signal_received = True
+
 
 
 
@@ -621,7 +646,7 @@ class microcontroller_Sender(QObject):
 					print('{} not found in Internal State model'.format(key))
 
 	def sendData(self):
-		print("Sending data to uController")
+		# print("Sending data to uController")
 		# Send command to the microcontroller
 		self.microcontroller.send_command(self.sendData_array)
 
@@ -714,7 +739,7 @@ class TrackingDataSaver(QObject):
 
 				self.DataToSave = [self.DataToSave_dict[key] for key in self.DataToSave_dict.keys()]
 
-				print(self.DataToSave)
+				# print(self.DataToSave)
 				# Register the data to a CSV file
 				self.csv_register.write_line([self.DataToSave])
 

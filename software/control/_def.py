@@ -114,6 +114,8 @@ class Tracking:
 # Width of Image used for Pixel Size Calibration. 
 CALIB_IMG_WIDTH = 1920
 
+WORKING_RES_DEFAULT = 0.5
+
 TRACKERS = ['nearest-nbr', 'csrt', 'daSIAMRPN']
 DEFAULT_TRACKER = 'csrt'
 
@@ -158,7 +160,7 @@ liquidLens = {'type': 'optotune', 'Freq':{'default':2, 'min':0.1, 'max':20, 'ste
 
 INTERNAL_STATE_VARIABLES = ['Time', 'X_objStage', 'Y_objStage', 'Z_objStage', 'X_stage', 'Y_stage',
     'Theta_stage', 'X_image', 'Z_image', 'track_obj_image','track_obj_image_hrdware', 'track_focus', 'track_obj_stage', 
-    'Acquisition', 'homing_command', 'homing_state', 'Zero_stage', 'liquidLens_Freq', 'liquidLens_Amp', 'FocusPhase', 'optical_path', 
+    'Acquisition', 'homing_command', 'homing_complete',  'Zero_stage', 'liquidLens_Freq', 'liquidLens_Amp', 'FocusPhase', 'optical_path', 
     'imaging channels', 'Objective', 'basePath', 'experimentID']
 
 # Based on the number of imaging channels, there will also be 1 or more image names saved.
@@ -167,13 +169,13 @@ SAVE_DATA = ['Time', 'X_objStage', 'Y_objStage', 'Z_objStage', 'Theta_stage', 'X
 
 MOTION_COMMANDS = ['X_order', 'Y_order', 'Theta_order']
 
-SEND_DATA = ['liquidLens_Freq', 'track_focus' , 'homing_state', 'track_obj_image' , 'X_order', 'Y_order', 'Theta_order', 'Zero_stage']
+SEND_DATA = ['liquidLens_Freq', 'track_focus' , 'homing_command', 'track_obj_image' , 'X_order', 'Y_order', 'Theta_order', 'Zero_stage']
 
-REC_DATA = ['FocusPhase', 'X_stage', 'Y_stage', 'Theta_stage', 'track_obj_image_hrdware', 'track_obj_stage']
+REC_DATA = ['FocusPhase', 'X_stage', 'Y_stage', 'Theta_stage', 'track_obj_image_hrdware', 'track_obj_stage', 'homing_complete']
 
 INITIAL_VALUES = {'Time':0, 'X_objStage':0, 'Y_objStage':0, 'Z_objStage':0, 'X_stage':0, 'Y_stage':0,
     'Theta_stage':0, 'X_image':0, 'Z_image':0, 'track_obj_image':False, 'track_obj_image_hrdware':False, 'track_focus':False, 
-    'track_obj_stage':False, 'Acquisition':False, 'homing_command':False, 'homing_state':False, 'Zero_stage':0, 'liquidLens_Freq': liquidLens['Freq']['default'], 
+    'track_obj_stage':False, 'Acquisition':False, 'homing_command':False, 'homing_complete':False, 'Zero_stage':0, 'liquidLens_Freq': liquidLens['Freq']['default'], 
     'liquidLens_Amp': liquidLens['Amp']['default'] , 'FocusPhase':0, 'optical_path': DEFAULT_OPTICAL_PATH, 
     'imaging channels': OPTICAL_PATHS[DEFAULT_OPTICAL_PATH],  'Objective':DEFAULT_OBJECTIVE, 'basePath':'/', 'experimentID':'track'}
 

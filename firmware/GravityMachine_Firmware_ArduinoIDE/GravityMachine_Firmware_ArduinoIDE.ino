@@ -172,7 +172,7 @@ const double pi = 3.1415926535897;
 // Serial communication
 //--------------------------------------------------
 # define CMD_LENGTH 12
-# define DATA_TX_LENGTH 19
+# define DATA_TX_LENGTH 20
 //=================================================================================
 // Stage Movement/Physical Variables
 //=================================================================================
@@ -189,8 +189,9 @@ long int CurrPos_X_Stepper = 0, CurrPos_Y_Stepper = 0, CurrPos_Theta_Stepper = 0
 long int PrevPos_X_Stepper = 0, PrevPos_Y_Stepper = 0, PrevPos_Theta_Stepper = 0, PrevPos_Z_Stepper = 0;
 long int PosStart_X = 0, PosStart_Y = 0, PosStart_Z = 0, PosStart_Theta = 0;
 
-float DeltaT=0, Homing=0; //Data from the computer
+float DeltaT=0; 
 
+int Homing = 0, HomingComplete = 0;
 // Steps to move (command from the computer)
 float Step_X = 0, Step_Y = 0, Step_Theta = 0, Step_Z = 0;
 // Steps to move (based on Manual input)
@@ -318,6 +319,7 @@ int lightUpdateTime = 500;         // Only update the light intensity every 500 
 //=================================================================================
 bool isReceived=true;
 volatile bool sendData = false;
+int sendInterval = 50;  // Send interval for Arduino serial data in milliseconds
 //=================================================================================
 // Triggering parameters (Tracking camera)
 //=================================================================================
@@ -481,6 +483,7 @@ void resetHomingState()
 {
   inProgress = false;
   Homing = 0;
+  HomingComplete = 0;
   StageLocked = false;
   atXhome = false;
   atYhome = false;
@@ -1335,6 +1338,12 @@ void setup()
 
   // init DAC
   analogWriteResolution(10);
+
+   //-------------------------------------------------------------------------------
+  // Homing variables
+  //-------------------------------------------------------------------------------
+  Homing = 0;
+  HomingComplete = 0;
   //-------------------------------------------------------------------------------
   // Light modulation setup
   //-------------------------------------------------------------------------------
@@ -1501,8 +1510,11 @@ void loop()
   // Serial sending block (Send data to computer)
   //-------------------------------------------------------------------------------
   // uController only sends data when image is triggered.
- 
-  if (sendData){
+  currMillisSend = millis();
+  
+  if (sendData & currMillisSend - prevMillisSend > sendInterval){
+
+    prevMillisSend = currMillisSend;
     
     buffer_tx[0] = byte(phase_code_lastTrigger%256);
     buffer_tx[1] = byte(phase_code_lastTrigger>>8);
@@ -1571,6 +1583,8 @@ void loop()
 
     // tracking trigger
     buffer_tx[18] = byte(!digitalRead(triggerTrack));
+
+    buffer_tx[19] = byte(HomingComplete);
   
     
 //    // 16 bit crc
@@ -1627,7 +1641,8 @@ void loop()
       }
 
       //Data analysis: if the right message is read, lets compute the data and update arduino position
-      isReceived=true;
+      isReceived = false;
+      
       if (buffer_rx_ptr == CMD_LENGTH) {
  
         isReceived=true;
@@ -1794,6 +1809,7 @@ void loop()
           resetHomingState();
           reset_X_StepperSpeed(microSteps_Old_X);
           reset_Y_StepperSpeed(microSteps_Old_Y);
+          HomingComplete = 1;
 
           // Also set some Homing_Complete flag to true and send it to the computer
 
