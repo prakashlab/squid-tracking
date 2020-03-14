@@ -14,7 +14,10 @@ class Microcontroller():
         self.serial = None
         self.platform_name = platform.system()
         self.tx_buffer_length = 12
-        self.rx_buffer_length = 19
+        self.rx_buffer_length = 20
+
+        self.buffer_size_curr = 0
+        self.buffer_size_prev = 0
 
         self.ReceivedData = {key:[] for key in REC_DATA}
 
@@ -64,8 +67,8 @@ class Microcontroller():
 
     def send_command(self,command):
         
-        print('Sending data to uController')
-        print(command)
+        # print('Sending data to uController')
+        # print(command)
 
         cmd = bytearray(self.tx_buffer_length)
         
@@ -86,6 +89,10 @@ class Microcontroller():
 
         # self.serial.reset_input_buffer()
         # wait to receive data
+
+
+        
+
         while self.serial.in_waiting==0:
             print(self.serial.in_waiting)
             print('wait for data to arrive:1')
@@ -106,6 +113,7 @@ class Microcontroller():
             # print('getting rid of old data')
             for i in range(num_bytes_in_rx_buffer-self.rx_buffer_length):
                 self.serial.read()
+
 
         
         
@@ -138,12 +146,50 @@ class Microcontroller():
 
 
 
-        
+       
 
         return self.ReceivedData
         # return YfocusPhase,Xpos_arduino,Ypos_arduino,Zpos_arduino, LED_measured, tracking_triggered,manualMode
         
         # return data
+
+    def read_received_packet_nowait(self):
+        # wait to receive data
+        if self.serial.in_waiting==0:
+            return None
+        if self.serial.in_waiting % self.rx_buffer_length != 0:
+            return None
+        
+        # get rid of old data
+        num_bytes_in_rx_buffer = self.serial.in_waiting
+        if num_bytes_in_rx_buffer > self.rx_buffer_length:
+            print('getting rid of old data')
+            for i in range(num_bytes_in_rx_buffer-self.rx_buffer_length):
+                self.serial.read()
+        
+        # read the buffer
+        data=[]
+        for i in range(self.rx_buffer_length):
+            data.append(ord(self.serial.read()))
+
+
+        self.ReceivedData['FocusPhase']  = data2byte_to_int(data[0],data[1])*2*np.pi/65535.
+        self.ReceivedData['X_stage']  = data[3]*2**24 + data[4]*2**16+data[5]*2**8 + data[6]
+        if data[2]==1:
+            self.ReceivedData['X_stage'] = -self.ReceivedData['X_stage']
+        self.ReceivedData['Y_stage'] = data[8]*2**24 + data[9]*2**16+data[10]*2**8 + data[11]
+        if data[7]==1:
+            self.ReceivedData['Y_stage'] = -self.ReceivedData['Y_stage']
+        self.ReceivedData['Theta_stage'] = data[13]*2**24 + data[14]*2**16+data[15]*2**8 + data[16]
+        if data[12]==1:
+            self.ReceivedData['Theta_stage'] = -self.ReceivedData['Theta_stage']
+        self.ReceivedData['track_obj_stage'] = data[17]
+
+        self.ReceivedData['track_obj_image_hrdware'] = bool(data[18])
+
+        self.ReceivedData['homing_complete'] = bool(data[19])
+
+        return self.ReceivedData
 
 # Define a micro controller emulator
 

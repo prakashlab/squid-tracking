@@ -184,6 +184,10 @@ class TrackingControllerWidget(QFrame):
 		self.btn_track.toggle()
 		self.do_track_button_tasks()
 
+	def handle_aquisition_widget_track_signal(self):
+		self.btn_track.setChecked(True)
+
+
 	def update_tracker(self, index):
 
 		self.trackingController.tracker_image.update_tracker_type(self.dropdown_TrackerSelection.currentText())

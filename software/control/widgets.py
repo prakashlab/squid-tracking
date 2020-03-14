@@ -188,7 +188,7 @@ class LiveControlWidget(QFrame):
         self.slider_resolutionScaling.setTickPosition(QSlider.TicksBelow)
         self.slider_resolutionScaling.setMinimum(10)
         self.slider_resolutionScaling.setMaximum(100)
-        self.slider_resolutionScaling.setValue(50)
+        self.slider_resolutionScaling.setValue(WORKING_RES_DEFAULT*100)
         self.slider_resolutionScaling.setSingleStep(10)
 
         self.display_workingResolution = QLCDNumber()
@@ -339,7 +339,7 @@ class LiveControlWidget(QFrame):
     #     self.liveController.set_microscope_mode(self.dropdown_modeSelection.currentText())
 
 class RecordingWidget(QFrame):
-    def __init__(self, streamHandler, imageSaver, internal_state, trackingDataSaver = None, imaging_channels = TRACKING, main=None, *args, **kwargs):
+    def __init__(self, streamHandler, imageSaver, internal_state, trackingControllerWidget, trackingDataSaver = None, imaging_channels = TRACKING, main=None, *args, **kwargs):
         super().__init__(*args, **kwargs)
         
         # In general imageSaver, streamHandler are dicts corresponding to each image_channel
@@ -347,6 +347,7 @@ class RecordingWidget(QFrame):
         self.streamHandler = streamHandler
         self.internal_state = internal_state 
         self.trackingDataSaver = trackingDataSaver
+        self.trackingControllerWidget = trackingControllerWidget
         self.imaging_channels = imaging_channels
 
         self.tracking_flag = False
@@ -479,7 +480,7 @@ class RecordingWidget(QFrame):
         dialog = QFileDialog()
         save_dir_base = dialog.getExistingDirectory(None, "Select Folder")
         # Set base path for image saver
-        self.imageSaver.set_base_path(save_dir_base)
+        self.imageSaver[TRACKING].set_base_path(save_dir_base)
       
         
         # set the base path for the data saver
@@ -506,6 +507,7 @@ class RecordingWidget(QFrame):
 
             
             if(self.trackingDataSaver is not None and self.recordingOnly_flag==False):
+                self.trackingControllerWidget.btn_track.setChecked(True)
                 self.trackingDataSaver.start_new_experiment(self.lineEdit_experimentID.text())
             else:
                 pass
@@ -513,14 +515,9 @@ class RecordingWidget(QFrame):
             for channel in self.imaging_channels:
 
                 if(self.checkbox[channel].isChecked()):
-                    if(self.recordingOnly_flag == True):
-                         # In pure recording mode
-                        self.imageSaver.start_new_experiment(self.lineEdit_experimentID.text())
-                    else:
-                        # If tracking mode
-                        self.imageSaver[channel].start_saving_images()
-                   
+                    self.imageSaver[channel].start_saving_images()
                     self.streamHandler[channel].start_recording()
+
         else:
             self.internal_state.data['Acquisition']= False
             
