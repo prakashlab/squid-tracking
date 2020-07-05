@@ -1,0 +1,41 @@
+2018_06_11
+
+threaded plot / display / threshold display
+
+2018_12_10
+
+Arduino Auto detect
+
+Split image saving separately into different folders limited to ~2000 files per folder.
+
+
+2018_12_12
+
+
+Adding OpenCV object tracker suite to improve the robustness of tracking: DONE
+Added 8 OpenCV trackers for single object in addition to the nearest neighbhour tracking that was already present.
+
+2018_12_13
+Tested the code with the new trackers and the code is working fine. Will test with actual organisms tomorrow
+
+
+
+2018_12_13:
+
+To DO:
+Add GUI control of the tracker type. 
+
+Modify certain GUI elements to expand the range of parameter varibales. Such as saving images at less than 1 FPS.
+
+Check the PID code which definitely seems to have some bug that causes oscillations even when the all P, I , D are turned to Zero.
+
+
+2018_12_15:
+
+To Do: Add functionality to control light intensity as a function of virtual depth.
+
+Also record the measured light intensity using a photodetector.
+
+2018_12_16:
+
+Added Light intensity control and measurement functionality.

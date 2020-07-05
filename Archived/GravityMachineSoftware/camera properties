@@ -1,0 +1,56 @@
+Brightness(integer) value: 240 default: 240 min: 0 max: 4095 grouping: Exposure - Brightness
+Whitebalance Auto(boolean) value: False default: True grouping: Color - Whitebalance
+Whitebalance Red(integer) value: 64 default: 64 min: 0 max: 255 grouping: Color - Whitebalance
+Whitebalance Blue(integer) value: 64 default: 64 min: 0 max: 255 grouping: Color - Whitebalance
+Gain(integer) value: 20 default: 0 min: 0 max: 480 grouping: Exposure - Gain
+Exposure(integer) value: 500 default: 333 min: 5 max: 30000000 grouping: Exposure - Exposure
+Exposure Auto(boolean) value: False default: True grouping: Exposure - Exposure
+Exposure Auto Reference(integer) value: 128 default: 128 min: 0 max: 255 grouping: Exposure - Exposure
+Gain Auto(boolean) value: False default: True grouping: Exposure - Gain
+Trigger Mode(boolean) value: True default: False grouping: Special - Trigger Mode
+Software Trigger(button) grouping is Special -  Trigger Mode
+Trigger Delay (us)(integer) value: 31 default: 0 min: 0 max: 100000 grouping: Special - Trigger Mode
+Strobe Enable(boolean) value: False default: False grouping: Special - Strobe Enable
+Strobe Polarity(boolean) value: False default: False grouping: Special - Strobe Enable
+Strobe Exposure(boolean) value: True default: True grouping: Special - Strobe Enable
+Strobe Duration(integer) value: 100 default: 100 min: 0 max: 32767 grouping: Special - Strobe Enable
+Strobe Delay(integer) value: 0 default: 0 min: 0 max: 32767 grouping: Special - Strobe Enable
+GPOut(integer) value: 0 default: 0 min: 0 max: 1 grouping: Special - GPIO
+GPIO(integer) value: 0 default: 0 min: 0 max: 1 grouping: Special - GPIO
+Offset X(integer) value: 0 default: 0 min: 0 max: 1184 grouping: Partial Scan - Offset Auto Center
+Offset Y(integer) value: 0 default: 0 min: 0 max: 1076 grouping: Partial Scan - Offset Auto Center
+Offset Auto Center(boolean) value: True default: True grouping: Partial Scan - Offset Auto Center
+Trigger Polarity(enum) value: RisingEdge default: RisingEdge grouping Special - Trigger Mode
+Entries: 
+	 FallingEdge
+	 RisingEdge
+Auto Functions ROI Control(boolean) value: True default: True grouping: Special - Auto Functions ROI Control
+Whitebalance(boolean) value: False default: False grouping: Color - Whitebalance
+Whitebalance Auto Preset(enum) value: Any default: Any grouping Color - Whitebalance
+Entries: 
+	 Any
+	 Cool White
+	 Daylight
+	 Deep Shade
+	 Warm White
+Whitebalance Green(integer) value: 50 default: 64 min: 0 max: 255 grouping: Color - Whitebalance
+White Balance Temperature Preset(enum) value: Cool White Fluorescent Light default:  grouping Color - Whitebalance
+Entries: 
+	 Blue Sky
+	 Cool White Fluorescent Light
+	 Cool White LED
+	 Cool White/Daylight (CFL)
+	 Daylight
+	 Halogen Light
+	 Neutral White
+	 Sodium-Vapur Lamp
+	 Warm Light
+Whitebalance Temperature(integer) value: 4000 default: 6500 min: 2500 max: 10000 grouping: Color - Whitebalance
+Reverse X(boolean) value: False default: False grouping: Unknown - INVALID_PORPERTY
+Reverse Y(boolean) value: False default: False grouping: Unknown - INVALID_PORPERTY
+Highlight Reduction(boolean) value: False default: False grouping: Unknown - INVALID_PORPERTY
+Exposure Auto Upper Limit Auto(boolean) value: True default: True grouping: Exposure - Exposure
+Exposure Auto Lower Limit(integer) value: 20 default: 333 min: 5 max: 1000000 grouping: Exposure - Exposure
+Exposure Auto Upper Limit(integer) value: 8333 default: 333 min: 5 max: 1000000 grouping: Exposure - Exposure
+Override Scanning Mode(integer) value: 0 default: 1 min: 1 max: 16 grouping: Unknown - INVALID_PORPERTY
+
