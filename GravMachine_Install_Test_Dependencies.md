@@ -1,6 +1,4 @@
-===================================================================================================
 # Dependencies for gravity machine (for testing)
-===================================================================================================
 
 ##Install pip
 	'sudo apt-get install python3-pip'
@@ -84,10 +82,9 @@ The above command with the compiler specified works! -->
 
 
 Install OpenCV (Direct)
+
 	pip3 install opencv-python
 	pip3 install opencv-contrib-python
-
-(alternative to above step) Install OpenCV from source: gives more control
 
 <!-- Install dependencies for TIS camera (Need to install before OpenCV)
 Build Dependency
@@ -119,21 +116,28 @@ Install pyqtgraph
 	pip3 install pyqtgraph
 
 Install imutils
+	
 	pip3 install imutils
 
 <!-- Install gi
 	sudo apt-get install python3-gi -->
 
 Install Serial
+	
 	pip3 install pyserial
 
 
 Import cmocean
- 
- 	sudo pip3 install cmocean 
+
+	sudo pip3 install cmocean 
 
 Install matplotlib
+	
 	sudo pip3 install matplotlib
+
+Install QtPy as a wrapper over PyQt5
+	
+	sudo pip3 install qtpy
 
 <!-- Install Tk (fro python3)
 	sudo apt-get install python3-tk -->
@@ -181,5 +185,4 @@ $ sudo apt-get update
 $ sudo apt-get install v4l-utils
  -->
 
-Install QtPy as a wrapper over PyQt5
-	sudo pip3 install qtpy
+
