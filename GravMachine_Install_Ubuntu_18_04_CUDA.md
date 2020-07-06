@@ -1,8 +1,8 @@
-#Installation of Scientific Python, CUDA, OpenCV-CUDA and TIS camera modules for gravity machine on Ubuntu 18.04 LTS. 
+# Installation of Scientific Python, CUDA, OpenCV-CUDA and TIS camera modules for gravity machine on Ubuntu 18.04 LTS. 
 
 ## These installations and dependencies correspond to the legacy version (1.0.0) of the code-base. 
 ---
-##1. Preliminaries
+## 1. Preliminaries
 
 Install pip
 
@@ -130,7 +130,7 @@ Build fails since the compiler used is greater than gcc-6. Trying to recompile u
 The above command with the compiler specified works!
 
 
-##5. Install OpenCV (Direct). This alternative to step 4 above.
+## 5. Install OpenCV (Direct). This alternative to step 4 above.
 	
 	pip3 install opencv-python
 	pip3 install opencv-contrib-python
@@ -155,7 +155,7 @@ If you got this far, you are now ready to run some really kickass experiments wi
 
 
 
-##6 GUI dependencies (There are specific dependencies to make sure the Qt GUI works)
+## 6. GUI dependencies (There are specific dependencies to make sure the Qt GUI works)
 
 Make sure that only PyQt5 is installed and not alongside earlier versions
 
