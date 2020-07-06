@@ -1,6 +1,5 @@
-===================================================================================================
+
 # Dependencies for gravity machine (for testing)
-===================================================================================================
 
 ##Install pip
 	'sudo apt-get install python3-pip'
@@ -34,14 +33,13 @@ Once this completes
 
 This should show the version of the drivers installed. -->
 
----------------------------------------------------------------------------------------------------
+
 ## OpenCV installation 
 sources: 1. https://www.pyimagesearch.com/2018/05/28/ubuntu-18-04-how-to-install-opencv/
 2. https://gist.github.com/raulqf/a3caa97db3f8760af33266a1475d0e5e
 Against Pyimagesearch's advice, this installation will not use virtual environments since that causes issues while using the TIS camera module.
 
 
----------------------------------------------------------------------------------------------------
 	
 <!-- 	sudo apt-get update
 
@@ -160,15 +158,6 @@ Install the Qtsvg library for exporting vector graphics from Qt
 
 
 At this point the DataAnalyser GUI should work
-
-
-
-
-
-
-
-
-
 
 
 # install pytorch(https://medium.cohttps://medium.com/@balaprasannav2009/install-tensorflow-pytorch-in-ubuntu-18-04-lts-with-cuda-9-0-for-nvidia-1080-ti-9e45eca99573m/@balaprasannav2009/install-tensorflow-pytorch-in-ubuntu-18-04-lts-with-cuda-9-0-for-nvidia-1080-ti-9e45eca99573)
