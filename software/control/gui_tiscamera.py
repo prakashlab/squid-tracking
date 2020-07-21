@@ -55,8 +55,7 @@ class GravityMachineGUI(QMainWindow):
 		if SIMULATION is True:
 			# Define a camera object for each unique image-stream.
 			self.camera = {key:camera.Camera_Simulation() for key in self.imaging_channels}
-			# self.microcontroller = microcontroller_tracking.Microcontroller_Simulation()
-			self.microcontroller = microcontroller_tracking.Microcontroller()
+			self.microcontroller = microcontroller_tracking.Microcontroller_Simulation()
 
 		else:
 			self.camera = {key:camera.Camera(serial=CAMERAS[key]['serial'], width = CAMERAS[key]['px_format'][0], 

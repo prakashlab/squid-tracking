@@ -201,16 +201,16 @@ class Microcontroller_Simulation():
         self.Ypos = 0
         self.Thetapos = 0
 
-        self.deltaX_stage = 0
-        self.deltaY_stage = 0
-        self.deltaTheta_stage = 0
+        self.X_stage = 0
+        self.Y_stage = 0
+        self.Theta_stage = 0
         
         self.track_obj_image = 1
         self.track_focus = 0
 
         self.track_obj_stage = 1
 
-        self.RecData = {'FocusPhase':self.FocusPhase, 'deltaX_stage': self.deltaX_stage, 'deltaY_stage':self.deltaY_stage, 'deltaTheta_stage':self.deltaTheta_stage, 'track_obj_image':self.track_obj_image, 'track_obj_stage' : self.track_obj_stage}
+        self.RecData = {'FocusPhase':self.FocusPhase, 'X_stage': self.X_stage, 'Y_stage':self.Y_stage, 'Theta_stage':self.Theta_stage, 'track_obj_image':self.track_obj_image, 'track_obj_stage' : self.track_obj_stage}
 
         self.SendData = {key:[] for key in SEND_DATA}
 
@@ -224,34 +224,35 @@ class Microcontroller_Simulation():
         pass
 
     def move_x(self,delta):
-        self.deltaX_stage = delta
-        self.Xpos += delta
+        
+        self.X_stage += delta
 
     def move_y(self,delta):
-        self.deltaY_stage = delta
-        self.Ypos += delta
+        
+        self.Y_stage += delta
 
 
     def move_Theta(self,delta):
-        self.deltaTheta_stage = delta
-        self.Thetapos += delta
+        
+        self.Theta_stage += delta
 
     def move_z(self,delta):
         pass
     
-    def send_command(self,command):
+    def send_command(self, command):
+        print(command)
         #SEND_DATA = ['X_order', 'Y_order', 'Z_order', 'track_obj_image', 'track_focus', 'homing_state']
-        X_order, Y_order, Theta_order = command['X_order'], command['Y_order'], command['Theta_order']
-        self.track_obj_image = command['track_obj_image']
-        self.track_focus = command['track_focus']
+        X_order, Y_order, Theta_order = command[4], command[5], command[6]
+        self.track_obj_image = command[3]
+        self.track_focus = command[1]
 
         self.move_x(X_order)
         self.move_y(Y_order)
         self.move_Theta(Theta_order)
 
 
-    def read_received_packet(self):
-        self.RecData = {'FocusPhase':self.FocusPhase, 'deltaX_stage': self.deltaX_stage, 'deltaY_stage':self.deltaY_stage, 'deltaTheta_stage':self.deltaTheta_stage, 'track_obj_image':self.track_obj_image, 'track_obj_stage' : self.track_obj_stage}
+    def read_received_packet_nowait(self):
+        self.RecData = {'FocusPhase':self.FocusPhase, 'X_stage': self.X_stage, 'Y_stage':self.Y_stage, 'Theta_stage':self.Theta_stage, 'track_obj_image':self.track_obj_image, 'track_obj_stage' : self.track_obj_stage}
         self.deltaX_stage = 0
         self.deltaY_stage = 0
         self.deltaTheta_stage = 0
