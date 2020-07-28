@@ -8,16 +8,18 @@ Created on Thu May 17 12:17:20 2018
 #Tuning the parameters:
     #Integrator max(resp .min): max nb of steps the motor can make in DeltaT
 
+from control._def import *
+
 class PID:
-    def __init__(self, P=0.5, I=0, D=0.5,Output_max=100,Output_min=-100):
+    def __init__(self, P=0.5, I=0, D=0.5, Output_max = PID_parameters.PID_OUTPUT_MAX, Output_min = -PID_parameters.PID_OUTPUT_MAX):
         
         #Parameters
         self.Kp=P
         self.Ki=I
         self.Kd=D
         
-        self.Output_max=Output_max
-        self.Output_min=Output_min
+        self.Output_max = Output_max
+        self.Output_min = Output_min
         
         self.isDirect=True
         
@@ -96,9 +98,7 @@ class PID:
         print('D', self.Kd)
 
 
-    def set_Tuning(self,P,I,D):
-        
-        
+    def set_Tuning(self,P,I,D):    
         a=1
         #if not(self.isDirect):
         #    a=-1

@@ -42,6 +42,8 @@ class Motors:
     
     STEPS_PER_REV_THETA_SHAFT = GEAR_RATIO_THETA*STEPS_PER_REV_THETA_MOTOR
 
+    MAX_MICROSTEPS = 64
+
     def __init__(self):
         pass
 
@@ -95,6 +97,26 @@ class Tracking:
     def __init__(self):
         pass
 
+class ucontroller:
+
+    # Time interval for reading micro Controller (ms)
+    UCONTROLLER_READ_INTERVAL = 25 
+    MSG_LENGTH = 20
+    CMD_LENGTH = 10
+
+    def __init__(self):
+        pass
+
+class PID_parameters:
+
+    MAX_DISTANCE = 2 # Max distance (in mm) for truncating PID command
+
+    STEP_PER_MM_TYPICAL = 200
+
+    PID_OUTPUT_MAX = MAX_DISTANCE*STEP_PER_MM_TYPICAL*Motors.MAX_MICROSTEPS
+
+
+
 # class FocusTracking:
 
 #     # in Hz
@@ -121,8 +143,7 @@ WORKING_RES_DEFAULT = 0.5
 TRACKERS = ['nearest-nbr', 'csrt', 'daSIAMRPN']
 DEFAULT_TRACKER = 'csrt'
 
-# Time interval for reading micro Controller
-UCONTROLLER_READ_INTERVAL = 25 
+
 
 CROPPED_IMG_RATIO = 10
 
@@ -173,10 +194,8 @@ MOTION_COMMANDS = ['X_order', 'Y_order', 'Theta_order']
 
 SEND_DATA = ['liquidLens_Freq', 'track_focus' , 'homing_command', 'track_obj_image' , 'X_order', 'Y_order', 'Theta_order', 'Zero_stage']
 
-if(SIMULATION == True):
-    REC_DATA = ['FocusPhase', 'X_stage', 'Y_stage', 'Theta_stage', 'track_obj_image', 'track_obj_stage']
-else:
-    REC_DATA = ['FocusPhase', 'X_stage', 'Y_stage', 'Theta_stage', 'track_obj_image_hrdware', 'track_obj_stage', 'homing_complete']
+
+REC_DATA = ['FocusPhase', 'X_stage', 'Y_stage', 'Theta_stage', 'track_obj_image_hrdware', 'track_obj_stage', 'homing_complete']
 
 
 INITIAL_VALUES = {'Time':0, 'X_objStage':0, 'Y_objStage':0, 'Z_objStage':0, 'X_stage':0, 'Y_stage':0,

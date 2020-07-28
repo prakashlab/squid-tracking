@@ -515,6 +515,8 @@ class NavigationController(QObject):
         self.z_pos = self.z_pos + delta
         self.zPos.emit(self.z_pos*1000)
 
+        
+
 class ImageDisplay(QObject):
 
     image_to_display = Signal(np.ndarray, str)

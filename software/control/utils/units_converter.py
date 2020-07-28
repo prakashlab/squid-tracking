@@ -83,11 +83,11 @@ class Units_Converter:
     # Transforming mm to stepper motor steps.
     #---------------------------------------------------
     def X_mm_to_step(self, Xmm):
-        Xstep = Xmm/self.mmPerRev_X*self.StepsPerRev_X
+        Xstep = (Xmm/self.mmPerRev_X)*self.StepsPerRev_X
         return Xstep
 
     def Y_mm_to_step(self, Ymm):
-        Ystep = Ymm/self.mmPerRev_Y*self.StepsPerRev_Y
+        Ystep = (Ymm/self.mmPerRev_Y)*self.StepsPerRev_Y
         return Ystep
 
     def mmPerRev_Z(self, Xpos_mm):                            #Xpos_mm position in the centerlign of the fluid channel's referenciel
@@ -95,7 +95,7 @@ class Units_Converter:
 
 
     def Z_mm_to_step(self, Zmm, Xpos_mm):
-        Zstep = Zmm/self.mmPerRev_Z(Xpos_mm)*self.StepsPerRev_Theta
+        Zstep = (Zmm/self.mmPerRev_Z(Xpos_mm))*self.StepsPerRev_Theta
         return Zstep
 
     #---------------------------------------------------

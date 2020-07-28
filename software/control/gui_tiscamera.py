@@ -55,7 +55,8 @@ class GravityMachineGUI(QMainWindow):
 		if SIMULATION is True:
 			# Define a camera object for each unique image-stream.
 			self.camera = {key:camera.Camera_Simulation() for key in self.imaging_channels}
-			self.microcontroller = microcontroller_tracking.Microcontroller_Simulation()
+			# self.microcontroller = microcontroller_tracking.Microcontroller_Simulation()
+			self.microcontroller = microcontroller_tracking.Microcontroller()
 
 		else:
 			self.camera = {key:camera.Camera(serial=CAMERAS[key]['serial'], width = CAMERAS[key]['px_format'][0], 
@@ -80,10 +81,6 @@ class GravityMachineGUI(QMainWindow):
 		
 		# Microcontroller Receiver object
 		self.microcontroller_Rec = core_tracking.microcontroller_Receiver(self.microcontroller, self.internal_state, self.trackingController)
-
-		# Microcontroller Send object
-		self.microcontroller_Sender = core_tracking.microcontroller_Sender(self.microcontroller, self.internal_state)
-
 		#-----------------------------------------------------------------------------------------------
 		# Define an ImageSaver, and Image Display object for each image stream
 		#-----------------------------------------------------------------------------------------------
@@ -96,10 +93,6 @@ class GravityMachineGUI(QMainWindow):
 		self.camera[TRACKING].set_software_triggered_acquisition() #self.camera.set_continuous_acquisition()
 		self.camera[TRACKING].set_callback(self.streamHandler[TRACKING].on_new_frame)
 		self.camera[TRACKING].enable_callback()
-
-
-
-
 		#------------------------------------------------------------------
 		# load widgets
 		#------------------------------------------------------------------
@@ -108,15 +101,15 @@ class GravityMachineGUI(QMainWindow):
 
 		# self.cameraSettingWidget = widgets.CameraSettingsWidget(self.camera,self.liveController)
 		self.liveControlWidget = widgets.LiveControlWidget(self.streamHandler[TRACKING],self.liveController, self.trackingController, self.camera[TRACKING])
-		self.navigationWidget = widgets_tracking.NavigationWidget(self.navigationController, self.internal_state, self.microcontroller_Sender)
+		self.navigationWidget = widgets_tracking.NavigationWidget(self.navigationController, self.internal_state, self.microcontroller)
 		#self.autofocusWidget = widgets.AutoFocusWidget(self.autofocusController)
-		self.trackingControlWidget = widgets_tracking.TrackingControllerWidget(self.streamHandler[TRACKING], self.trackingController, self.trackingDataSaver, self.internal_state, self.imageDisplayWindow[TRACKING])
+		self.trackingControlWidget = widgets_tracking.TrackingControllerWidget(self.streamHandler[TRACKING], self.trackingController, self.trackingDataSaver, self.internal_state, self.imageDisplayWindow[TRACKING], self.microcontroller)
 		
 
 
 		self.PID_Group_Widget = widgets_tracking.PID_Group_Widget(self.trackingController)
 
-		self.FocusTracking_Widget = widgets_tracking.FocusTracking_Widget(self.trackingController, self.internal_state)
+		self.FocusTracking_Widget = widgets_tracking.FocusTracking_Widget(self.trackingController, self.internal_state, self.microcontroller)
 
 
 		self.recordingControlWidget = widgets.RecordingWidget(self.streamHandler,self.imageSaver, self.internal_state, self.trackingControlWidget, self.trackingDataSaver, self.imaging_channels)
@@ -196,9 +189,6 @@ class GravityMachineGUI(QMainWindow):
 		self.trackingController.centroid_image.connect(self.imageDisplayWindow[TRACKING].draw_circle)
 		self.trackingController.Rect_pt1_pt2.connect(self.imageDisplayWindow[TRACKING].draw_rectangle)
 		
-
-		self.trackingController.multiplex_send_signal.connect(self.microcontroller_Sender.multiplex_sendData)
-
 		self.trackingController.save_data_signal.connect(self.trackingDataSaver.enqueue)
 		
 

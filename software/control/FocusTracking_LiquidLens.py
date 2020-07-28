@@ -60,9 +60,9 @@ class Tracker_Focus():
         self.FM_slope = 0 # measured decay rate of FM with distance (Delta FM/ Delta mm)
         
         freq_range=[liquidLens['Freq']['min'],liquidLens['Freq']['max']]
-        phase_lag=[0,0]
-        self.phase_lag_funct=interpolate.interp1d(freq_range,phase_lag)
-        self.phase_lag=self.phase_lag_funct(self.liquidLensFreq)
+        phase_lag = [0,0]
+        self.phase_lag_funct =interpolate.interp1d(freq_range,phase_lag)
+        self.phase_lag = self.phase_lag_funct(self.liquidLensFreq)
 
         self.cropped_imSize = None
 
@@ -161,8 +161,8 @@ class Tracker_Focus():
             
     def set_Freq(self,liquidLensFreq):
         # print("Frequency: {}".format(liquidLensFreq))
-        self.liquidLensFreq=liquidLensFreq
-        self.phase_lag=self.phase_lag_funct(self.liquidLensFreq)
+        self.liquidLensFreq = liquidLensFreq
+        self.phase_lag = self.phase_lag_funct(self.liquidLensFreq)
         print('liquid Lens freq: {}'.format(self.liquidLensFreq))
         
     def set_maxGain(self,gain):
