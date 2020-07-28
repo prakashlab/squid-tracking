@@ -17,12 +17,66 @@
 
 // If we want to run in open-loop mode, uncomment this line or set it with a build flag:
 #define RUN_OPEN_LOOP
-
+// For testing (pinging ucontroller and listening to answer)
+//#define TESTING;
+//#define USE_SERIAL_MONITOR
 //=================================================================================
 // Mathematical constants
 //=================================================================================
 const double pi = 3.1415926535897;
 
+/***************************************************************************************************/
+/***************************************** Communications ******************************************/
+/***************************************************************************************************/
+
+/* Command parsing scheme
+ *  
+byte[0]: Command type 
+  0: move stages
+  1: Object tracking
+  2: Focus tracking
+  3: Set focus tracking parameters
+  4: Home stages
+  5: Set stage positions to zero.
+
+For motion commands (byte[0] == 0)
+bytes[1] = direction of motion.
+
+bytes[2-3]: X motion command in microsteps (unsigned 2 byte int)
+
+bytes[4] = direction of motion.
+
+bytes[5-6]: Y motion command in microsteps (unsigned 2 byte int)
+
+bytes[7] = direction of motion.
+
+bytes[8-9]: Z motion command in microsteps (signed 2 byte int)
+
+(For non-motion commands byte[0]!=0)
+byte[1]: Sub-parameter being set 
+  For set parameter commands: 5, 7
+    sets the parameter whose value is being set
+      eg. for focus tracking:
+       0: liquid lens frequency
+       1: liquid lens amplitude
+      eg. for setting stage positions to zero:
+       0: x-stage
+       1: y-stage
+       2: theta-stage
+       
+bytes[2-3]: Value of the parameter
+  For set parameter commands:
+    byte[2]: Upper 8 bits of parameter value
+    byte[3]: lower 8 bits of parameter value
+    
+*/
+
+static const int CMD_LENGTH = 10;
+static const int MSG_LENGTH = 20;
+byte buffer_rx[500];
+byte buffer_tx[MSG_LENGTH];
+volatile int buffer_rx_ptr;
+bool calculateCRC_tx = true;
 //=================================================================================
 // PIN Definitions
 //=================================================================================
@@ -168,11 +222,7 @@ const double pi = 3.1415926535897;
 # define sendSerial_indicator_pin 24
 //# define trigger_indicator_Pin_GND 52
 //# define sendSerial_indicator_pin_GND 53
-//--------------------------------------------------
-// Serial communication
-//--------------------------------------------------
-# define CMD_LENGTH 12
-# define DATA_TX_LENGTH 20
+
 //=================================================================================
 // Stage Movement/Physical Variables
 //=================================================================================
@@ -191,14 +241,16 @@ long int PosStart_X = 0, PosStart_Y = 0, PosStart_Z = 0, PosStart_Theta = 0;
 
 float DeltaT=0; 
 
-int Homing = 0, HomingComplete = 0;
+bool flag_homing = false, flag_homing_complete = false;
 // Steps to move (command from the computer)
-float Step_X = 0, Step_Y = 0, Step_Theta = 0, Step_Z = 0;
+long int Step_X = 0, Step_Y = 0, Step_Theta = 0, Step_Z = 0;
 // Steps to move (based on Manual input)
 int TargetCurr_X = 0, TargetCurr_Y = 0, TargetCurr_Z = 0, TargetCurr_Theta = 0, TargetPrev_X = 0, TargetPrev_Y = 0, TargetPrev_Z = 0;            // Target required in Steps 
 bool ms1_X,ms2_X,ms3_X,ms1_Y,ms2_Y,ms3_Y,ms1_Z,ms2_Z,ms3_Z, ms1_Theta, ms2_Theta, ms3_Theta;          // State of microstepping pins
 int microSteps_X = 1, microSteps_Y = 1, microSteps_Z = 1, microSteps_Theta = 1;            // no:of fractional steps per full step
 int microSteps_Old_X=1, microSteps_Old_Y = 1, microSteps_Old_Z = 1;
+// Max no:of microsteps supported by the stepper driver. This is used to get sub-step resolution motions.
+float MAX_MICROSTEPS = 64;  
 //--------------------------------------------------
 // Variables to store lower and upper limits of the stage:
 //--------------------------------------------------
@@ -216,7 +268,7 @@ int stepperSpeedX, stepperSpeedY, stepperSpeedZ, stepperSpeedTheta;
 
 int maxAcclX, maxAcclY, maxAcclZ, maxAcclTheta;                           // Maximum acceleration of X,Y,Z steppers in steps/s^2
 
-int Tracking = 0;
+bool flag_tracking = false;
 // Set the stage speed of X and Theta stage
 int joystickSensitivity_X,joystickSensitivity_X_Prev;
 // Set the stage speed of X and Theta stage
@@ -226,7 +278,7 @@ int YfocusSensitivity=0,YfocusSensitivityPrev=0;
 bool joystickSensitivityChange=LOW;
 bool joystickSensitivity_X_Change=LOW;
 bool YfocusSensitivityChange=LOW;
-bool sensitivityChange=LOW;
+bool sensitivityChange = LOW;
 //=================================================================================
 // State Variables
 //=================================================================================
@@ -238,7 +290,6 @@ bool _xFlip = LOW, _yFlip=LOW, _zFlip = LOW, _xLimPos=LOW, _xLimNeg = LOW, _yLim
 
 // Stage-zeroing state variables
 int Zero_stage =0;
-
 
 volatile bool x_EncoderASet;
 volatile bool x_EncoderBSet;
@@ -280,11 +331,10 @@ volatile int x_Dir=0, y_Dir=0, z_Dir=0, theta_Dir=0, DirInput=0, ErrorCount=0;
 // Liquid Lens variable
 //=================================================================================
 
-bool isYtracking = false;
-volatile float liquidLensSweepFrequency = 2.0;
-volatile float liquidLensVOffset = 39.5;
-volatile float liquidLensVAmplitude = 0;   //10 corresponds to 1.4 mm
-bool liquidLensOrder=0;
+bool flag_focus_tracking = false;
+volatile float liquidLens_freq = 2.0;
+volatile float liquidLens_offset = 39.5;
+volatile float liquidLens_amp = 0;   //10 corresponds to 1.4 mm
 volatile float phase = 0;
 volatile int phase_code = 0;
 volatile int phase_code_lastTrigger = 0;
@@ -338,13 +388,7 @@ long int sample_interval_FL_prev = sample_interval_FL ;
 long int numTimerCycles_FL = (1000000/timerPeriod)*(sample_interval_FL/100);
 volatile long int counter_timer_FL = 0;
 bool startTriggering_FL = false;
-//=================================================================================
-// Serial Communication
-//=================================================================================
-byte buffer_tx[DATA_TX_LENGTH];
-byte buffer_rx[500];
-int buffer_rx_ptr;
-bool calculateCRC_tx = true;
+
 //============================================================================================================
 // Create required number of instances of the AccelStepper Class based on the no:of Stepper motors to control
 //============================================================================================================
@@ -482,8 +526,8 @@ void setMS123(int microstep,char motor){
 void resetHomingState()
 {
   inProgress = false;
-  Homing = 0;
-  HomingComplete = 0;
+  flag_homing = false;
+  flag_homing_complete = false;
   StageLocked = false;
   atXhome = false;
   atYhome = false;
@@ -855,11 +899,7 @@ void setMicroStepsJoystick(int joystickSensitivity, char axis)
       setMS123(microSteps_Theta,'T');
   
       
-    }
-  
- 
-   
-   
+    }   
 }
 
   //-------------------------------------------------------------------------------
@@ -929,8 +969,6 @@ int DecoderInput()
   else return 0;
 
 }
-
-
 //-------------------------------------------------------------------------------
 //        Interrupt service routines for the motor's quadrature encoder
 //-------------------------------------------------------------------------------
@@ -1009,7 +1047,7 @@ void HandleInputEncoderInterrupt()
   _InputEncoderAPrev = _InputEncoderASet;
   _InputEncoderBPrev = _InputEncoderBSet;
 
-  if(!isYtracking || ManualMode){
+  if(!flag_focus_tracking || ManualMode){
     // Step the Focus stage Stepper by a small number of steps
     if(DirInput > 0)
     {
@@ -1086,7 +1124,7 @@ uint16_t crc_xmodem (byte* data_array, uint8_t data_length)
 void liquid_lens_handler_timer_500us(){
   
   // update phase (add *0.1 to debug )
-  phase += 2*pi*(liquidLensSweepFrequency*timerPeriod/1000000);
+  phase += 2*pi*(liquidLens_freq*timerPeriod/1000000);
   if (phase > 2*pi) {
     phase -= 2*pi;
   }
@@ -1097,7 +1135,7 @@ void liquid_lens_handler_timer_500us(){
   analogWrite(DAC0, phase_code/64);
 
   /*
-  liquidLensV = liquidLensVOffset + liquidLensVAmplitude*sin(phase);
+  liquidLensV = liquidLens_offset + liquidLens_amp*sin(phase);
   liquidLensVCode = liquidLensV*22.5828 - 551.0199;
   
   // translate phase into voltage and send it to the liquid lens driver
@@ -1165,6 +1203,126 @@ void HandleOptotuneSYNCInterrupt() {
   phase = pi/2.0;
 }
 
+
+/*************************************************************************************
+ ******************************* Serial send and Receive *****************************
+ *************************************************************************************/
+ void serial_send()
+ {
+    buffer_tx[0] = byte(phase_code_lastTrigger%256);
+    buffer_tx[1] = byte(phase_code_lastTrigger>>8);
+    
+    #ifdef RUN_OPEN_LOOP
+      x_EncoderTicks = CurrPos_X;
+      y_EncoderTicks = CurrPos_Y;
+      theta_EncoderTicks = CurrPos_Theta;
+    #else 
+      #ifdef TESTING
+        x_EncoderTicks = Step_X/MAX_MICROSTEPS;
+        y_EncoderTicks = Step_Y/MAX_MICROSTEPS;
+        theta_EncoderTicks = Step_Theta/MAX_MICROSTEPS;
+      #endif
+    #endif
+    
+    CurrPos_X_code = x_EncoderTicks;  //right sens of the motor
+    
+    if (CurrPos_X_code>0){
+      buffer_tx[2] = byte(int(0));
+    }
+    else{
+      buffer_tx[2] = byte(int(1));
+      CurrPos_X_code = -CurrPos_X_code;
+    }
+    buffer_tx[3] = byte(CurrPos_X_code>>24);
+    buffer_tx[4] = byte(CurrPos_X_code>>16);
+    buffer_tx[5] = byte(CurrPos_X_code>>8);
+    buffer_tx[6] = byte(CurrPos_X_code%256);
+    
+    CurrPos_Y_code = y_EncoderTicks;
+
+    if (CurrPos_Y_code>0){
+      buffer_tx[7] = byte(int(0));
+    }
+    else{
+      buffer_tx[7] = byte(int(1));
+      CurrPos_Y_code = -CurrPos_Y_code;
+    }
+    buffer_tx[8]  = byte(CurrPos_Y_code>>24);
+    buffer_tx[9]  = byte(CurrPos_Y_code>>16);
+    buffer_tx[10] = byte(CurrPos_Y_code>>8);
+    buffer_tx[11] = byte(CurrPos_Y_code%256);
+   
+    CurrPos_Theta_code = theta_EncoderTicks;
+    
+    if(CurrPos_Theta_code>0) 
+    {
+      buffer_tx[12] = byte(int(0));
+    }
+    else 
+    {
+      buffer_tx[12] = byte(int(1));
+      CurrPos_Theta_code = -CurrPos_Theta_code;
+    }
+    buffer_tx[13] = byte(CurrPos_Theta_code>>24);
+    buffer_tx[14] = byte(CurrPos_Theta_code>>16);
+    buffer_tx[15] = byte(CurrPos_Theta_code>>8);
+    buffer_tx[16] = byte(CurrPos_Theta_code%256);
+
+    // Testing
+    #ifdef TESTING
+      buffer_tx[17] = byte(flag_tracking);
+      buffer_tx[18] = byte(flag_focus_tracking);
+      buffer_tx[19] = byte(flag_homing);
+    #else
+      buffer_tx[17] = byte(!ManualMode);
+      buffer_tx[18] = byte(!digitalRead(triggerTrack));
+      buffer_tx[19] = byte(flag_homing_complete);
+    #endif
+ 
+    digitalWrite(sendSerial_indicator_pin,HIGH);
+    SerialUSB.write(buffer_tx, MSG_LENGTH);
+    digitalWrite(sendSerial_indicator_pin,LOW);
+
+  
+ }
+
+ void serial_send_monitor()
+ {
+
+    #ifdef RUN_OPEN_LOOP
+      x_EncoderTicks = CurrPos_X;
+      y_EncoderTicks = CurrPos_Y;
+      theta_EncoderTicks = CurrPos_Theta;
+    #else 
+    #ifdef TESTING
+      x_EncoderTicks = Step_X/MAX_MICROSTEPS;
+      y_EncoderTicks = Step_Y/MAX_MICROSTEPS;
+      theta_EncoderTicks = Step_Theta/MAX_MICROSTEPS;
+    #endif
+    #endif
+
+    SerialUSB.print("X position:");
+    SerialUSB.println(x_EncoderTicks);
+
+    SerialUSB.print("Y position:");
+    SerialUSB.println(y_EncoderTicks);
+
+    SerialUSB.print("Theta position:");
+    SerialUSB.println(theta_EncoderTicks);
+
+    SerialUSB.print("Tracking flag:");
+    SerialUSB.println(flag_tracking);
+
+    SerialUSB.print("Focus tracking flag:");
+    SerialUSB.println(flag_focus_tracking);
+
+    SerialUSB.print("Homing flag:");
+    SerialUSB.println(flag_homing);
+
+  
+ }
+ 
+
 //%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 //-------------------------------------------------------------------------------
 //                          Beginning of SETUP
@@ -1181,22 +1339,18 @@ void setup()
   SerialUSB.begin (2000000);
   
   while(!SerialUSB); //Wait until connection is established
-  buffer_rx_ptr=0;
-  int a = 1;
-  //SerialUSB.println(1,DEC); 
-  SerialUSB.write(a);
-  int init=0;
-  
-  while (init!=2)        // Wait for command 'a' to be sent from the host computer.
-  {
-    init=int(SerialUSB.read());
-  }
-  SerialUSB.write(init);
- //===============================================================================
-  // Serial Communication for debugging
-  //===============================================================================
+//  buffer_rx_ptr=0;
+//  int a = 1;
+//  //SerialUSB.println(1,DEC); 
+//  SerialUSB.write(a);
+//  int init=0;
+//  
+//  while (init!=2)        // Wait for command 'a' to be sent from the host computer.
+//  {
+//    init=int(SerialUSB.read());
+//  }
+//  SerialUSB.write(init);
 
-//  Serial.begin(115200);
   
   //===============================================================================
   // Setup User Input Pins
@@ -1342,8 +1496,8 @@ void setup()
    //-------------------------------------------------------------------------------
   // Homing variables
   //-------------------------------------------------------------------------------
-  Homing = 0;
-  HomingComplete = 0;
+  flag_homing = false;
+  flag_homing_complete = false;
   //-------------------------------------------------------------------------------
   // Light modulation setup
   //-------------------------------------------------------------------------------
@@ -1371,7 +1525,7 @@ void loop()
   ManualMode = digitalRead(ManualPin);
 
   #ifdef RUN_OPEN_LOOP
-  ManualMode = LOW;
+    ManualMode = LOW;
   #endif
   
   currMillisRec = millis();
@@ -1510,118 +1664,28 @@ void loop()
   // Serial sending block (Send data to computer)
   //-------------------------------------------------------------------------------
   // uController only sends data when image is triggered.
+  /* Data sent to computer
+   *  1. Phase code
+   *  2. X position of stage (open-loop stepper position or closed-loop encoder position)
+   *  3. Y position of stage (open-loop stepper position or closed-loop encoder position)
+   *  4. Theta position of stage (open-loop stepper position or closed-loop encoder position)
+   *  5. Stage Auto/Manual mode
+   *  6. Start tracking (triggered by hardware button)
+   *  7. Homing completed flag 
+   */
   currMillisSend = millis();
   
   if (sendData & currMillisSend - prevMillisSend > sendInterval){
 
     prevMillisSend = currMillisSend;
-    
-    buffer_tx[0] = byte(phase_code_lastTrigger%256);
-    buffer_tx[1] = byte(phase_code_lastTrigger>>8);
-    
-    // When only open-loop position is available
-//    CurrPos_X_code = CurrPos_X;  //right sens of the motor
-    // When a closed-loop encoder is implemented
-    // Testing
-    #ifdef RUN_OPEN_LOOP
-    x_EncoderTicks = CurrPos_X;
+
+    #ifdef USE_SERIAL_MONITOR
+      serial_send_monitor();
+    #else
+      serial_send();
     #endif
-    
-    CurrPos_X_code = x_EncoderTicks;  //right sens of the motor
-    if (CurrPos_X_code>0){
-      buffer_tx[2] = byte(int(0));
-    }
-    else{
-      buffer_tx[2] = byte(int(1));
-      CurrPos_X_code = -CurrPos_X_code;
-    }
-    buffer_tx[3] = byte(CurrPos_X_code>>24);
-    buffer_tx[4] = byte(CurrPos_X_code>>16);
-    buffer_tx[5] = byte(CurrPos_X_code>>8);
-    buffer_tx[6] = byte(CurrPos_X_code%256);
-
-    // CurrPos_Y_code= CurrPos_Y;  //right sens of the motor
-    
-    #ifdef RUN_OPEN_LOOP
-    y_EncoderTicks = CurrPos_Y;
-    #endif
-    CurrPos_Y_code = y_EncoderTicks;
-
-    if (CurrPos_Y_code>0){
-      buffer_tx[7] = byte(int(0));
-    }
-    else{
-      buffer_tx[7] = byte(int(1));
-      CurrPos_Y_code = -CurrPos_Y_code;
-    }
-    buffer_tx[8]  = byte(CurrPos_Y_code>>24);
-    buffer_tx[9]  = byte(CurrPos_Y_code>>16);
-    buffer_tx[10] = byte(CurrPos_Y_code>>8);
-    buffer_tx[11] = byte(CurrPos_Y_code%256);
-    
-    #ifdef RUN_OPEN_LOOP
-    theta_EncoderTicks = CurrPos_Theta;
-    #endif
-    
-    CurrPos_Theta_code = theta_EncoderTicks;
-    if(CurrPos_Theta_code>0) 
-    {
-      buffer_tx[12] = byte(int(0));
-      
-    }
-    else 
-    {
-      buffer_tx[12] = byte(int(1));
-      CurrPos_Theta_code = -CurrPos_Theta_code;
-    }
-    buffer_tx[13] = byte(CurrPos_Theta_code>>24);
-    buffer_tx[14] = byte(CurrPos_Theta_code>>16);
-    buffer_tx[15] = byte(CurrPos_Theta_code>>8);
-    buffer_tx[16] = byte(CurrPos_Theta_code%256);
-    
-    buffer_tx[17] = byte(!ManualMode);
-
-    // tracking trigger
-    buffer_tx[18] = byte(!digitalRead(triggerTrack));
-
-    buffer_tx[19] = byte(HomingComplete);
-  
-    
-//    // 16 bit crc
-//    calculateCRC_tx = false;
-//    if(calculateCRC_tx) {
-//      uint16_t crc = crc_ccitt(buffer_tx,24);
-//      // uint16_t crc = crc_xmodem(buffer_tx,24);
-//      buffer_tx[25] = byte(crc>>8);
-//      buffer_tx[26] = byte(crc%256);
-//    }
-//    else{
-//      buffer_tx[0] = 0;
-//      buffer_tx[0] = 0;
-//    }    
-
-    digitalWrite(sendSerial_indicator_pin,HIGH);
-    SerialUSB.write(buffer_tx,DATA_TX_LENGTH);
-    digitalWrite(sendSerial_indicator_pin,LOW);
-
     sendData=false;
   }
-
-  //-------------------------------------------------------------------------------
-  // Serial print (for debugging)
-  //-------------------------------------------------------------------------------
-//  Serial.print("X pos: ");
-//  Serial.println(CurrPos_X);
-//  Serial.print("X pos encoder: ");
-//  Serial.println(x_EncoderTicks);
-//  Serial.print("Y pos encoder: ");
-//  Serial.println(y_EncoderTicks);
-//  Serial.print("X encoder pin A:");
-//  Serial.println(x_EncoderASet);
-//  Serial.print("X encoder pin B:");
-//  Serial.println(x_EncoderBSet);
-//  Serial.print("Input encoder");
-//  Serial.print(_InputEncoderTicks);
   //-------------------------------------------------------------------------------
   // Serial Receiving Block 
   //-------------------------------------------------------------------------------
@@ -1643,113 +1707,116 @@ void loop()
       //Data analysis: if the right message is read, lets compute the data and update arduino position
       isReceived = false;
       
-      if (buffer_rx_ptr == CMD_LENGTH) {
- 
+      if (buffer_rx_ptr == CMD_LENGTH) 
+      {
         isReceived=true;
 
-        // Holding freq fized (TESTING)
-        liquidLensSweepFrequency = float(int(buffer_rx[0]) + int(buffer_rx[1]) *256)/100;
-//        liquidLensVAmplitude = float(int(buffer_rx[2]) + int(buffer_rx[3]) *256)/1000*20/1.4;        //the amplitude is sent in mm, and is converted in V: 10V = 1.4 mm
-//        liquidLensVOffset = float(int(buffer_rx[4]) + int(buffer_rx[5]) *256)/100;
-        
-        liquidLensOrder=int(buffer_rx[2]);
-        
-        if (liquidLensOrder==1 ){
-          isYtracking=true;
-        }
-        else{
-          isYtracking=false;
-        }
-        
-        
-        
-        Homing = int(buffer_rx[3]);                                                                  
-        Tracking=int(buffer_rx[4]);
-        
-        Step_X = float(int(buffer_rx[5])+(int(buffer_rx[6]) << 8));                                   // X steps to move  ATTENTION: We change the sens of the motor 
-        if (Step_X>32767){
-          Step_X=Step_X-65536;
-        }
-        Step_X = Step_X/100;                                                                   
-         
-        Step_Y = float(int(buffer_rx[7])+(int(buffer_rx[8]) << 8));
-        if (Step_Y>32767){
-          Step_Y=Step_Y-65536;
-        }
-        Step_Y = -Step_Y/100;
-        
-
-        Step_Theta = float(int(buffer_rx[9])+(int(buffer_rx[10]) << 8)); 
-        if (Step_Theta > 32767){
-          Step_Theta = Step_Theta - 65536;
-        }
-        Step_Theta= Step_Theta/100;
-
-        Zero_stage = int(buffer_rx[11]); 
-
-
-        if(Zero_stage == 1)
+        //Motion commands
+        if(buffer_rx[0] == 'M')
         {
-          Zero_Stage_X();
-        }
-        else if(Zero_stage == 2)
-        {
-          Zero_Stage_Y();
-        }
-        else if(Zero_stage == 3)
-        {
-          Zero_Stage_Theta();
+          Step_X = long(buffer_rx[1]*2-1)*(long(buffer_rx[2])*256 + long(buffer_rx[3])); // relative position to move in full-steps
+          Step_Y = long(buffer_rx[4]*2-1)*(long(buffer_rx[5])*256 + long(buffer_rx[6]));
+          Step_Theta = long(buffer_rx[7]*2-1)*(long(buffer_rx[8])*256 + long(buffer_rx[9]));
           
         }
-  
-        
-      
+        // Set parameter command 
+        else if(buffer_rx[0] == 'P')
+        {
 
-        
-//        sample_interval_FL_prev = sample_interval_FL;
-//        // Sampling interval for FL images (100*seconds)
-//        
-//        sample_interval_FL = int(buffer_rx[15]) + int(buffer_rx[16]) << 8;
-        
-//        updateNumTimerCycles();
-        
+          if(buffer_rx[1]=='L')
+          {
+            if(buffer_rx[2]=='F')
+            {
+              liquidLens_freq = float(int(buffer_rx[3]) + int(buffer_rx[4]) *256)/100;
+            }
+            else if(buffer_rx[2]=='O')
+            {
+              liquidLens_offset = float(int(buffer_rx[3]) + int(buffer_rx[4]) *256)/100;
+            }
+            else if(buffer_rx[2]=='A')
+            {
+              liquidLens_amp = float(int(buffer_rx[3]) + int(buffer_rx[4]) *256)/100;
+            }
+          }
+
+          // we can also add camera triggering frrq in the future
+          
+        }
+        // Set flag commands
+        else if(buffer_rx[0] == 'F')
+        {
+          if(buffer_rx[1] == 'O') // Set tracking object flag
+          { 
+            if(buffer_rx[2] == 1)
+            {
+              flag_tracking = true;
+            }
+            else
+            {
+              flag_tracking = false;
+            }
+          }
+          else if(buffer_rx[1] == 'L') // Set focus tracking object using liquid lens flag
+          {
+             if(buffer_rx[2] == 1)
+            {
+              flag_focus_tracking = true;
+            }
+            else
+            {
+              flag_focus_tracking = false;
+            }
+            
+          }
+          else if(buffer_rx[1] == 'H') // Set Homing flag to true
+          { 
+             flag_homing = true;
+          }
+          
+        }
+        // Zero-stages command 
+        else if(buffer_rx[0] == '0')
+        {
+          if(buffer_rx[1] == 'X')
+          {
+            Zero_Stage_X();
+          }
+          else if(buffer_rx[1]=='Y')
+          {
+            Zero_Stage_Y();
+          }
+          else if(buffer_rx[1]=='T')
+          {
+            Zero_Stage_Theta();
+          }
+          
+        }
         //-------------------------------------------------------------------------------
         // Automatic Input Block
         //-------------------------------------------------------------------------------
-   
-        // If an object is detected then move the stage based on the positional error signal
-        if(ManualMode == LOW && Tracking > 0 && StageLocked == false)
+        
+        // If an object is detected then move the stage based on the commanded error signal
+        if(ManualMode == LOW && flag_tracking > 0 && StageLocked == false)
         { 
-          stepperTHETA.move((int) round(microSteps_Theta * Step_Theta));
+          stepperTHETA.move((long) round(microSteps_Theta * Step_Theta/MAX_MICROSTEPS));
           
-          stepperX.move((int) round(microSteps_X * Step_X *((Step_X>0)*_xLimPos + (Step_X < 0) *_xLimNeg)));
+          stepperX.move((long) round((microSteps_X/MAX_MICROSTEPS) * Step_X *((Step_X>0)*_xLimPos + (Step_X<0) *_xLimNeg)));
           
-          if (isYtracking)
+          if (flag_focus_tracking)
           {
-             stepperY.move((int) round(microSteps_Y * Step_Y * ((Step_Y>0)*_yLimPos + (Step_Y < 0) *_yLimNeg)));
-                // Disabling limit switch control
-//                 stepperY.move((int) round(microSteps_Y * Step_Y)); 
-
+             stepperY.move((long) round((microSteps_Y/MAX_MICROSTEPS) * Step_Y * ((Step_Y>0)*_yLimPos + (Step_Y<0) *_yLimNeg)));
           }
         }
+        
       }
-
-
-     
-      
     }
 
-  
+ 
     
-
-    
-   // For testing
-//    Homing = 0;
-    
-    if (Homing==1 || inProgress == true)
+    if (flag_homing==1 || inProgress == true)
   {
 
-      if(Homing==1 && inProgress == false)
+      if(flag_homing==1 && inProgress == false)
       { 
             // Lock the stage so Manual inputs and speed changes are not acted upon.
           StageLocked = true;
@@ -1799,7 +1866,6 @@ void loop()
           atYhome = true;
       }
 
-//      atXhome = true;
       //If Homing is complete for both stages
       if(atXhome && atYhome)
       { 
@@ -1809,7 +1875,7 @@ void loop()
           resetHomingState();
           reset_X_StepperSpeed(microSteps_Old_X);
           reset_Y_StepperSpeed(microSteps_Old_Y);
-          HomingComplete = 1;
+          flag_homing_complete = true;
 
           // Also set some Homing_Complete flag to true and send it to the computer
 

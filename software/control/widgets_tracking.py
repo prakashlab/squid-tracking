@@ -28,7 +28,7 @@ class TrackingControllerWidget(QFrame):
 	Text boxes for base path and Experiment ID.
 
 	'''
-	def __init__(self, streamHandler, trackingController, trackingDataSaver, internal_state, ImageDisplayWindow, main=None, *args, **kwargs):
+	def __init__(self, streamHandler, trackingController, trackingDataSaver, internal_state, ImageDisplayWindow, microcontroller, main=None, *args, **kwargs):
 		super().__init__(*args, **kwargs)
 
 		self.base_path_is_set = False
@@ -41,6 +41,8 @@ class TrackingControllerWidget(QFrame):
 		self.internal_state = internal_state
 
 		self.ImageDisplayWindow = ImageDisplayWindow
+
+		self.microcontroller = microcontroller
 
 		# self.add_components()
 		self.setFrameStyle(QFrame.Panel | QFrame.Raised)
@@ -165,14 +167,24 @@ class TrackingControllerWidget(QFrame):
 
 		if self.btn_track.isChecked():
 
-			# Start a new track. If 'Aquire' is true this also creates a track file.
+			# Start a new track. If 'Acquire' is true this also creates a track file.
 			# Internal state is changed after creating this file.
+				# Update the internal_state to indicate that object should be tracked using image proc
+			self.internal_state.data['track_obj_image'] = True
+
+			print('Set track_obj_image to : {}'.format(self.internal_state.data['track_obj_image']))
+			
+			self.microcontroller.send_tracking_command(True)
+
 			self.trackingDataSaver.start_new_track()
 			self.streamHandler.start_tracking()
 
 		else:
 			self.streamHandler.stop_tracking()
 			self.internal_state.data['track_obj_image'] = False
+
+			# Send the track_obj_image flag to uController
+			self.microcontroller.send_tracking_command(False)
 			# Resets the track deques and counters
 
 			self.trackingController.initialise_track()
@@ -237,16 +249,13 @@ class TrackingControllerWidget(QFrame):
 
 class NavigationWidget(QFrame):
 	
-	def __init__(self, navigationController, internal_state, microcontroller_Sender,  main=None, *args, **kwargs):
+	def __init__(self, navigationController, internal_state, microcontroller,  main=None, *args, **kwargs):
 		super().__init__(*args, **kwargs)
 		self.navigationController = navigationController
 		self.internal_state = internal_state
-		self.microcontroller_Sender = microcontroller_Sender
+		self.microcontroller = microcontroller
 		self.add_components()
 		self.setFrameStyle(QFrame.Panel | QFrame.Raised)
-
-		
-
 
 	def add_components(self):
 
@@ -309,10 +318,6 @@ class NavigationWidget(QFrame):
 
 		self.stage_control_group.setLayout(stage_control)
 
-
-		
-
-
 		layout = QGridLayout()
 
 		layout.addWidget(self.stage_position, 0,0,1,1)
@@ -329,34 +334,20 @@ class NavigationWidget(QFrame):
 
 		self.homing_button.clicked.connect(self.homing_button_click)
 
-
-
-
-
 	def zero_X_stage(self):
 
 		self.internal_state.data['Zero_stage'] = 1
-
-		self.microcontroller_Sender.multiplex_sendData(0,0,0)
+		self.microcontroller.send_stage_zero_command('X')
 	
-
 	def zero_Y_stage(self):
 
 		self.internal_state.data['Zero_stage'] = 2
-
-		self.microcontroller_Sender.multiplex_sendData(0,0,0)
-		
-
-		
+		self.microcontroller.send_stage_zero_command('Y')
 
 	def zero_Theta_stage(self):
 
 		self.internal_state.data['Zero_stage'] = 3
-
-		self.microcontroller_Sender.multiplex_sendData(0,0,0)
-		
-
-	
+		self.microcontroller.send_stage_zero_command('T')
 
 	# Triggered by microController_Receiever
 	def update_display(self):
@@ -370,6 +361,9 @@ class NavigationWidget(QFrame):
 
 		# Update the internal homing command state
 		self.internal_state.data['homing_command'] = True
+
+		# Send homing command to microcontroller
+		self.microcontroller.send_homing_command()
 
 		# self.homing_button.processing('Homing stages...')
 
@@ -386,16 +380,6 @@ class NavigationWidget(QFrame):
 
 		else:
 			self.homing_button.failure('Homing failed!')
-
-
-		
-
-
-
-
-
-
-
 
 
 
@@ -438,10 +422,6 @@ class PID_Group_Widget(QFrame):
 
 
 		self.setLayout(hor_layout)
-
-
-
-
 
 		# Connections
 
@@ -567,12 +547,12 @@ class PID_Widget(QGroupBox):
 
 class FocusTracking_Widget(QFrame):
 
-	def __init__(self, trackingController, internal_state, main=None, *args, **kwargs):
+	def __init__(self, trackingController, internal_state, microcontroller, main=None, *args, **kwargs):
 		super().__init__(*args, **kwargs)
 
 		self.trackingController = trackingController
-
 		self.internal_state = internal_state
+		self.microcontroller = microcontroller
 
 		self.add_components()
 		
@@ -668,13 +648,17 @@ class FocusTracking_Widget(QFrame):
 			# Set the internal state value
 			self.internal_state.data['track_focus'] = True
 
+			self.microcontroller.send_focus_tracking_command(True)
+
 			# Start the liquid lens sweep
 			self.trackingController.tracker_focus.liquid_lens.start()
 			self.button_FocusTracking.setText("Stop Focus Tracking")
+
 			
 		else:
 			# Set the internal state value
 			self.internal_state.data['track_focus'] = False
+			self.microcontroller.send_focus_tracking_command(False)
 			self.trackingController.tracker_focus.liquid_lens.stop()
 			self.button_FocusTracking.setText("Start Focus Tracking")
 			
@@ -734,6 +718,9 @@ class FocusTracking_Widget(QFrame):
 		self.trackingController.tracker_focus.set_Freq(newvalue)
 
 		self.trackingController.tracker_focus.liquid_lens.set_Freq(newvalue)
+
+		# Send new frequency value to microcontroller
+		self.microcontroller.send_liquid_lens_freq(newvalue)
 
 		# Also send the amplitude change to the liquid lens
 		# @@@@@@ To Implement @@@@@@@

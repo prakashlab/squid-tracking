@@ -46,8 +46,6 @@ class TrackingController(QObject):
 
 	save_data_signal = Signal()
 
-	multiplex_send_signal = Signal(float, float, float)
-
 	''' 
 	Connection map
 
@@ -311,21 +309,16 @@ class TrackingController(QObject):
 				# print('Image error: {}, {}, {} mm'.format(x_error, y_error, z_error))
 				X_order, Y_order, Theta_order = self.get_motion_commands(x_error,y_error,z_error)
 
-			else:
-				# X_order, Y_order, Z_order is in stepper motor steps
-				X_order, Y_order, Theta_order = 0,0,0            
-				
+				# New serial interface (send data directly to micro-controller object)
+				print('Command sent to micro-controller: {}, {}, {}'.format(X_order, Y_order, Theta_order))
+				self.microcontroller.send_motion_command_xytheta(X_order, Y_order, Theta_order)
+
+			# else: # with the new serial comm interface there is no need to send data to uController if new object is detected
+			# 	# X_order, Y_order, Z_order is in stepper motor steps
+			# 	X_order, Y_order, Theta_order = 0,0,0            
 			
-			# @@@testing
-			# print('Tracking order to uController: {}, {}, {} steps'.format(X_order, Y_order, Theta_order))
-			# We want to send to the microcontroller at a constant rate, even if an object is not found
 
-			# Send the motion commands and instruct the multiplex send object to send data 
-			# to the microcontroller. This order is in Full Steps. 
-			self.multiplex_send_signal.emit(X_order, Y_order, Theta_order)
-
-
-			# print(X_order, Y_order, Theta_order)
+			# self.multiplex_send_signal.emit(X_order, Y_order, Theta_order)
 
 			# Update the Internal State Model
 			self.update_internal_state()
@@ -367,8 +360,6 @@ class TrackingController(QObject):
 		self.Z_objStage = deque(maxlen=self.dequeLen)
 
 		
-
-
 	def update_elapsed_time(self):
 
 		self.Time.append(time.time() - self.begining_Time)
@@ -400,10 +391,10 @@ class TrackingController(QObject):
 	def get_motion_commands(self, x_error, y_error, z_error):
 		# Take an error signal and pass it through a PID algorithm
 
-		# Convert from mm to steps.
-		x_error_steps = self.units_converter.X_mm_to_step(x_error)
-		y_error_steps = self.units_converter.Y_mm_to_step(y_error)
-		theta_error_steps = self.units_converter.Z_mm_to_step(z_error, self.X_objStage[-1])
+		# Convert from mm to steps (these are rounded to the nearest integer).
+		x_error_steps = int(Motors.MAX_MICROSTEPS*self.units_converter.X_mm_to_step(x_error))
+		y_error_steps = int(Motors.MAX_MICROSTEPS*self.units_converter.Y_mm_to_step(y_error))
+		theta_error_steps = int(Motors.MAX_MICROSTEPS*self.units_converter.Z_mm_to_step(z_error, self.X_objStage[-1]))
 
 		if self.resetPID:
 			self.pid_controller_x.initiate(x_error_steps,self.Time[-1]) #reset the PID
@@ -496,7 +487,8 @@ class TrackingController(QObject):
 				raise NameError('Key not found in Internal State')
 
 
-
+	def send_focus_tracking(self, focus_tracking_flag):
+		self.microcontroller.send_focus_tracking_command(focus_tracking_flag)
 
 
 class InternalState():
@@ -538,7 +530,7 @@ class microcontroller_Receiver(QObject):
 
 		# Define a timer to read the Arduino at regular intervals
 		self.timer_read_uController = QTimer()
-		self.timer_read_uController.setInterval(UCONTROLLER_READ_INTERVAL)
+		self.timer_read_uController.setInterval(ucontroller.UCONTROLLER_READ_INTERVAL)
 		self.timer_read_uController.timeout.connect(self.getData_microcontroller)
 		self.timer_read_uController.start()
 
@@ -592,70 +584,6 @@ class microcontroller_Receiver(QObject):
 	def stop(self):
 
 		self.stop_signal_received = True
-
-
-
-
-
-
-		
-class microcontroller_Sender(QObject):
-
-	'''
-	Command list to microcontroller
-
-	X_order, Y_order, Z_order, track_obj_image, track_focus, liquidLensFreq, liquidLensAmpl, homing
-
-	'''
-
-	def __init__(self, microcontroller, internal_state):
-		QObject.__init__(self)
-
-		self.microcontroller = microcontroller
-		self.internal_state = internal_state
-
-		self.sendData_dict = {key:[] for key in SEND_DATA}
-
-		self.sendData_array = []
-
-		
-
-	def multiplex_sendData(self, X_order, Y_order, Theta_order):
-		
-		# Assemble data from different sources into a send command.
-		# print(X_order, Y_order, Theta_order)
-		# X_error, Y_error, Z_error (in full steps)
-		self.sendData_dict['X_order'] = X_order
-		self.sendData_dict['Y_order'] = Y_order
-		self.sendData_dict['Theta_order'] = Theta_order
-
-		# Update the local copy with the state of non-motion-related data to be sent to uController.
-		self.get_sendData()
-		
-		self.sendData_array = [self.sendData_dict[key] for key in self.sendData_dict.keys()]
-		
-		self.sendData()
-		
-	def get_sendData(self):
-
-		for key in SEND_DATA:
-			if(key not in MOTION_COMMANDS):
-				try:
-					self.sendData_dict[key] = self.internal_state.data[key]
-				except:
-					print('{} not found in Internal State model'.format(key))
-
-	def sendData(self):
-		# print("Sending data to uController")
-		# Send command to the microcontroller
-		self.microcontroller.send_command(self.sendData_array)
-
-		# Reset the Stage-zeroing command.
-		self.internal_state.data['Zero_stage'] = 0
-
-
-
-
 
 
 class TrackingDataSaver(QObject):
@@ -861,16 +789,6 @@ class TrackingDataSaver(QObject):
 
 		else:
 			pass
-
-
-		# Update the internal_state to indicate that object should be tracked using image proc
-		self.internal_state.data['track_obj_image'] = True
-		
-		print('Set track_obj_image to : {}'.format(self.internal_state.data['track_obj_image']))
-		
-
-
-
 
 
 	def create_metadata_file(self):
