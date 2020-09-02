@@ -18,7 +18,7 @@
 // If we want to run in open-loop mode, uncomment this line or set it with a build flag:
 #define RUN_OPEN_LOOP
 // For testing (pinging ucontroller and listening to answer)
-//#define TESTING;
+#define TESTING;
 //#define USE_SERIAL_MONITOR
 //=================================================================================
 // Mathematical constants

@@ -644,7 +644,6 @@ class TrackingDataSaver(QObject):
 		# CSV register
 		self.csv_register = CSV_Tool.CSV_Register(header = [self.saveDataNames_imageChannels])
 
-
 		# Use a counter 
 		self.counter = 0
 
@@ -657,12 +656,12 @@ class TrackingDataSaver(QObject):
 
 	def process_queue(self):
 		while True:
-			# print('Processing Datasaver queue')
 			# stop the thread if stop signal is received
 			if self.stop_signal_received:
 				return
 			# process the queue
 			try:
+
 				self.DataToSave_dict = self.queue.get(timeout=0.1)
 
 				self.DataToSave = [self.DataToSave_dict[key] for key in self.DataToSave_dict.keys()]

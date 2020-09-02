@@ -480,7 +480,9 @@ class RecordingWidget(QFrame):
         dialog = QFileDialog()
         save_dir_base = dialog.getExistingDirectory(None, "Select Folder")
         # Set base path for image saver
-        self.imageSaver[TRACKING].set_base_path(save_dir_base)
+        for channel in self.imaging_channels:
+            if(self.checkbox[channel].isChecked()):
+                self.imageSaver[channel].set_base_path(save_dir_base)
       
         
         # set the base path for the data saver

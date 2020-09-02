@@ -46,7 +46,6 @@ class GravityMachineGUI(QMainWindow):
 			for key in self.imaging_channels}
 
 		
-
 		self.imageDisplayWindow_ThresholdedImage = core.ImageDisplayWindow('Thresholded Image', rotate_image_angle=90)
 
 		#------------------------------------------------------------------
@@ -114,8 +113,8 @@ class GravityMachineGUI(QMainWindow):
 
 		self.recordingControlWidget = widgets.RecordingWidget(self.streamHandler,self.imageSaver, self.internal_state, self.trackingControlWidget, self.trackingDataSaver, self.imaging_channels)
 
-		self.recordTabWidget = QTabWidget()
-		self.recordTabWidget.addTab(self.recordingControlWidget, "Acquisition control")
+		# self.recordTabWidget = QTabWidget()
+		# self.recordTabWidget.addTab(self.recordingControlWidget, "Acquisition control")
 		
 		self.cameraSettings_Tab = QTabWidget()
 
@@ -145,7 +144,7 @@ class GravityMachineGUI(QMainWindow):
 		# layout.addWidget(self.PID_Group_Widget,2,0)
 		# layout.addWidget(self.navigationWidget,2,0)
 		#layout.addWidget(self.autofocusWidget,3,0)
-		layout.addWidget(self.recordTabWidget,1,1)
+		layout.addWidget(self.recordingControlWidget,1,1)
 
 		layout.addWidget(self.plotWidget,2,1)
 

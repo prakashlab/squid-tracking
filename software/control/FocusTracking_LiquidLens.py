@@ -19,9 +19,7 @@ from control._def import *
 class Tracker_Focus():
     '''
     Liquid lens based tracker.
-
     '''
-    
     def __init__(self,parent=None):
         
         self.YdequeLen=50

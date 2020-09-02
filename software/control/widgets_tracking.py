@@ -272,23 +272,13 @@ class NavigationWidget(QFrame):
 		self.pos_Theta_label = pg.ValueLabel(siPrefix=True, suffix = 'rad')
 		self.pos_Theta_label.setValue(0)
 
-
-
-
-
-
 		stage_pos_layout = QGridLayout()
 
 		stage_pos_layout.addWidget(QLabel('X-stage (mm)'),0,0)
-
 		stage_pos_layout.addWidget(self.pos_X_label, 0,1)
-
 		stage_pos_layout.addWidget(QLabel('Y-stage (mm)'),1,0)
-
 		stage_pos_layout.addWidget(self.pos_Y_label, 1,1)
-
 		stage_pos_layout.addWidget(QLabel('Rotational-stage (deg)'),2,0)
-
 		stage_pos_layout.addWidget(self.pos_Theta_label, 2,1)
 
 		self.stage_position = QGroupBox('Stage positions')
@@ -351,7 +341,6 @@ class NavigationWidget(QFrame):
 
 	# Triggered by microController_Receiever
 	def update_display(self):
-
 		
 		self.pos_X_label.setValue(self.internal_state.data['X_stage']*1e-3)
 		self.pos_Y_label.setValue(self.internal_state.data['Y_stage']*1e-3)

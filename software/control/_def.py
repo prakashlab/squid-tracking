@@ -177,10 +177,6 @@ liquidLens = {'type': 'optotune', 'Freq':{'default':2, 'min':0.1, 'max':20, 'ste
     'Amp':{'default':0.05, 'min':0, 'max':0.5, 'step':0.01, 'units':'mm'}, 'currentScaleFactor':1/(0.0003) }
 
 
-
-
-
-
 INTERNAL_STATE_VARIABLES = ['Time', 'X_objStage', 'Y_objStage', 'Z_objStage', 'X_stage', 'Y_stage',
     'Theta_stage', 'X_image', 'Z_image', 'track_obj_image','track_obj_image_hrdware', 'track_focus', 'track_obj_stage', 
     'Acquisition', 'homing_command', 'homing_complete',  'Zero_stage', 'liquidLens_Freq', 'liquidLens_Amp', 'FocusPhase', 'optical_path', 
