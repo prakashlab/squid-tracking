@@ -41,7 +41,7 @@ class StreamHandler(QObject):
     signal_new_frame_received = Signal()
     signal_fps = Signal(int)
     signal_fps_display = Signal(float)
-    signal_fps_save = Signal(float)
+    signal_fps_save = Signal(str, float)
     signal_working_resolution = Signal(int)
 
     '''
@@ -258,7 +258,7 @@ class StreamHandler(QObject):
             
             self.fps_save_real = round(1/(time_now - self.timestamp_last_save),1)
              # Send the real display FPS to the live Controller widget.
-            self.signal_fps_save.emit(self.fps_save_real)
+            self.signal_fps_save.emit(self.imaging_channel, self.fps_save_real)
             
             self.counter_save = 0
 

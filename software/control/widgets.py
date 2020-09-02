@@ -353,6 +353,7 @@ class RecordingWidget(QFrame):
         self.tracking_flag = False
         self.recordingOnly_flag = False
 
+        self.save_dir_base = DEFAULT_SAVE_FOLDER
         self.base_path_is_set = False
         self.add_components()
         self.setFrameStyle(QFrame.Panel | QFrame.Raised)
@@ -476,29 +477,34 @@ class RecordingWidget(QFrame):
             self.entry_timeLimit[channel].valueChanged.connect(self.imageSaver[channel].set_recording_time_limit)
             self.imageSaver[channel].stop_recording.connect(self.stop_recording)
 
-    def set_saving_dir(self):
-        dialog = QFileDialog()
-        save_dir_base = dialog.getExistingDirectory(None, "Select Folder")
+    def set_saving_dir(self, use_default_dir = False):
+        
+        if(use_default_dir is False):
+            dialog = QFileDialog()
+            self.save_dir_base = dialog.getExistingDirectory(None, "Select Folder")
+
         # Set base path for image saver
         for channel in self.imaging_channels:
             if(self.checkbox[channel].isChecked()):
-                self.imageSaver[channel].set_base_path(save_dir_base)
-      
+                self.imageSaver[channel].set_base_path(self.save_dir_base)
         
         # set the base path for the data saver
         if(self.trackingDataSaver is not None):
-            self.trackingDataSaver.set_base_path(save_dir_base)
+            self.trackingDataSaver.set_base_path(self.save_dir_base)
         
-        self.lineEdit_savingDir.setText(save_dir_base)
+        self.lineEdit_savingDir.setText(self.save_dir_base)
         self.base_path_is_set = True
 
     def toggle_recording(self,pressed):
-        if self.base_path_is_set == False:
+        if self.base_path_is_set == False and self.save_dir_base is None:
             self.btn_record.setChecked(False)
             msg = QMessageBox()
             msg.setText("Please choose base saving directory first")
             msg.exec_()
             return
+        elif self.save_dir_base is not None:
+            self.set_saving_dir(use_default_dir = True)
+
         if pressed:
             self.internal_state.data['Acquisition'] = True
             self.lineEdit_experimentID.setEnabled(False)
@@ -529,8 +535,7 @@ class RecordingWidget(QFrame):
             
             self.lineEdit_experimentID.setEnabled(True)
             self.btn_setSavingDir.setEnabled(True)
-
-                
+            
 
     # stop_recording can be called by imageSaver
     def stop_recording(self):
@@ -549,6 +554,11 @@ class RecordingWidget(QFrame):
         elif(self.radioButton_recording.isChecked()):
             self.recordingOnly_flag = True
             print('Set mode to Recording only')
+
+    def update_save_fps(self, channel, real_fps):
+
+        self.actual_saveFPS[channel].display(real_fps)
+
 
 
 '''
@@ -767,187 +777,4 @@ class AutoFocusWidget(QFrame):
 
     def autofocus_is_finished(self):
         self.btn_autofocus.setChecked(False)
-
-class MultiPointWidget(QFrame):
-    def __init__(self, multipointController, main=None, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        self.multipointController = multipointController
-        self.base_path_is_set = False
-        self.add_components()
-        self.setFrameStyle(QFrame.Panel | QFrame.Raised)
-
-    def add_components(self):
-
-        self.btn_setSavingDir = QPushButton('Browse')
-        self.btn_setSavingDir.setDefault(False)
-        self.btn_setSavingDir.setIcon(QIcon('icon/folder.png'))
-        
-        self.lineEdit_savingDir = QLineEdit()
-        self.lineEdit_savingDir.setReadOnly(True)
-        self.lineEdit_savingDir.setText('Choose a base saving directory')
-
-        self.lineEdit_experimentID = QLineEdit()
-
-        self.entry_deltaX = QDoubleSpinBox()
-        self.entry_deltaX.setMinimum(0.2) 
-        self.entry_deltaX.setMaximum(5) 
-        self.entry_deltaX.setSingleStep(1)
-        self.entry_deltaX.setValue(Acquisition.DX)
-
-        self.entry_NX = QSpinBox()
-        self.entry_NX.setMinimum(1) 
-        self.entry_NX.setMaximum(20) 
-        self.entry_NX.setSingleStep(1)
-        self.entry_NX.setValue(1)
-
-        self.entry_deltaY = QDoubleSpinBox()
-        self.entry_deltaY.setMinimum(0.2) 
-        self.entry_deltaY.setMaximum(5) 
-        self.entry_deltaY.setSingleStep(1)
-        self.entry_deltaY.setValue(Acquisition.DX)
-        
-        self.entry_NY = QSpinBox()
-        self.entry_NY.setMinimum(1) 
-        self.entry_NY.setMaximum(20) 
-        self.entry_NY.setSingleStep(1)
-        self.entry_NY.setValue(1)
-
-        self.entry_deltaZ = QDoubleSpinBox()
-        self.entry_deltaZ.setMinimum(0) 
-        self.entry_deltaZ.setMaximum(1000) 
-        self.entry_deltaZ.setSingleStep(0.2)
-        self.entry_deltaZ.setValue(Acquisition.DZ)
-        
-        self.entry_NZ = QSpinBox()
-        self.entry_NZ.setMinimum(1) 
-        self.entry_NZ.setMaximum(100) 
-        self.entry_NZ.setSingleStep(1)
-        self.entry_NZ.setValue(1)
-        
-
-        self.entry_dt = QDoubleSpinBox()
-        self.entry_dt.setMinimum(0) 
-        self.entry_dt.setMaximum(3600) 
-        self.entry_dt.setSingleStep(1)
-        self.entry_dt.setValue(1)
-
-        self.entry_Nt = QSpinBox()
-        self.entry_Nt.setMinimum(1) 
-        self.entry_Nt.setMaximum(50000)   # @@@ to be changed
-        self.entry_Nt.setSingleStep(1)
-        self.entry_Nt.setValue(1)
-
-        self.checkbox_bfdf = QCheckBox('BF/DF')
-        self.checkbox_fluorescence = QCheckBox('Fluorescence')
-        self.checkbox_withAutofocus = QCheckBox('With AF')
-        self.btn_startAcquisition = QPushButton('Start Acquisition')
-        self.btn_startAcquisition.setCheckable(True)
-        self.btn_startAcquisition.setChecked(False)
-
-        # layout
-        grid_line0 = QGridLayout()
-        grid_line0.addWidget(QLabel('Saving Path'))
-        grid_line0.addWidget(self.lineEdit_savingDir, 0,1)
-        grid_line0.addWidget(self.btn_setSavingDir, 0,2)
-
-        grid_line1 = QGridLayout()
-        grid_line1.addWidget(QLabel('Experiment ID'), 0,0)
-        grid_line1.addWidget(self.lineEdit_experimentID,0,1)
-
-        grid_line2 = QGridLayout()
-        grid_line2.addWidget(QLabel('dx (mm)'), 0,0)
-        grid_line2.addWidget(self.entry_deltaX, 0,1)
-        grid_line2.addWidget(QLabel('Nx'), 0,2)
-        grid_line2.addWidget(self.entry_NX, 0,3)
-        grid_line2.addWidget(QLabel('dy (mm)'), 0,4)
-        grid_line2.addWidget(self.entry_deltaY, 0,5)
-        grid_line2.addWidget(QLabel('Ny'), 0,6)
-        grid_line2.addWidget(self.entry_NY, 0,7)
-
-        grid_line2.addWidget(QLabel('dz (um)'), 1,0)
-        grid_line2.addWidget(self.entry_deltaZ, 1,1)
-        grid_line2.addWidget(QLabel('Nz'), 1,2)
-        grid_line2.addWidget(self.entry_NZ, 1,3)
-        grid_line2.addWidget(QLabel('dt (s)'), 1,4)
-        grid_line2.addWidget(self.entry_dt, 1,5)
-        grid_line2.addWidget(QLabel('Nt'), 1,6)
-        grid_line2.addWidget(self.entry_Nt, 1,7)
-
-        grid_line3 = QHBoxLayout()
-        grid_line3.addWidget(self.checkbox_bfdf)
-        grid_line3.addWidget(self.checkbox_fluorescence)
-        grid_line3.addWidget(self.checkbox_withAutofocus)
-        grid_line3.addWidget(self.btn_startAcquisition)
-
-        self.grid = QGridLayout()
-        self.grid.addLayout(grid_line0,0,0)
-        self.grid.addLayout(grid_line1,1,0)
-        self.grid.addLayout(grid_line2,2,0)
-        self.grid.addLayout(grid_line3,3,0)
-        self.setLayout(self.grid)
-
-        # add and display a timer - to be implemented
-        # self.timer = QTimer()
-
-        # connections
-        self.entry_deltaX.valueChanged.connect(self.multipointController.set_deltaX)
-        self.entry_deltaY.valueChanged.connect(self.multipointController.set_deltaY)
-        self.entry_deltaZ.valueChanged.connect(self.multipointController.set_deltaZ)
-        self.entry_dt.valueChanged.connect(self.multipointController.set_deltat)
-        self.entry_NX.valueChanged.connect(self.multipointController.set_NX)
-        self.entry_NY.valueChanged.connect(self.multipointController.set_NY)
-        self.entry_NZ.valueChanged.connect(self.multipointController.set_NZ)
-        self.entry_Nt.valueChanged.connect(self.multipointController.set_Nt)
-        self.checkbox_bfdf.stateChanged.connect(self.multipointController.set_bfdf_flag)
-        self.checkbox_fluorescence.stateChanged.connect(self.multipointController.set_fluorescence_flag)
-        self.checkbox_withAutofocus.stateChanged.connect(self.multipointController.set_af_flag)
-        self.btn_setSavingDir.clicked.connect(self.set_saving_dir)
-        self.btn_startAcquisition.clicked.connect(self.toggle_acquisition)
-        self.multipointController.acquisitionFinished.connect(self.acquisition_is_finished)
-
-    def set_saving_dir(self):
-        dialog = QFileDialog()
-        save_dir_base = dialog.getExistingDirectory(None, "Select Folder")
-        self.multipointController.set_base_path(save_dir_base)
-        self.lineEdit_savingDir.setText(save_dir_base)
-        self.base_path_is_set = True
-
-    def toggle_acquisition(self,pressed):
-        if self.base_path_is_set == False:
-            self.btn_startAcquisition.setChecked(False)
-            msg = QMessageBox()
-            msg.setText("Please choose base saving directory first")
-            msg.exec_()
-            return
-        if pressed:
-            # @@@ to do: add a widgetManger to enable and disable widget 
-            # @@@ to do: emit signal to widgetManager to disable other widgets
-            self.setEnabled_all(False)
-            self.multipointController.start_new_experiment(self.lineEdit_experimentID.text())
-            self.multipointController.run_acquisition()
-        else:
-            # self.multipointController.stop_acquisition() # to implement
-            self.setEnabled_all(True)
-
-    def acquisition_is_finished(self):
-        self.btn_startAcquisition.setChecked(False)
-        self.setEnabled_all(True)
-
-    def setEnabled_all(self,enabled,exclude_btn_startAcquisition=True):
-        self.btn_setSavingDir.setEnabled(enabled)
-        self.lineEdit_savingDir.setEnabled(enabled)
-        self.lineEdit_experimentID.setEnabled(enabled)
-        self.entry_deltaX.setEnabled(enabled)
-        self.entry_NX.setEnabled(enabled)
-        self.entry_deltaY.setEnabled(enabled)
-        self.entry_NY.setEnabled(enabled)
-        self.entry_deltaZ.setEnabled(enabled)
-        self.entry_NZ.setEnabled(enabled)
-        self.entry_dt.setEnabled(enabled)
-        self.entry_Nt.setEnabled(enabled)
-        self.checkbox_bfdf.setEnabled(enabled)
-        self.checkbox_fluorescence.setEnabled(enabled)
-        self.checkbox_withAutofocus.setEnabled(enabled)
-        if exclude_btn_startAcquisition is not True:
-        	self.btn_startAcquisition.setEnabled(enabled)
 

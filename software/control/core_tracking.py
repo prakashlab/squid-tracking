@@ -951,7 +951,8 @@ class ImageSaver(QObject):
 		print(self.imaging_channel)
 		# create a new folder for each imaging channel
 		# try:
-		os.mkdir(os.path.join(self.base_path, self.experiment_ID, self.imaging_channel))
+		os.makedirs(os.path.join(self.base_path, self.experiment_ID, self.imaging_channel))
+
 		print('Created folder for {} channel'.format(self.imaging_channel))
 
 		# except:

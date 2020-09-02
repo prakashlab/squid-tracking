@@ -1,3 +1,5 @@
+import os
+
 SIMULATION = True
 
 class TriggerMode:
@@ -134,6 +136,14 @@ class PID_parameters:
 
 #     def __init__(self):
 #         pass
+
+# Default saving location
+DEFAULT_SAVE_FOLDER = os.path.join(os.environ['HOME'], 'GravityMachine')
+
+if(not os.path.exists(DEFAULT_SAVE_FOLDER)):
+    os.makedirs(DEFAULT_SAVE_FOLDER)
+
+
 
 # Width of Image used for Pixel Size Calibration. 
 CALIB_IMG_WIDTH = 1920

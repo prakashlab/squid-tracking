@@ -246,10 +246,10 @@ class Camera_Simulation(object):
         pass
 
     def set_exposure_time(self,exposure_time):
-        pass
+        print('Set exposure time to: {}'.format(exposure_time))
 
     def set_analog_gain(self,analog_gain):
-        pass
+        print('Set analog gain to: {}'.format(analog_gain))
 
     def get_awb_ratios(self):
         pass

@@ -173,6 +173,8 @@ class GravityMachineGUI(QMainWindow):
 			# self.imageDisplay[channel].image_to_display.connect(self.imageDisplayWindow[channel].display_image) # may connect streamHandler directly to imageDisplayWindow
 			self.imageSaver[channel].imageName.connect(self.trackingDataSaver.setImageName)
 
+			self.streamHandler[channel].signal_fps_save.connect(self.recordingControlWidget.update_save_fps)
+
 
 		# Connections that involve only the tracking image stream
 		self.streamHandler[TRACKING].thresh_image_to_display.connect(self.imageDisplayWindow_ThresholdedImage.display_image)
@@ -183,6 +185,7 @@ class GravityMachineGUI(QMainWindow):
 		self.streamHandler[TRACKING].signal_fps_display.connect(self.liveControlWidget.update_display_fps)
 
 		self.streamHandler[TRACKING].signal_working_resolution.connect(self.liveControlWidget.update_working_resolution)
+
 
 
 		self.trackingController.centroid_image.connect(self.imageDisplayWindow[TRACKING].draw_circle)
