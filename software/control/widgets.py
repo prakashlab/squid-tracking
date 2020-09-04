@@ -215,9 +215,15 @@ class LiveControlWidget(QGroupBox):
 		
 	def toggle_live(self,pressed):
 		if pressed:
-			self.liveController.start_live()
+			for channel in self.imaging_channels:
+				self.checkbox[channel].setEnabled(False)
+				if(self.checkbox[channel].isChecked()):
+					self.liveController[channel].start_live()
+					
 		else:
-			self.liveController.stop_live()
+			for channel in self.imaging_channels:
+				self.liveController[channel].stop_live()
+				self.checkbox[channel].setEnabled(True)
 
 	def update_image_properties_tracking(self):
 		# If the image resolution is changed on the fly then restart the image tracker.

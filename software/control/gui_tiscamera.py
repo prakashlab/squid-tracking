@@ -70,7 +70,7 @@ class GravityMachineGUI(QMainWindow):
 		#-----------------------------------------------------------------------------------------------
 		# Tracking-related objects
 		#-----------------------------------------------------------------------------------------------		
-		self.liveController = core.LiveController(self.camera[TRACKING],self.microcontroller)
+		self.liveController = {key:core.LiveController(self.camera[key],self.microcontroller) for key in self.imaging_channels}
 		self.navigationController = core.NavigationController(self.microcontroller)
 		#self.autofocusController = core.AutoFocusController(self.camera,self.navigationController,self.liveController)
 		#self.multipointController = core.MultiPointController(self.camera,self.navigationController,self.liveController,self.autofocusController)
@@ -87,16 +87,18 @@ class GravityMachineGUI(QMainWindow):
 
 		# open the camera
 		# camera start streaming
-		self.camera[TRACKING].open()
-		self.camera[TRACKING].set_software_triggered_acquisition() #self.camera.set_continuous_acquisition()
-		self.camera[TRACKING].set_callback(self.streamHandler[TRACKING].on_new_frame)
-		self.camera[TRACKING].enable_callback()
+		for channel in self.imaging_channels:
+			self.camera[channel].open()
+			self.camera[channel].set_software_triggered_acquisition() #self.camera.set_continuous_acquisition()
+			self.camera[channel].set_callback(self.streamHandler[channel].on_new_frame)
+			self.camera[channel].enable_callback()
 		#------------------------------------------------------------------
 		# load widgets
 		#------------------------------------------------------------------
-		self.cameraSettingWidget = {key: widgets.CameraSettingsWidget(self.camera[key],self.liveController) for key in self.imaging_channels}
+		self.cameraSettingWidget = {key: widgets.CameraSettingsWidget(self.camera[key],self.liveController[key]) for key in self.imaging_channels}
 		self.liveControlWidget = widgets.LiveControlWidget(self.streamHandler[TRACKING],self.liveController, self.trackingController, self.camera[TRACKING], self.imageDisplayWindow, self.imageDisplayWindow_ThresholdedImage)
-		self.streamControlWidget = {key: widgets.StreamControlWidget(self.streamHandler[key], self.liveController, self.camera[key]) for key in self.imaging_channels}
+		
+		self.streamControlWidget = {key: widgets.StreamControlWidget(self.streamHandler[key], self.liveController[key], self.camera[key]) for key in self.imaging_channels}
 		self.navigationWidget = widgets_tracking.NavigationWidget(self.navigationController, self.internal_state, self.microcontroller)
 		#self.autofocusWidget = widgets.AutoFocusWidget(self.autofocusController)
 		self.trackingControlWidget = widgets_tracking.TrackingControllerWidget(self.streamHandler[TRACKING], self.trackingController, self.trackingDataSaver, self.internal_state, self.imageDisplayWindow[TRACKING], self.microcontroller)
@@ -120,13 +122,14 @@ class GravityMachineGUI(QMainWindow):
 		#------------------------------------------------------------------
 		# Connections
 		#------------------------------------------------------------------
-		self.streamHandler[TRACKING].signal_new_frame_received.connect(self.liveController.on_new_frame)
 
 		# uController is now handled by an in-built timer
 		# self.streamHandler.signal_new_frame_received.connect(self.microcontroller_Rec.getData_microcontroller)
 		
 		# Connections that involve all image streams
 		for channel in self.imaging_channels:
+
+			self.streamHandler[channel].signal_new_frame_received.connect(self.liveController[channel].on_new_frame)
 
 			self.streamHandler[channel].image_to_display.connect(self.imageDisplayWindow[channel].display_image)
 			self.streamHandler[channel].packet_image_to_write.connect(self.imageSaver[channel].enqueue)
@@ -138,20 +141,18 @@ class GravityMachineGUI(QMainWindow):
 
 		# Connections that involve only the tracking image stream
 		self.streamHandler[TRACKING].thresh_image_to_display.connect(self.imageDisplayWindow_ThresholdedImage.display_image)
-
 		self.streamHandler[TRACKING].packet_image_for_tracking.connect(self.trackingController.on_new_frame)
-		
-		self.streamHandler[TRACKING].signal_fps.connect(self.streamControlWidget[TRACKING].update_stream_fps)
-		self.streamHandler[TRACKING].signal_fps_display.connect(self.streamControlWidget[TRACKING].update_display_fps)
-
+		# @@@ Currently the resolution-scaling only controls the TRACKING stream
 		self.streamHandler[TRACKING].signal_working_resolution.connect(self.liveControlWidget.update_working_resolution)
-
-
-
 		self.trackingController.centroid_image.connect(self.imageDisplayWindow[TRACKING].draw_circle)
 		self.trackingController.Rect_pt1_pt2.connect(self.imageDisplayWindow[TRACKING].draw_rectangle)
 		
 		self.trackingController.save_data_signal.connect(self.trackingDataSaver.enqueue)
+		# Connections for all image-streams
+		for channel in self.imaging_channels:
+			self.streamHandler[channel].signal_fps.connect(self.streamControlWidget[channel].update_stream_fps)
+			self.streamHandler[channel].signal_fps_display.connect(self.streamControlWidget[channel].update_display_fps)
+
 		
 
 		self.microcontroller_Rec.update_display.connect(self.navigationWidget.update_display)
@@ -191,7 +192,8 @@ class GravityMachineGUI(QMainWindow):
 		# Start all image-streams
 		print('Starting image streams')
 		# self.start_imageStreams()
-		self.camera[TRACKING].start_streaming()
+		for channel in self.imaging_channels:
+			self.camera[channel].start_streaming()
 		print('Started image streams!')
 
 	def start_imageStreams(self):
@@ -210,8 +212,8 @@ class GravityMachineGUI(QMainWindow):
 		# self.softwareTriggerGenerator.stop() @@@ => 
 
 
-			self.liveController.stop_live()
 			for key in self.imaging_channels:
+				self.liveController[key].stop_live()
 				self.camera[key].close()
 				self.imageSaver[key].stop_saving_images()
 				self.imageDisplay[key].close()
