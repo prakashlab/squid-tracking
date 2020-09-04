@@ -109,13 +109,15 @@ class LiveControlWidget(QGroupBox):
 		- Objective
 		- Display resolution slider
 	'''
-	def __init__(self, streamHandler, liveController, trackingController, camera, main=None, *args, **kwargs):
+	def __init__(self, streamHandler, liveController, trackingController, camera, imageDisplayWindow, imageDisplayWindow_threshImage, main=None, *args, **kwargs):
 		super().__init__(*args, **kwargs)
 		self.setTitle('Live Controller')
 		self.liveController = liveController
 		self.streamHandler = streamHandler
 		self.trackingController = trackingController
 		self.camera = camera
+		self.imageDisplayWindow = imageDisplayWindow
+		self.imageDisplayWindow_threshImage = imageDisplayWindow_threshImage
 		self.imaging_channels = CAMERAS.keys()
 
 
@@ -168,7 +170,8 @@ class LiveControlWidget(QGroupBox):
 		self.dropdown_objectiveSelection.currentIndexChanged.connect(self.update_pixel_size)
 		self.btn_live.clicked.connect(self.toggle_live)
 
-
+		for channel in self.imaging_channels:
+			self.checkbox[channel].clicked.connect(self.update_active_channels)
 
 
 		# Layout
@@ -226,7 +229,20 @@ class LiveControlWidget(QGroupBox):
 	#     self.liveController.set_microscope_mode(self.dropdown_modeSelection.currentText())
 
 	def update_active_channels(self):
-		pass
+		print('Updating active channels')
+		for channel in self.imaging_channels:
+			if(self.checkbox[channel].isChecked()):
+				# Make window active/Show
+				self.imageDisplayWindow[channel].show()
+				if(channel==TRACKING):
+					self.imageDisplayWindow_threshImage.show()
+				print('Show {} window'.format(channel))
+			elif (self.checkbox[channel].isChecked()==False):
+				# Hide the window.
+				self.imageDisplayWindow[channel].hide()
+				if(channel==TRACKING):
+					self.imageDisplayWindow_threshImage.hide()
+				print('Hide {} window'.format(channel))
 
 class StreamControlWidget(QFrame):
 	'''

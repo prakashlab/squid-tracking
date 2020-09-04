@@ -49,7 +49,7 @@ class GravityMachineGUI(QMainWindow):
 		self.imageDisplayWindow_ThresholdedImage = core.ImageDisplayWindow('Thresholded Image', rotate_image_angle=90)
 
 		#------------------------------------------------------------------
-		# load objects
+		# Load objects
 		#------------------------------------------------------------------
 		if SIMULATION is True:
 			# Define a camera object for each unique image-stream.
@@ -70,7 +70,6 @@ class GravityMachineGUI(QMainWindow):
 		#-----------------------------------------------------------------------------------------------
 		# Tracking-related objects
 		#-----------------------------------------------------------------------------------------------		
-		
 		self.liveController = core.LiveController(self.camera[TRACKING],self.microcontroller)
 		self.navigationController = core.NavigationController(self.microcontroller)
 		#self.autofocusController = core.AutoFocusController(self.camera,self.navigationController,self.liveController)
@@ -96,79 +95,30 @@ class GravityMachineGUI(QMainWindow):
 		# load widgets
 		#------------------------------------------------------------------
 		self.cameraSettingWidget = {key: widgets.CameraSettingsWidget(self.camera[key],self.liveController) for key in self.imaging_channels}
-
-
-		self.liveControlWidget = widgets.LiveControlWidget(self.streamHandler[TRACKING],self.liveController, self.trackingController, self.camera[TRACKING])
-		
+		self.liveControlWidget = widgets.LiveControlWidget(self.streamHandler[TRACKING],self.liveController, self.trackingController, self.camera[TRACKING], self.imageDisplayWindow, self.imageDisplayWindow_ThresholdedImage)
 		self.streamControlWidget = {key: widgets.StreamControlWidget(self.streamHandler[key], self.liveController, self.camera[key]) for key in self.imaging_channels}
-
-
 		self.navigationWidget = widgets_tracking.NavigationWidget(self.navigationController, self.internal_state, self.microcontroller)
 		#self.autofocusWidget = widgets.AutoFocusWidget(self.autofocusController)
 		self.trackingControlWidget = widgets_tracking.TrackingControllerWidget(self.streamHandler[TRACKING], self.trackingController, self.trackingDataSaver, self.internal_state, self.imageDisplayWindow[TRACKING], self.microcontroller)
-		
-
-
 		self.PID_Group_Widget = widgets_tracking.PID_Group_Widget(self.trackingController)
-
 		self.FocusTracking_Widget = widgets_tracking.FocusTracking_Widget(self.trackingController, self.internal_state, self.microcontroller)
-
-
 		self.recordingControlWidget = widgets.RecordingWidget(self.streamHandler,self.imageSaver, self.internal_state, self.trackingControlWidget, self.trackingDataSaver, self.imaging_channels)
 
 		# self.recordTabWidget = QTabWidget()
 		# self.recordTabWidget.addTab(self.recordingControlWidget, "Acquisition control")
 		
 		self.cameraSettings_Tab = QTabWidget()
-
 		for key in self.imaging_channels:
 			self.cameraSettings_Tab.addTab(self.cameraSettingWidget[key],key)
 
 		self.streamSettings_Tab = QTabWidget()
-
 		for key in self.imaging_channels:
 			self.streamSettings_Tab.addTab(self.streamControlWidget[key],key)
-
-
 		# self.recordTabWidget.addTab(self.trackingControlWidget, "Tracking")
 		#self.recordTabWidget.addTab(self.multiPointWidget, "Multipoint Acquisition")
-
 		self.plotWidget = widgets.dockAreaPlot()
-
-		#-----------------------------------------------------
-		# layout widgets
-		#-----------------------------------------------------
-		layout = QGridLayout() #layout = QStackedLayout()
-		# layout.addWidget(self.cameraSettingWidget,0,0)
-		layout.addWidget(self.liveControlWidget,0,0)
-
-		layout.addWidget(self.streamSettings_Tab,0,1)
-		
-		layout.addWidget(self.navigationWidget,0,2)
-
-		layout.addWidget(self.trackingControlWidget,1,0)
-
-		# layout.addWidget(self.PID_Group_Widget,2,0)
-		# layout.addWidget(self.navigationWidget,2,0)
-		#layout.addWidget(self.autofocusWidget,3,0)
-		layout.addWidget(self.recordingControlWidget,1,1)
-
-
-		layout.addWidget(self.FocusTracking_Widget,2,0)
-
-		layout.addWidget(self.plotWidget,2,1)
-
-		# layout.addWidget(self.cameraSettings_Tab,3,1,1,1)
-		
-		# transfer the layout to the central widget
-		self.centralWidget = QWidget()
-		self.centralWidget.setLayout(layout)
-		self.setCentralWidget(self.centralWidget)
-
-		
-
 		#------------------------------------------------------------------
-		# make connections
+		# Connections
 		#------------------------------------------------------------------
 		self.streamHandler[TRACKING].signal_new_frame_received.connect(self.liveController.on_new_frame)
 
@@ -211,18 +161,37 @@ class GravityMachineGUI(QMainWindow):
 		#self.autofocusController.image_to_display.connect(self.imageDisplayWindow.display_image)
 		#self.multipointController.image_to_display.connect(self.imageDisplayWindow.display_image)
 
-		# Show sub-windows:
-		for key in self.imaging_channels:
-			self.imageDisplayWindow[key].show()
-		self.imageDisplayWindow_ThresholdedImage.show()
+		#-----------------------------------------------------
+		# Layout widgets
+		#-----------------------------------------------------
+		layout = QGridLayout() #layout = QStackedLayout()
+		# layout.addWidget(self.cameraSettingWidget,0,0)
+		layout.addWidget(self.liveControlWidget,0,0)
+		layout.addWidget(self.streamSettings_Tab,0,1)
+		layout.addWidget(self.navigationWidget,0,2)
+		layout.addWidget(self.trackingControlWidget,1,0)
+		# layout.addWidget(self.PID_Group_Widget,2,0)
+		# layout.addWidget(self.navigationWidget,2,0)
+		#layout.addWidget(self.autofocusWidget,3,0)
+		layout.addWidget(self.recordingControlWidget,1,1)
+		layout.addWidget(self.FocusTracking_Widget,2,0)
+		layout.addWidget(self.plotWidget,2,1)
+		# layout.addWidget(self.cameraSettings_Tab,3,1,1,1)
+		# transfer the layout to the central widget
+		self.centralWidget = QWidget()
+		self.centralWidget.setLayout(layout)
+		self.setCentralWidget(self.centralWidget)
+
+		# Show sub-windows (now controlled by liveControlWidget:
+		# for key in self.imaging_channels:
+		# 	self.imageDisplayWindow[key].show()
+		# self.imageDisplayWindow_ThresholdedImage.show()
 
 
+		# Start all image-streams
 		print('Starting image streams')
-
 		# self.start_imageStreams()
 		self.camera[TRACKING].start_streaming()
-
-
 		print('Started image streams!')
 
 	def start_imageStreams(self):
@@ -260,4 +229,6 @@ class GravityMachineGUI(QMainWindow):
 			
 		else:
 			event.ignore() 
+
+
 		
