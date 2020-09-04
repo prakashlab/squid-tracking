@@ -98,8 +98,11 @@ class GravityMachineGUI(QMainWindow):
 		self.cameraSettingWidget = {key: widgets.CameraSettingsWidget(self.camera[key],self.liveController) for key in self.imaging_channels}
 
 
-		# self.cameraSettingWidget = widgets.CameraSettingsWidget(self.camera,self.liveController)
 		self.liveControlWidget = widgets.LiveControlWidget(self.streamHandler[TRACKING],self.liveController, self.trackingController, self.camera[TRACKING])
+		
+		self.streamControlWidget = {key: widgets.StreamControlWidget(self.streamHandler[key], self.liveController, self.camera[key]) for key in self.imaging_channels}
+
+
 		self.navigationWidget = widgets_tracking.NavigationWidget(self.navigationController, self.internal_state, self.microcontroller)
 		#self.autofocusWidget = widgets.AutoFocusWidget(self.autofocusController)
 		self.trackingControlWidget = widgets_tracking.TrackingControllerWidget(self.streamHandler[TRACKING], self.trackingController, self.trackingDataSaver, self.internal_state, self.imageDisplayWindow[TRACKING], self.microcontroller)
@@ -121,6 +124,12 @@ class GravityMachineGUI(QMainWindow):
 		for key in self.imaging_channels:
 			self.cameraSettings_Tab.addTab(self.cameraSettingWidget[key],key)
 
+		self.streamSettings_Tab = QTabWidget()
+
+		for key in self.imaging_channels:
+			self.streamSettings_Tab.addTab(self.streamControlWidget[key],key)
+
+
 		# self.recordTabWidget.addTab(self.trackingControlWidget, "Tracking")
 		#self.recordTabWidget.addTab(self.multiPointWidget, "Multipoint Acquisition")
 
@@ -132,23 +141,24 @@ class GravityMachineGUI(QMainWindow):
 		layout = QGridLayout() #layout = QStackedLayout()
 		# layout.addWidget(self.cameraSettingWidget,0,0)
 		layout.addWidget(self.liveControlWidget,0,0)
+
+		layout.addWidget(self.streamSettings_Tab,0,1)
 		
-		layout.addWidget(self.navigationWidget,0,1)
+		layout.addWidget(self.navigationWidget,0,2)
 
 		layout.addWidget(self.trackingControlWidget,1,0)
-
-		layout.addWidget(self.FocusTracking_Widget,2,0)
-
-
 
 		# layout.addWidget(self.PID_Group_Widget,2,0)
 		# layout.addWidget(self.navigationWidget,2,0)
 		#layout.addWidget(self.autofocusWidget,3,0)
 		layout.addWidget(self.recordingControlWidget,1,1)
 
+
+		layout.addWidget(self.FocusTracking_Widget,2,0)
+
 		layout.addWidget(self.plotWidget,2,1)
 
-		layout.addWidget(self.cameraSettings_Tab,3,1,1,1)
+		# layout.addWidget(self.cameraSettings_Tab,3,1,1,1)
 		
 		# transfer the layout to the central widget
 		self.centralWidget = QWidget()
@@ -181,8 +191,8 @@ class GravityMachineGUI(QMainWindow):
 
 		self.streamHandler[TRACKING].packet_image_for_tracking.connect(self.trackingController.on_new_frame)
 		
-		self.streamHandler[TRACKING].signal_fps.connect(self.liveControlWidget.update_stream_fps)
-		self.streamHandler[TRACKING].signal_fps_display.connect(self.liveControlWidget.update_display_fps)
+		self.streamHandler[TRACKING].signal_fps.connect(self.streamControlWidget[TRACKING].update_stream_fps)
+		self.streamHandler[TRACKING].signal_fps_display.connect(self.streamControlWidget[TRACKING].update_display_fps)
 
 		self.streamHandler[TRACKING].signal_working_resolution.connect(self.liveControlWidget.update_working_resolution)
 
