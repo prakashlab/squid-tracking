@@ -358,7 +358,7 @@ class LiveController(QObject):
         self.was_live_before_autofocus = False
         self.was_live_before_multipoint = False
 
-        self.fps_software_trigger = 10;
+        self.fps_software_trigger = FPS['trigger_software']['default'];
         self.timer_software_trigger_interval = (1/self.fps_software_trigger)*1000
 
         self.timer_software_trigger = QTimer()
