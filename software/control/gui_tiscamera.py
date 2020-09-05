@@ -78,7 +78,7 @@ class GravityMachineGUI(QMainWindow):
 		self.trackingDataSaver = core_tracking.TrackingDataSaver(self.internal_state)
 		
 		# Microcontroller Receiver object
-		self.microcontroller_Rec = core_tracking.microcontroller_Receiver(self.microcontroller, self.internal_state, self.trackingController)
+		self.microcontroller_Rec = core_tracking.microcontroller_Receiver(self.microcontroller, self.internal_state)
 		#-----------------------------------------------------------------------------------------------
 		# Define an ImageSaver, and Image Display object for each image stream
 		#-----------------------------------------------------------------------------------------------
@@ -118,7 +118,7 @@ class GravityMachineGUI(QMainWindow):
 			self.streamSettings_Tab.addTab(self.streamControlWidget[key],key)
 		# self.recordTabWidget.addTab(self.trackingControlWidget, "Tracking")
 		#self.recordTabWidget.addTab(self.multiPointWidget, "Multipoint Acquisition")
-		self.plotWidget = widgets.dockAreaPlot()
+		self.plotWidget = widgets.dockAreaPlot(self.internal_state)
 		#------------------------------------------------------------------
 		# Connections
 		#------------------------------------------------------------------
@@ -153,9 +153,15 @@ class GravityMachineGUI(QMainWindow):
 			self.streamHandler[channel].signal_fps.connect(self.streamControlWidget[channel].update_stream_fps)
 			self.streamHandler[channel].signal_fps_display.connect(self.streamControlWidget[channel].update_display_fps)
 
-		
-
 		self.microcontroller_Rec.update_display.connect(self.navigationWidget.update_display)
+
+		# Plot Widget connections
+		for key in PLOT_VARIABLES.keys():
+			self.microcontroller_Rec.update_display.connect(self.plotWidget.plots[key].update_plot)
+
+
+
+
 		# self.navigationController.xPos.connect(self.navigationWidget.label_Xpos.setNum)
 		# self.navigationController.yPos.connect(self.navigationWidget.label_Ypos.setNum)
 		# self.navigationController.zPos.connect(self.navigationWidget.label_Zpos.setNum)

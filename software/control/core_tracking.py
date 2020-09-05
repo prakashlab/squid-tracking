@@ -66,7 +66,7 @@ class TrackingController(QObject):
 		self.units_converter = Units_Converter()
 
 		# Set the reference image width based on the camera sensor size used for calibration
-		# This allows physical distances be calculated even if the image res is downsampled.
+		# This allows physical distances be calculated even if the image res is down-sampled.
 		self.units_converter.set_calib_imWidth(CALIB_IMG_WIDTH)
 		
 		self.image_axis = image_axis
@@ -519,13 +519,12 @@ class microcontroller_Receiver(QObject):
 	'''
 	update_display = Signal()
 
-	def __init__(self, microcontroller, internal_state, trackingController):
+	def __init__(self, microcontroller, internal_state):
 		QObject.__init__(self)
 
 		self.microcontroller = microcontroller
 		self.internal_state = internal_state
-		self.trackingController = trackingController
-
+		self.units_converter = Units_Converter()
 		self.RecData = {key:[] for key in REC_DATA}
 
 		# Define a timer to read the Arduino at regular intervals
@@ -569,9 +568,9 @@ class microcontroller_Receiver(QObject):
 					self.internal_state.data[key] = data[key]
 
 			# Find the actual stage position based prev position and the change.
-			self.internal_state.data['X_stage'] = self.trackingController.units_converter.X_count_to_mm(self.RecData['X_stage'])
-			self.internal_state.data['Y_stage'] = self.trackingController.units_converter.Y_count_to_mm(self.RecData['Y_stage'])
-			self.internal_state.data['Theta_stage'] = self.trackingController.units_converter.Theta_count_to_rad(self.RecData['Theta_stage'])
+			self.internal_state.data['X_stage'] = self.units_converter.X_count_to_mm(self.RecData['X_stage'])
+			self.internal_state.data['Y_stage'] = self.units_converter.Y_count_to_mm(self.RecData['Y_stage'])
+			self.internal_state.data['Theta_stage'] = self.units_converter.Theta_count_to_rad(self.RecData['Theta_stage'])
 
 			# Emit the stage position so it can be displayed (only need to display the position when it changes)
 
@@ -950,19 +949,8 @@ class ImageSaver(QObject):
 		print(self.experiment_ID)
 		print(self.imaging_channel)
 		# create a new folder for each imaging channel
-		# try:
 		os.makedirs(os.path.join(self.base_path, self.experiment_ID, self.imaging_channel))
-
 		print('Created folder for {} channel'.format(self.imaging_channel))
-
-		# except:
-			# pass
-
-
-
-		
-
-
 
 	def set_recording_time_limit(self,time_limit):
 		self.recording_time_limit = time_limit

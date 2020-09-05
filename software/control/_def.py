@@ -179,7 +179,7 @@ TRACKING = 'DF1'
 FPS = {'display':{'min':1, 'max':30, 'default':15}, 
         'trigger_hardware':{'min':1, 'max':CAMERAS[TRACKING]['fps'], 
             'default':50}, 
-        'trigger_software':{'min':1, 'max':30, 'default':15}, 
+        'trigger_software':{'min':1, 'max':120, 'default':15}, 
         'save':{'min':1, 'max':100, 'default':10}}
 
 
@@ -210,9 +210,9 @@ INITIAL_VALUES = {'Time':0, 'X_objStage':0, 'Y_objStage':0, 'Z_objStage':0, 'X_s
     'liquidLens_Amp': liquidLens['Amp']['default'] , 'FocusPhase':0, 'optical_path': DEFAULT_OPTICAL_PATH, 
     'imaging channels': OPTICAL_PATHS[DEFAULT_OPTICAL_PATH],  'Objective':DEFAULT_OBJECTIVE, 'basePath':'/', 'experimentID':'track'}
 
-PLOT_VARIABLES = {'X':'X_objStage','Y':'Y_objStage', 'Z':'Z_objStage', 'Theta':'Theta_stage'}
+PLOT_VARIABLES = {'X':'X_objStage','Y':'Y_objStage', 'Z':'Z_objStage', 'Theta':'Theta_stage', 'Phase':'FocusPhase'}
 
-PLOT_UNITS = {'X':'mm','Y':'mm', 'Z':'mm', 'Theta':'radians'}
+PLOT_UNITS = {'X':'mm','Y':'mm', 'Z':'mm', 'Theta':'radians','Phase':'radians'}
 
 DEFAULT_PLOTS = ['X', 'Z']
 

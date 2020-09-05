@@ -9,7 +9,7 @@ from pyqtgraph.dockarea.Dock import DockLabel
 import control.utils.dockareaStyle as dstyle
 
 
-
+import numpy as np
 from collections import deque
 
 # qt libraries
@@ -607,11 +607,12 @@ class RecordingWidget(QFrame):
 '''
 
 class dockAreaPlot(dock.DockArea):
-	def __init__(self, parent=None):
+	def __init__(self, internal_state, parent=None):
 		super().__init__(parent)
+		self.internal_state = internal_state
 		DockLabel.updateStyle = dstyle.updateStylePatched
 
-		self.plots = {key:PlotWidget(key) for key in PLOT_VARIABLES.keys()}
+		self.plots = {key:PlotWidget(key, self.internal_state) for key in PLOT_VARIABLES.keys()}
 		
 		self.docks = {key:dock.Dock(key) for key in PLOT_VARIABLES.keys()}
 
@@ -637,10 +638,15 @@ class dockAreaPlot(dock.DockArea):
 			self.plot[key].initialise_plot()
 
 
+
+
+
 class PlotWidget(pg.GraphicsLayoutWidget):
-	def __init__(self,title, parent=None):
+	def __init__(self,title, internal_state, parent=None):
 		super().__init__(parent)
 		self.title=title
+		self.key = PLOT_VARIABLES[self.title]
+		self.internal_state = internal_state
 		#plot Zobj
 		self.Abscissa=deque(maxlen=20)
 		self.Ordinate=deque(maxlen=20)
@@ -654,7 +660,12 @@ class PlotWidget(pg.GraphicsLayoutWidget):
 		self.plot1.showGrid(x=True, y=True)
 		
 		
-	def update_plot(self,data):
+	def update_plot(self):
+
+		data = np.zeros(2)
+		# For now the x-axis is always time
+		data[0] = self.internal_state.data['Time']
+		data[1] = self.internal_state.data[self.key]
 		
 		self.Abscissa.append(data[0])
 
@@ -662,8 +673,8 @@ class PlotWidget(pg.GraphicsLayoutWidget):
 
 		self.label = PLOT_UNITS[self.title]
 			
-		self.Abs=list(self.Abscisse)
-		self.Ord=list(self.Ordonnee)
+		self.Abs=list(self.Abscissa)
+		self.Ord=list(self.Ordinate)
 
 		self.curve.setData(self.Abs,self.Ord)
 
