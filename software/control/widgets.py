@@ -267,6 +267,7 @@ class StreamControlWidget(QFrame):
 		self.fps_trigger = FPS['trigger_software']['default']
 
 		self.streamHandler.set_display_fps(self.fps_display)
+		self.liveController.set_trigger_fps(self.fps_trigger)
 		
 		self.add_components()
 
@@ -297,7 +298,7 @@ class StreamControlWidget(QFrame):
 		self.entry_displayFPS.setMinimum(FPS['display']['min']) 
 		self.entry_displayFPS.setMaximum(FPS['display']['max']) 
 		self.entry_displayFPS.setSingleStep(1)
-		self.entry_displayFPS.setValue(self.fps_display)
+		self.entry_displayFPS.setValue(FPS['display']['default'])
 
 		 # Display fps actual
 		self.actual_displayFPS = QLCDNumber()

@@ -342,6 +342,7 @@ class NavigationWidget(QFrame):
 	# Triggered by microController_Receiever
 	def update_display(self):
 		
+		
 		self.pos_X_label.setValue(self.internal_state.data['X_stage']*1e-3)
 		self.pos_Y_label.setValue(self.internal_state.data['Y_stage']*1e-3)
 		self.pos_Theta_label.setValue(self.internal_state.data['Theta_stage'])
