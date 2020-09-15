@@ -1,15 +1,16 @@
 import argparse
 import cv2
 import time
-
+import numpy as np
 try:
     import control.gxipy as gx
-except ImportError:
+except:
     print('gxipy import error')
 
 class Camera(object):
 
     def __init__(self,sn=None):
+
         # many to be purged
         self.sn = sn
         self.device_manager = gx.DeviceManager()
@@ -53,7 +54,9 @@ class Camera(object):
         # self.camera.register_capture_callback(self,self._on_frame_callback)
         if self.is_color:
             # self.set_wb_ratios(self.get_awb_ratios())
-            self.set_wb_ratios(1.28125,1.0,2.9453125)
+            print(self.get_awb_ratios())
+            # self.set_wb_ratios(1.28125,1.0,2.9453125)
+            self.set_wb_ratios(2,1,2)
 
     def set_callback(self,function):
         self.new_image_callback_external = function
@@ -138,7 +141,8 @@ class Camera(object):
         self.camera.TriggerSource.set(gx.GxTriggerSourceEntry.SOFTWARE)
 
     def set_hardware_triggered_acquisition(self):
-        pass
+        self.camera.TriggerMode.set(gx.GxSwitchEntry.ON)
+        self.camera.TriggerSource.set(gx.GxTriggerSourceEntry.LINE0)
 
     def send_trigger(self):
         self.camera.TriggerSoftware.send_command()
@@ -177,3 +181,99 @@ class Camera(object):
 
         # self.frameID = self.frameID + 1
         # print(self.frameID)
+
+
+class Camera_Simulation(object):
+    
+    def __init__(self,sn=None):
+        # many to be purged
+        self.sn = sn
+        self.device_info_list = None
+        self.device_index = 0
+        self.camera = None
+        self.is_color = None
+        self.gamma_lut = None
+        self.contrast_lut = None
+        self.color_correction_param = None
+
+        self.exposure_time = 0
+        self.analog_gain = 0
+        self.frame_ID = -1
+        self.timestamp = 0
+
+        self.image_locked = False
+        self.current_frame = None
+
+        self.callback_is_enabled = False
+        self.callback_was_enabled_before_autofocus = False
+        self.callback_was_enabled_before_multipoint = False
+
+        self.GAIN_MAX = 24
+        self.GAIN_MIN = 0
+        self.GAIN_STEP = 1
+        self.EXPOSURE_TIME_MS_MIN = 0.01
+        self.EXPOSURE_TIME_MS_MAX = 4000
+
+    def open(self,index=0):
+        pass
+
+    def set_callback(self,function):
+        self.new_image_callback_external = function
+
+    def enable_callback(self):
+        self.callback_is_enabled = True
+
+    def disable_callback(self):
+        self.callback_is_enabled = False
+
+    def open_by_sn(self,sn):
+        pass
+
+    def close(self):
+        pass
+
+    def set_exposure_time(self,exposure_time):
+        pass
+
+    def set_analog_gain(self,analog_gain):
+        pass
+
+    def get_awb_ratios(self):
+        pass
+
+    def set_wb_ratios(self, wb_r=None, wb_g=None, wb_b=None):
+        pass
+
+    def start_streaming(self):
+        self.frame_ID = 0
+
+    def stop_streaming(self):
+        pass
+
+    def set_continuous_acquisition(self):
+        pass
+
+    def set_software_triggered_acquisition(self):
+        pass
+
+    def set_hardware_triggered_acquisition(self):
+        pass
+
+    def send_trigger(self):
+        self.frame_ID = self.frame_ID + 1
+        self.timestamp = time.time()
+        if self.frame_ID == 1:
+            self.current_frame = np.random.randint(255,size=(2000,2000),dtype=np.uint8)
+            self.current_frame[901:1100,901:1100] = 200
+        else:
+            self.current_frame = np.roll(self.current_frame,10,axis=0)
+            pass 
+            # self.current_frame = np.random.randint(255,size=(768,1024),dtype=np.uint8)
+        if self.new_image_callback_external is not None:
+            self.new_image_callback_external(self)
+
+    def read_frame(self):
+        return self.current_frame
+
+    def _on_frame_callback(self, user_param, raw_image):
+        pass
