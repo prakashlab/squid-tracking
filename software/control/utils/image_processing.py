@@ -28,8 +28,8 @@ def default_upper_HSV(color):
     return np.array(c,dtype="uint8")
 
 def threshold_image(image_BGR,LOWER,UPPER):
-    image_HSV=cv2.cvtColor(image_BGR,cv2.COLOR_BGR2HSV)
-    imgMask = cv2.inRange(image_HSV, LOWER, UPPER)  #The tracked object will be in white
+    image_HSV = cv2.cvtColor(image_BGR,cv2.COLOR_BGR2HSV)
+    imgMask = 255*np.array(cv2.inRange(image_HSV, LOWER, UPPER), dtype='uint8')  #The tracked object will be in white
     imgMask = cv2.erode(imgMask, None, iterations=2) # Do a series of erosions and dilations on the thresholded image to reduce smaller blobs
     imgMask = cv2.dilate(imgMask, None, iterations=2)
     
