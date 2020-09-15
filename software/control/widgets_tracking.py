@@ -174,8 +174,6 @@ class TrackingControllerWidget(QFrame):
 
 			print('Set track_obj_image to : {}'.format(self.internal_state.data['track_obj_image']))
 			
-			self.microcontroller.send_tracking_command(True)
-
 			self.trackingDataSaver.start_new_track()
 			self.streamHandler.start_tracking()
 
@@ -183,8 +181,6 @@ class TrackingControllerWidget(QFrame):
 			self.streamHandler.stop_tracking()
 			self.internal_state.data['track_obj_image'] = False
 
-			# Send the track_obj_image flag to uController
-			self.microcontroller.send_tracking_command(False)
 			# Resets the track deques and counters
 
 			self.trackingController.initialise_track()
@@ -268,8 +264,8 @@ class NavigationWidget(QFrame):
 		self.pos_Y_label = pg.ValueLabel(siPrefix=True, suffix = 'm')
 		self.pos_Y_label.setValue(0)
 
-		self.pos_Theta_label = pg.ValueLabel(siPrefix=True, suffix = 'rad')
-		self.pos_Theta_label.setValue(0)
+		self.pos_Z_label = pg.ValueLabel(siPrefix=True, suffix = 'm')
+		self.pos_Z_label.setValue(0)
 
 		# self.pos_X_label = QLabel()
 		# self.pos_X_label.setText('{:.03f}'.format(0))
@@ -277,8 +273,8 @@ class NavigationWidget(QFrame):
 		# self.pos_Y_label = QLabel()
 		# self.pos_Y_label.setText('{:.03f}'.format(0))
 
-		# self.pos_Theta_label = QLabel()
-		# self.pos_Theta_label.setText('{:.03f}'.format(0))
+		# self.pos_Z_label = QLabel()
+		# self.pos_Z_label.setText('{:.03f}'.format(0))
 
 		stage_pos_layout = QGridLayout()
 
@@ -286,8 +282,8 @@ class NavigationWidget(QFrame):
 		stage_pos_layout.addWidget(self.pos_X_label, 1,0)
 		stage_pos_layout.addWidget(QLabel('Y-stage'),2,0)
 		stage_pos_layout.addWidget(self.pos_Y_label, 3,0)
-		stage_pos_layout.addWidget(QLabel('Rotational-stage'),4,0)
-		stage_pos_layout.addWidget(self.pos_Theta_label, 5,0)
+		stage_pos_layout.addWidget(QLabel('Z-stage'),4,0)
+		stage_pos_layout.addWidget(self.pos_Z_label, 5,0)
 
 		self.stage_position = QGroupBox('Stage positions')
 
@@ -299,7 +295,7 @@ class NavigationWidget(QFrame):
 		
 		self.zero_Y = QPushButton('Zero Y-stage')
 	
-		self.zero_Theta = QPushButton('Zero Rotation-stage')
+		self.zero_Z = QPushButton('Zero Z-stage')
 	
 		
 		# Homing Button
@@ -310,7 +306,7 @@ class NavigationWidget(QFrame):
 		stage_control.addWidget(self.homing_button)
 		stage_control.addWidget(self.zero_X)
 		stage_control.addWidget(self.zero_Y)
-		stage_control.addWidget(self.zero_Theta)
+		stage_control.addWidget(self.zero_Z)
 
 		self.stage_control_group = QGroupBox('Stage control')
 
@@ -328,7 +324,7 @@ class NavigationWidget(QFrame):
 		# Connections
 		self.zero_X.clicked.connect(self.zero_X_stage)
 		self.zero_Y.clicked.connect(self.zero_Y_stage)
-		self.zero_Theta.clicked.connect(self.zero_Theta_stage)
+		self.zero_Z.clicked.connect(self.zero_Z_stage)
 
 		self.homing_button.clicked.connect(self.homing_button_click)
 
@@ -342,21 +338,21 @@ class NavigationWidget(QFrame):
 		self.internal_state.data['Zero_stage'] = 2
 		self.microcontroller.send_stage_zero_command('Y')
 
-	def zero_Theta_stage(self):
+	def zero_Z_stage(self):
 
 		self.internal_state.data['Zero_stage'] = 3
-		self.microcontroller.send_stage_zero_command('T')
+		self.microcontroller.send_stage_zero_command('Z')
 
 	# Triggered by microController_Receiever
 	def update_display(self):
 		
 		# self.pos_X_label.setText('{:.03f}'.format(self.internal_state.data['X_stage']))
 		# self.pos_Y_label.setText('{:.03f}'.format(self.internal_state.data['Y_stage']))
-		# self.pos_Theta_label.setText('{:.03f}'.format(self.internal_state.data['Theta_stage']))
+		# self.pos_Z_label.setText('{:.03f}'.format(self.internal_state.data['Theta_stage']))
 
 		self.pos_X_label.setValue(self.internal_state.data['X_stage']*1e-3)
 		self.pos_Y_label.setValue(self.internal_state.data['Y_stage']*1e-3)
-		self.pos_Theta_label.setValue(self.internal_state.data['Theta_stage'])
+		self.pos_Z_label.setValue(self.internal_state.data['Z_stage']*1e-3)
 
 	def homing_button_click(self):
 
@@ -437,9 +433,9 @@ class PID_Group_Widget(QFrame):
 		self.PID_widget_y.spinboxD.valueChanged.connect(self.trackingController.pid_controller_y.update_D)
 
 		# Theta
-		self.PID_widget_z.spinboxP.valueChanged.connect(self.trackingController.pid_controller_theta.update_P)
-		self.PID_widget_z.spinboxI.valueChanged.connect(self.trackingController.pid_controller_theta.update_I)
-		self.PID_widget_z.spinboxD.valueChanged.connect(self.trackingController.pid_controller_theta.update_D)
+		self.PID_widget_z.spinboxP.valueChanged.connect(self.trackingController.pid_controller_z.update_P)
+		self.PID_widget_z.spinboxI.valueChanged.connect(self.trackingController.pid_controller_z.update_I)
+		self.PID_widget_z.spinboxD.valueChanged.connect(self.trackingController.pid_controller_z.update_D)
 
 
 
