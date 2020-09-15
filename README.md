@@ -1,10 +1,13 @@
-# Scale-free Vertical Tracking Microscopy (a.k.a) Gravity Machine
-For sharing the design, software and firmware of the Scale-free Vertical Tracking Microscope (a.k.a Gravity Machine) developed by Krishnamurthy et al.: https://www.biorxiv.org/content/10.1101/610246v1. More details coming soon.
-Code for viewing data collected using the microscope can be found here along with other analysis scripts. 
+# SQUID : Tracking microscopy for everyone
 
-This is a joint effort with the octopi(https://www.biorxiv.org/content/10.1101/684423v1) (open configurable high-throughput imaging platform) designed for research use. This repo can also be used as a template for building general open-source tracking microscopy platforms (for instance built on the octopi).
+Tracking microscopy built on top of the octopi open-hardware platform. 
 
-We are currently in the process of migrating the code to a new code-base which will serve as a general template for open-source tracking microscopy platforms. *Stay tuned for upcoming releases!*
+Tracking and other modules derived from Scale-free Vertical Tracking Microscope (a.k.a Gravity Machine) developed by Krishnamurthy et al.: [Nature Methods](https://www.nature.com/articles/s41592-020-0924-7), [Biorxiv](https://www.biorxiv.org/content/10.1101/610246v1).
+
+# References
+1. Krishnamurthy, Deepak, Hongquan Li, François Benoit du Rey, Pierre Cambournac, Adam G. Larson, Ethan Li, and Manu Prakash. "Scale-free vertical tracking microscopy." Nature Methods (2020): 1-12.
+
+
 
 
 
