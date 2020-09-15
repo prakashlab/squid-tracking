@@ -278,8 +278,12 @@ class Camera_Simulation(object):
         self.frame_ID = self.frame_ID + 1
         self.timestamp = time.time()
         if self.frame_ID == 1:
-            self.current_frame = np.random.randint(50,size=(2000,2000),dtype=np.uint8)
-            self.current_frame[800:1000,900:1100] = 200
+            if(self.is_color == False):
+                self.current_frame = np.random.randint(50,size=(2000,2000),dtype=np.uint8)
+                self.current_frame[800:1000,900:1100] = 200
+            elif(self.is_color == True):
+                self.current_frame = np.random.randint(50,size=(2000,2000,3),dtype=np.uint8)
+                self.current_frame[800:1000,900:1100,1] = 200
         else:
             self.current_frame = np.roll(self.current_frame,10,axis=1)
             # pass 
