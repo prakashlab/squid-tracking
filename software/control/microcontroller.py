@@ -226,6 +226,15 @@ class Microcontroller_Simulation():
     def move_y(self,delta):
         pass
 
+    def move_x_nonblocking(self,delta):
+        pass
+
+    def move_y_nonblocking(self,delta):
+        pass
+
+    def move_z_nonblocking(self,delta):
+        pass
+        
     def move_z(self,delta):
         pass
 

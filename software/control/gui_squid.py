@@ -17,7 +17,7 @@ from control._def import *
 # app specific libraries
 import control.widgets as widgets
 import control.widgets_tracking as widgets_tracking
-import control.camera_TIS as camera
+import control.camera as camera
 import control.core as core
 import control.core_tracking as core_tracking
 import control.microcontroller as microcontroller
@@ -52,8 +52,8 @@ class SquidGUI(QMainWindow):
 		#------------------------------------------------------------------
 		if SIMULATION is True:
 			# Define a camera object for each unique image-stream.
-			self.camera = {key:camera.Camera_Simulation(color=True) for key in self.imaging_channels}
-			self.microcontroller = microcontroller.Microcontroller()
+			self.camera = {key:camera.Camera_Simulation() for key in self.imaging_channels}
+			self.microcontroller = microcontroller.Microcontroller_Simulation()
 			# self.microcontroller = microcontroller_tracking.Microcontroller()
 
 		else:
