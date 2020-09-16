@@ -27,15 +27,18 @@ class Tracker_Image(object):
 		
 		 # Define list of trackers being used(maybe do this as a definition?)
 		# OpenCV tracking suite
-		self.OPENCV_OBJECT_TRACKERS = {
-		"csrt": cv2.TrackerCSRT_create,
-		"kcf": cv2.TrackerKCF_create,
-		"boosting": cv2.TrackerBoosting_create,
-		"mil": cv2.TrackerMIL_create,
-		"tld": cv2.TrackerTLD_create,
-		"medianflow": cv2.TrackerMedianFlow_create,
-		"mosse": cv2.TrackerMOSSE_create
-		}
+		try:
+			self.OPENCV_OBJECT_TRACKERS = {
+			"csrt": cv2.TrackerCSRT_create,
+			"kcf": cv2.TrackerKCF_create,
+			"boosting": cv2.TrackerBoosting_create,
+			"mil": cv2.TrackerMIL_create,
+			"tld": cv2.TrackerTLD_create,
+			"medianflow": cv2.TrackerMedianFlow_create,
+			"mosse": cv2.TrackerMOSSE_create
+			}
+		except ImportError:
+			print('Warning: OpenCV-Contrib trackers unavailable!')
 		# Neural Net based trackers
 		self.NEURALNETTRACKERS = {"daSiamRPN":[]}
 

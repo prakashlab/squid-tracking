@@ -168,7 +168,7 @@ CALIB_IMG_WIDTH = 1920
 WORKING_RES_DEFAULT = 0.5
 
 TRACKERS = ['nearest-nbr', 'csrt', 'daSIAMRPN']
-DEFAULT_TRACKER = 'csrt'
+DEFAULT_TRACKER = 'nearest-nbr'
 
 
 
