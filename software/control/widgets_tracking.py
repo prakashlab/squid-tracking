@@ -401,14 +401,14 @@ class PID_Group_Widget(QFrame):
 		PID_imagePlane = QGroupBox('PID (Image Plane)')
 		PID_imagePlane_layout = QHBoxLayout()
 
-		PID_imagePlane_layout.addWidget(self.PID_widget_z)
 		PID_imagePlane_layout.addWidget(self.PID_widget_x)
+		PID_imagePlane_layout.addWidget(self.PID_widget_y)
 
 		PID_imagePlane.setLayout(PID_imagePlane_layout)
 
 		PID_focus = QGroupBox('PID (Focus)')
 		PID_focus_Layout = QHBoxLayout()
-		PID_focus_Layout.addWidget(self.PID_widget_y)
+		PID_focus_Layout.addWidget(self.PID_widget_z)
 
 		PID_focus.setLayout(PID_focus_Layout)
 

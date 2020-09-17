@@ -56,7 +56,7 @@ class StreamHandler(QObject):
 
     '''
 
-    def __init__(self, camera = None , crop_width=3000,crop_height=3000, working_resolution_scaling = WORKING_RES_DEFAULT, imaging_channel = TRACKING):
+    def __init__(self, camera = None , crop_width=2000,crop_height=2000, working_resolution_scaling = WORKING_RES_DEFAULT, imaging_channel = TRACKING):
         QObject.__init__(self)
         self.fps_display = 1
         self.fps_save = 1
@@ -70,13 +70,6 @@ class StreamHandler(QObject):
         self.working_resolution_scaling = working_resolution_scaling
 
         self.camera = camera
-
-        # Raw image width
-        if(camera is not None):
-            self.working_image_width = round(self.working_resolution_scaling*self.camera.width)
-        else:
-            self.working_image_width = 720
-
 
         self.save_image_flag = False
 
@@ -134,11 +127,7 @@ class StreamHandler(QObject):
 
     def set_working_resolution_scaling(self, working_resolution_scaling):
         self.working_resolution_scaling = working_resolution_scaling/100
-        self.update_working_image_width()
         # print(self.working_resolution_scaling)
-    def update_working_image_width(self):
-        self.working_image_width = round(self.working_resolution_scaling*self.camera.width)
-
 
     def set_image_thresholds(self, lower_HSV, upper_HSV):
         self.lower_HSV = lower_HSV
@@ -199,16 +188,16 @@ class StreamHandler(QObject):
         self.get_real_stream_fps()
 
         # crop image
-        # image = image_processing.crop_image(camera.current_frame,self.crop_width,self.crop_height)
-        image = camera.current_frame
+        image = image_processing.crop_image(camera.current_frame,self.crop_width,self.crop_height)
+        # image = camera.current_frame
 
         # save a copy of full-res image for saving (make sure to do a deep copy)
         # @@@@@@@@@
 
         
         if(self.imaging_channel == TRACKING):
-            # image_resized = cv2.resize(image,(round(self.crop_width*self.working_resolution_scaling), round(self.crop_height*self.working_resolution_scaling)),cv2.INTER_LINEAR)
-            image_resized = imutils.resize(image, self.working_image_width)
+            image_resized = cv2.resize(image,(round(self.crop_width*self.working_resolution_scaling), round(self.crop_height*self.working_resolution_scaling)),cv2.INTER_LINEAR)
+            # image_resized = imutils.resize(image, self.working_image_width)
 
             # Threshold the image based on the color-thresholds
             image_thresh = 255*np.array(self.threshold_image(image_resized, color = camera.is_color), dtype = 'uint8')
@@ -240,7 +229,7 @@ class StreamHandler(QObject):
             if(self.imaging_channel == TRACKING):
                 # Send thresholded image to display (only for tracking stream)
                 self.thresh_image_to_display.emit(image_thresh)
-                self.signal_working_resolution.emit(self.working_image_width)
+                self.signal_working_resolution.emit(round(self.crop_width*self.working_resolution_scaling))
             
             self.timestamp_last_display = time_now
 
@@ -354,6 +343,7 @@ class LiveController(QObject):
         self.microcontroller = microcontroller
         self.microscope_mode = None
         self.trigger_mode = TriggerMode.SOFTWARE # @@@ change to None
+        self.mode = None
         self.is_live = False
         self.was_live_before_autofocus = False
         self.was_live_before_multipoint = False
@@ -432,7 +422,7 @@ class LiveController(QObject):
         self.timer_software_trigger.stop()
 
     # trigger mode and settings
-    def set_trigger_mode(self,mode):
+    def set_trigger_mode(self, mode):
         if mode == TriggerMode.SOFTWARE:
             self.camera.set_software_triggered_acquisition()
             if self.is_live:
@@ -443,7 +433,7 @@ class LiveController(QObject):
         if mode == TriggerMode.CONTINUOUS: 
             if self.trigger_mode == TriggerMode.SOFTWARE:
                 self._stop_software_triggerred_acquisition()
-            if self.mode == TriggerMode.HARDWARE:
+            if mode == TriggerMode.HARDWARE:
                 pass #@@@ to be implemented
             self.camera.set_continuous_acquisition()
         self.trigger_mode = mode

@@ -109,15 +109,15 @@ class LiveControlWidget(QGroupBox):
 		- Objective
 		- Display resolution slider
 	'''
-	def __init__(self, streamHandler, liveController, trackingController, camera, imageDisplayWindow, imageDisplayWindow_threshImage, main=None, *args, **kwargs):
+	objective_signal = Signal(str) # Pixel size based on calibration image
+	resolution_scaling_signal = Signal(int)
+	show_window = Signal(bool)
+
+	def __init__(self, streamHandler, liveController, main=None, *args, **kwargs):
 		super().__init__(*args, **kwargs)
 		self.setTitle('Live Controller')
 		self.liveController = liveController
 		self.streamHandler = streamHandler
-		self.trackingController = trackingController
-		self.camera = camera
-		self.imageDisplayWindow = imageDisplayWindow
-		self.imageDisplayWindow_threshImage = imageDisplayWindow_threshImage
 		self.imaging_channels = CAMERAS.keys()
 
 
@@ -149,7 +149,7 @@ class LiveControlWidget(QGroupBox):
 		self.slider_resolutionScaling.setTickPosition(QSlider.TicksBelow)
 		self.slider_resolutionScaling.setMinimum(10)
 		self.slider_resolutionScaling.setMaximum(100)
-		self.slider_resolutionScaling.setValue(WORKING_RES_DEFAULT*100)
+		self.slider_resolutionScaling.setValue(50)
 		self.slider_resolutionScaling.setSingleStep(10)
 
 		self.display_workingResolution = QLCDNumber()
@@ -210,29 +210,30 @@ class LiveControlWidget(QGroupBox):
 	def update_pixel_size(self):
 		self.objective = self.dropdown_objectiveSelection.currentText()
 		print('new objective: {}'.format(self.objective))
-		new_pixel_size = OBJECTIVES[self.objective]['PixelPermm']
-		self.trackingController.units_converter.update_pixel_size(new_pixel_size)
+		self.objective_signal.emit(self.objective)
 		
 	def toggle_live(self,pressed):
 		if pressed:
 			for channel in self.imaging_channels:
 				self.checkbox[channel].setEnabled(False)
 				if(self.checkbox[channel].isChecked()):
-					self.liveController[channel].start_live()
+					if(type(self.liveController) is dict):
+						self.liveController[channel].start_live()
+					else:
+						self.liveController.start_live()
+
 					
 		else:
 			for channel in self.imaging_channels:
-				self.liveController[channel].stop_live()
+				if(type(self.liveController) is dict):
+					self.liveController[channel].stop_live()
+				else:
+					self.liveController.stop_live()
 				self.checkbox[channel].setEnabled(True)
 
 	def update_image_properties_tracking(self):
-		# If the image resolution is changed on the fly then restart the image tracker.
-		self.trackingController.start_flag = True
-		# Also update the image sizes for use in tracking.
-		self.trackingController.update_image_center_width()
-	# def update_microscope_mode(self,index):
-	#     self.liveController.turn_off_illumination()
-	#     self.liveController.set_microscope_mode(self.dropdown_modeSelection.currentText())
+
+		self.resolution_scaling_signal.emit(self.slider_resolutionScaling.value())
 
 	def update_active_channels(self):
 
@@ -241,16 +242,10 @@ class LiveControlWidget(QGroupBox):
 		for channel in self.imaging_channels:
 			if(self.checkbox[channel].isChecked()):
 				# Make window active/Show
-				self.imageDisplayWindow[channel].show()
-				if(channel==TRACKING):
-					self.imageDisplayWindow_threshImage.show()
-				print('Show {} window'.format(channel))
+				self.show_window.emit(True)
 			elif (self.checkbox[channel].isChecked()==False):
 				# Hide the window.
-				self.imageDisplayWindow[channel].hide()
-				if(channel==TRACKING):
-					self.imageDisplayWindow_threshImage.hide()
-				print('Hide {} window'.format(channel))
+				self.show_window.emit(False)
 
 
 
@@ -261,6 +256,7 @@ class StreamControlWidget(QFrame):
 		- Trigger FPS (Set and Actual). Set value only matters during Software trigger. 
 		- Display fps (Set and Actual).
 	'''
+
 	def __init__(self, streamHandler, liveController, camera, main=None, *args, **kwargs):
 		super().__init__(*args, **kwargs)
 		self.liveController = liveController
@@ -359,10 +355,10 @@ class StreamControlWidget(QFrame):
 		self.actual_streamFPS.display(value)
 
 	def update_trigger_mode(self):
-        self.liveController.set_trigger_mode(self.dropdown_triggerManu.currentText())
+		self.liveController.set_trigger_mode(self.dropdown_triggerMode.currentText())
 
 	  
-	  
+
 class RecordingWidget(QFrame):
 	def __init__(self, streamHandler, imageSaver, internal_state, trackingControllerWidget, trackingDataSaver = None, imaging_channels = TRACKING, main=None, *args, **kwargs):
 		super().__init__(*args, **kwargs)

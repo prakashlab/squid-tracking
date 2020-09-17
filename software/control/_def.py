@@ -182,8 +182,7 @@ OBJECTIVES = {'10x':{'magnification':10, 'NA':0.17, 'PixelPermm':1122},
 DEFAULT_OBJECTIVE = '10x'
   
 
-CAMERAS = {'DF1':{'serial':"08910102", 'px_format':(1920,1080), 'color_format': 'GRAY8', 'fps': 120}, 
-    'FL1':{'serial':"08910100", 'px_format':(1920,1080), 'color_format': 'RGBx', 'fps': 120}}
+CAMERAS = {'DF1':{'serial':"08910102", 'px_format':(1920,1080), 'color_format': 'GRAY8', 'fps': 120}}
 
 OPTICAL_PATHS = {'DF only':['DF1'], 'DF+FL':['DF1', 'FL1'], 
             '2-camera':['DF1', 'DF2'], '2-camera-FL':['DF1', 'DF2', 'FL1']}

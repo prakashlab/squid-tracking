@@ -47,6 +47,11 @@ class SquidGUI(QMainWindow):
 
 		
 		self.imageDisplayWindow_ThresholdedImage = core.ImageDisplayWindow('Thresholded Image', rotate_image_angle=90)
+		
+		for key in self.imaging_channels:
+			self.imageDisplayWindow[key].show()
+
+		self.imageDisplayWindow_ThresholdedImage.show()
 		#------------------------------------------------------------------
 		# Load objects
 		#------------------------------------------------------------------
@@ -94,7 +99,7 @@ class SquidGUI(QMainWindow):
 		# load widgets
 		#------------------------------------------------------------------
 		self.cameraSettingWidget = {key: widgets.CameraSettingsWidget(self.camera[key],self.liveController[key]) for key in self.imaging_channels}
-		self.liveControlWidget = widgets.LiveControlWidget(self.streamHandler[TRACKING],self.liveController, self.trackingController, self.camera[TRACKING], self.imageDisplayWindow, self.imageDisplayWindow_ThresholdedImage)
+		self.liveControlWidget = widgets.LiveControlWidget(self.streamHandler[TRACKING],self.liveController, self.trackingController, self.camera[TRACKING])
 		self.streamControlWidget = {key: widgets.StreamControlWidget(self.streamHandler[key], self.liveController[key], self.camera[key]) for key in self.imaging_channels}
 		self.navigationWidget = widgets_tracking.NavigationWidget(self.navigationController, self.internal_state, self.microcontroller)
 		self.trackingControlWidget = widgets_tracking.TrackingControllerWidget(self.streamHandler[TRACKING], self.trackingController, self.trackingDataSaver, self.internal_state, self.imageDisplayWindow[TRACKING], self.microcontroller)
@@ -179,6 +184,10 @@ class SquidGUI(QMainWindow):
 		for channel in self.imaging_channels:
 			self.camera[channel].start_streaming()
 		print('Started image streams!')
+
+	
+	def show_image_window(self, channel):
+		pass
 
 	def start_imageStreams(self):
 		for key in self.imaging_channels:

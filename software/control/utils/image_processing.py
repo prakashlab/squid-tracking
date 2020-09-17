@@ -58,8 +58,7 @@ def crop(image,center,imSize): #center is the vector [x,y]
     return np.array([[xmin,ymin],[xmax,ymax]]),np.array(image[ymin:ymax,xmin:xmax])
 
 
-
-def crop_image_wh(image,crop_width,crop_height):
+def crop_image(image,crop_width,crop_height):
     image_height = image.shape[0]
     image_width = image.shape[1]
     roi_left = int(max(image_width/2 - crop_width/2,0))
@@ -68,6 +67,7 @@ def crop_image_wh(image,crop_width,crop_height):
     roi_bottom = int(min(image_height/2 + crop_height/2,image_height))
     image_cropped = image[roi_top:roi_bottom,roi_left:roi_right]
     return image_cropped
+
 
 def get_bbox(cnt):
     return cv2.boundingRect(cnt)
