@@ -140,6 +140,7 @@ class Camera(object):
     def set_software_triggered_acquisition(self):
         self.camera.TriggerMode.set(gx.GxSwitchEntry.ON)
         self.camera.TriggerSource.set(gx.GxTriggerSourceEntry.SOFTWARE)
+        print('Set software triggered aquisition')
 
     def set_hardware_triggered_acquisition(self):
         self.camera.TriggerMode.set(gx.GxSwitchEntry.ON)
@@ -181,9 +182,8 @@ class Camera(object):
         self.frame_ID = self.frame_ID + 1 # @@@ read frame ID from the camera
         self.timestamp = time.time()
         self.new_image_callback_external(self)
-
-        # self.frameID = self.frameID + 1
-        # print(self.frameID)
+       
+        print(self.frame_ID)
 
 
 class Camera_Simulation(object):

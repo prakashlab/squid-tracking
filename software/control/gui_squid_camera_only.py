@@ -14,7 +14,7 @@ import control.camera as camera
 import control.core as core
 import control.microcontroller as microcontroller
 
-SIMULATION = True
+SIMULATION = False
 
 class SquidGUI(QMainWindow):
 
@@ -70,8 +70,7 @@ class SquidGUI(QMainWindow):
 
 		# make connections
 		self.streamHandler.signal_new_frame_received.connect(self.liveController.on_new_frame)
-		self.streamHandler.image_to_display.connect(self.imageDisplay.enqueue)
-		self.imageDisplay.image_to_display.connect(self.imageDisplayWindow.display_image) # may connect streamHandler directly to imageDisplayWindow
+		self.streamHandler.image_to_display.connect(self.imageDisplayWindow.display_image)
 
 	def closeEvent(self, event):
 		event.accept()

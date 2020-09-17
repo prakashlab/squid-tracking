@@ -178,7 +178,7 @@ class StreamHandler(QObject):
 
     def on_new_frame(self, camera):
 
-        # print('On new frame')
+        print('On new frame')
         camera.image_locked = True
         self.handler_busy = True
         self.signal_new_frame_received.emit() # self.liveController.turn_off_illumination()
