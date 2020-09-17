@@ -147,7 +147,7 @@ class Camera(object):
         self.camera.TriggerSource.set(gx.GxTriggerSourceEntry.LINE0)
 
     def send_trigger(self):
-        print("sending trigger to camera")
+        # print("sending trigger to camera")
         self.camera.TriggerSoftware.send_command()
 
     def read_frame(self):
@@ -161,7 +161,7 @@ class Camera(object):
         return numpy_image
 
     def _on_frame_callback(self, user_param, raw_image):
-        print("In camera call back")
+        # print("In camera call back")
         if raw_image is None:
             print("Getting image failed.")
             return
@@ -183,7 +183,7 @@ class Camera(object):
         self.timestamp = time.time()
         self.new_image_callback_external(self)
        
-        print(self.frame_ID)
+        # print(self.frame_ID)
 
 
 class Camera_Simulation(object):
