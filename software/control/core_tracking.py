@@ -151,7 +151,7 @@ class TrackingController(QObject):
 		self.image = image
 
 		# @@@testing
-		# print('In Tracking controller new frame')
+		print('In Tracking controller new frame')
 
 		tracking_triggered = self.internal_state.data['track_obj_image_hrdware']
 
@@ -159,17 +159,17 @@ class TrackingController(QObject):
 
 		# If image tracking is triggered using hardware button
 		# Need to distinguish between Hardware button and Software button-based triggers
-		if tracking_triggered and tracking_triggered != self.tracking_triggered_prev:
-			''' @@@@@ Then emit the start_tracking signal to change the track button 
-			state of the Tracking Widget.
-			 EMIT (tracking_triggered)
-			'''
-			# This Toggles the state of the Track Button.
-			self.start_tracking_signal.emit()
-			self.internal_state.data['track_obj_image_hrdware'] = False
+		# if tracking_triggered and tracking_triggered != self.tracking_triggered_prev:
+		# 	''' @@@@@ Then emit the start_tracking signal to change the track button 
+		# 	state of the Tracking Widget.
+		# 	 EMIT (tracking_triggered)
+		# 	'''
+		# 	# This Toggles the state of the Track Button.
+		# 	self.start_tracking_signal.emit()
+		# 	self.internal_state.data['track_obj_image_hrdware'] = False
 
 			
-		self.tracking_triggered_prev = tracking_triggered
+		# self.tracking_triggered_prev = tracking_triggered
 
 		''' 
 			Note that this needs to be a local copy since on the internal_state 
@@ -180,7 +180,7 @@ class TrackingController(QObject):
 			
 			self.update_elapsed_time()
 
-			# print('In track function')
+			print('In track function')
 
 			# Update image parameters
 			# TO DO: Only call this when image resolution changes
@@ -362,7 +362,6 @@ class TrackingController(QObject):
 			X_order = round(X_order,2)
 
 			Y_order = self.pid_controller_y.update(y_error_steps,self.Time[-1])
-			Y_order = y_error_steps #@@@ NonPID focus tracking; may need to reverse the sign
 			Y_order = round(Y_order,2)
 
 			Z_order = self.pid_controller_z.update(z_error_steps,self.Time[-1])

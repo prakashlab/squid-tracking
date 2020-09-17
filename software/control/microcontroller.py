@@ -59,6 +59,7 @@ class Microcontroller():
         cmd[3] = int(n_microsteps) & 0xff
         self.serial.write(cmd)
         time.sleep(WaitTime.BASE + WaitTime.X*abs(delta))
+        print('Command sent to uController: {}'.format(n_microsteps))
 
     def move_y(self,delta):
         direction = int((np.sign(delta)+1)/2)
@@ -72,6 +73,7 @@ class Microcontroller():
         cmd[3] = int(n_microsteps) & 0xff
         self.serial.write(cmd)
         time.sleep(WaitTime.BASE + WaitTime.Y*abs(delta))
+        print('Command sent to uController: {}'.format(n_microsteps))
 
     def move_z(self,delta):
         direction = int((np.sign(delta)+1)/2)
@@ -85,10 +87,11 @@ class Microcontroller():
         cmd[3] = int(n_microsteps) & 0xff
         self.serial.write(cmd)
         time.sleep(WaitTime.BASE + WaitTime.Z*abs(delta))
+        print('Command sent to uController: {}'.format(n_microsteps))
 
     def move_x_nonblocking(self,delta):
         direction = int((np.sign(delta)+1)/2)
-        n_microsteps = abs(delta*Motion.STEPS_PER_MM_XY)
+        n_microsteps = abs(delta)
         if n_microsteps > 65535:
             n_microsteps = 65535
         cmd = bytearray(self.tx_buffer_length)
@@ -97,10 +100,11 @@ class Microcontroller():
         cmd[2] = int(n_microsteps) >> 8
         cmd[3] = int(n_microsteps) & 0xff
         self.serial.write(cmd)
+        print('Command sent to uController: {}'.format(n_microsteps))
 
     def move_y_nonblocking(self,delta):
         direction = int((np.sign(delta)+1)/2)
-        n_microsteps = abs(delta*Motion.STEPS_PER_MM_XY)
+        n_microsteps = abs(delta)
         if n_microsteps > 65535:
             n_microsteps = 65535
         cmd = bytearray(self.tx_buffer_length)
@@ -109,10 +113,11 @@ class Microcontroller():
         cmd[2] = int(n_microsteps) >> 8
         cmd[3] = int(n_microsteps) & 0xff
         self.serial.write(cmd)
+        print('Command sent to uController: {}'.format(n_microsteps))
 
     def move_z_nonblocking(self,delta):
         direction = int((np.sign(delta)+1)/2)
-        n_microsteps = abs(delta*Motion.STEPS_PER_MM_Z)
+        n_microsteps = abs(delta)
         if n_microsteps > 65535:
             n_microsteps = 65535
         cmd = bytearray(self.tx_buffer_length)
@@ -158,7 +163,7 @@ class Microcontroller():
 
         # get rid of old data
         if num_bytes_in_rx_buffer > self.rx_buffer_length:
-            print('getting rid of old data')
+            # print('getting rid of old data')
             for i in range(num_bytes_in_rx_buffer-self.rx_buffer_length):
                 self.serial.read()
         

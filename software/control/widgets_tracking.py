@@ -243,140 +243,235 @@ class TrackingControllerWidget(QFrame):
 		# self.object_tracking.upper_HSV=np.uint8(UPPER		
 
 
+# class NavigationWidget(QFrame):
+	
+# 	def __init__(self, navigationController, internal_state, microcontroller,  main=None, *args, **kwargs):
+# 		super().__init__(*args, **kwargs)
+# 		self.navigationController = navigationController
+# 		self.internal_state = internal_state
+# 		self.microcontroller = microcontroller
+# 		self.add_components()
+# 		self.setFrameStyle(QFrame.Panel | QFrame.Raised)
+
+# 	def add_components(self):
+
+# 		# Stage position display 
+
+# 		self.pos_X_label = pg.ValueLabel(siPrefix=True, suffix = 'm')
+# 		self.pos_X_label.setValue(0)
+# 		# self.pos_X_label.setStyleSheet('color: red')
+
+# 		self.pos_Y_label = pg.ValueLabel(siPrefix=True, suffix = 'm')
+# 		self.pos_Y_label.setValue(0)
+
+# 		self.pos_Z_label = pg.ValueLabel(siPrefix=True, suffix = 'm')
+# 		self.pos_Z_label.setValue(0)
+
+# 		# self.pos_X_label = QLabel()
+# 		# self.pos_X_label.setText('{:.03f}'.format(0))
+
+# 		# self.pos_Y_label = QLabel()
+# 		# self.pos_Y_label.setText('{:.03f}'.format(0))
+
+# 		# self.pos_Z_label = QLabel()
+# 		# self.pos_Z_label.setText('{:.03f}'.format(0))
+
+# 		stage_pos_layout = QGridLayout()
+
+# 		stage_pos_layout.addWidget(QLabel('X-stage'),0,0)
+# 		stage_pos_layout.addWidget(self.pos_X_label, 1,0)
+# 		stage_pos_layout.addWidget(QLabel('Y-stage'),2,0)
+# 		stage_pos_layout.addWidget(self.pos_Y_label, 3,0)
+# 		stage_pos_layout.addWidget(QLabel('Z-stage'),4,0)
+# 		stage_pos_layout.addWidget(self.pos_Z_label, 5,0)
+
+# 		self.stage_position = QGroupBox('Stage positions')
+
+# 		self.stage_position.setLayout(stage_pos_layout)
+
+
+# 		# Stage zeroing buttons
+# 		self.zero_X = QPushButton('Zero X-stage')
+		
+# 		self.zero_Y = QPushButton('Zero Y-stage')
+	
+# 		self.zero_Z = QPushButton('Zero Z-stage')
+	
+		
+# 		# Homing Button
+# 		self.homing_button = pg.FeedbackButton('Run Homing')
+
+# 		stage_control = QVBoxLayout()
+
+# 		stage_control.addWidget(self.homing_button)
+# 		stage_control.addWidget(self.zero_X)
+# 		stage_control.addWidget(self.zero_Y)
+# 		stage_control.addWidget(self.zero_Z)
+
+# 		self.stage_control_group = QGroupBox('Stage control')
+
+# 		self.stage_control_group.setLayout(stage_control)
+
+# 		layout = QGridLayout()
+
+# 		layout.addWidget(self.stage_position, 0,0,1,1)
+# 		layout.addWidget(self.stage_control_group, 0,1,1,1)
+		
+
+# 		self.setLayout(layout)
+
+
+# 		# Connections
+# 		self.zero_X.clicked.connect(self.zero_X_stage)
+# 		self.zero_Y.clicked.connect(self.zero_Y_stage)
+# 		self.zero_Z.clicked.connect(self.zero_Z_stage)
+
+# 		self.homing_button.clicked.connect(self.homing_button_click)
+
+# 	def zero_X_stage(self):
+
+# 		self.internal_state.data['Zero_stage'] = 1
+# 		self.microcontroller.send_stage_zero_command('X')
+	
+# 	def zero_Y_stage(self):
+
+# 		self.internal_state.data['Zero_stage'] = 2
+# 		self.microcontroller.send_stage_zero_command('Y')
+
+# 	def zero_Z_stage(self):
+
+# 		self.internal_state.data['Zero_stage'] = 3
+# 		self.microcontroller.send_stage_zero_command('Z')
+
+# 	# Triggered by microController_Receiever
+# 	def update_display(self):
+		
+# 		# self.pos_X_label.setText('{:.03f}'.format(self.internal_state.data['X_stage']))
+# 		# self.pos_Y_label.setText('{:.03f}'.format(self.internal_state.data['Y_stage']))
+# 		# self.pos_Z_label.setText('{:.03f}'.format(self.internal_state.data['Theta_stage']))
+
+# 		self.pos_X_label.setValue(self.internal_state.data['X_stage']*1e-3)
+# 		self.pos_Y_label.setValue(self.internal_state.data['Y_stage']*1e-3)
+# 		self.pos_Z_label.setValue(self.internal_state.data['Z_stage']*1e-3)
+
+# 	def homing_button_click(self):
+
+# 		# Update the internal homing command state
+# 		self.internal_state.data['homing_command'] = True
+
+# 		# Send homing command to microcontroller
+# 		self.microcontroller.send_homing_command()
+
+# 		# self.homing_button.processing('Homing stages...')
+
+# 		#@@@@ Hard-coding this to check button function
+# 		# time.sleep(2.0)
+# 		# self.internal_state.data['homing_state'] = True
+
+# 	# Can implement later if necessary
+# 	def homing_button_feedback(self):
+
+# 		if(self.internal_state.data['homing_state']):
+# 			self.homing_button.success('Homing completed!')
+# 			self.homing_button.setText('Homing complete')
+
+# 		else:
+# 			self.homing_button.failure('Homing failed!')
+
 class NavigationWidget(QFrame):
-	
-	def __init__(self, navigationController, internal_state, microcontroller,  main=None, *args, **kwargs):
-		super().__init__(*args, **kwargs)
-		self.navigationController = navigationController
-		self.internal_state = internal_state
-		self.microcontroller = microcontroller
-		self.add_components()
-		self.setFrameStyle(QFrame.Panel | QFrame.Raised)
+    def __init__(self, navigationController, main=None, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.navigationController = navigationController
+        self.add_components()
+        self.setFrameStyle(QFrame.Panel | QFrame.Raised)
 
-	def add_components(self):
+    def add_components(self):
+        self.label_Xpos = QLabel()
+        self.label_Xpos.setNum(0)
+        self.label_Xpos.setFrameStyle(QFrame.Panel | QFrame.Sunken)
+        self.entry_dX = QDoubleSpinBox()
+        self.entry_dX.setMinimum(0) 
+        self.entry_dX.setMaximum(5) 
+        self.entry_dX.setSingleStep(0.2)
+        self.entry_dX.setValue(0)
+        self.btn_moveX_forward = QPushButton('Forward')
+        self.btn_moveX_forward.setDefault(False)
+        self.btn_moveX_backward = QPushButton('Backward')
+        self.btn_moveX_backward.setDefault(False)
+        
+        self.label_Ypos = QLabel()
+        self.label_Ypos.setNum(0)
+        self.label_Ypos.setFrameStyle(QFrame.Panel | QFrame.Sunken)
+        self.entry_dY = QDoubleSpinBox()
+        self.entry_dY.setMinimum(0)
+        self.entry_dY.setMaximum(5)
+        self.entry_dY.setSingleStep(0.2)
+        self.entry_dY.setValue(0)
+        self.btn_moveY_forward = QPushButton('Forward')
+        self.btn_moveY_forward.setDefault(False)
+        self.btn_moveY_backward = QPushButton('Backward')
+        self.btn_moveY_backward.setDefault(False)
 
-		# Stage position display 
+        self.label_Zpos = QLabel()
+        self.label_Zpos.setNum(0)
+        self.label_Zpos.setFrameStyle(QFrame.Panel | QFrame.Sunken)
+        self.entry_dZ = QDoubleSpinBox()
+        self.entry_dZ.setMinimum(0) 
+        self.entry_dZ.setMaximum(1000) 
+        self.entry_dZ.setSingleStep(0.2)
+        self.entry_dZ.setValue(0)
+        self.btn_moveZ_forward = QPushButton('Forward')
+        self.btn_moveZ_forward.setDefault(False)
+        self.btn_moveZ_backward = QPushButton('Backward')
+        self.btn_moveZ_backward.setDefault(False)
+        
+        grid_line0 = QGridLayout()
+        grid_line0.addWidget(QLabel('X (mm)'), 0,0)
+        grid_line0.addWidget(self.label_Xpos, 0,1)
+        grid_line0.addWidget(self.entry_dX, 0,2)
+        grid_line0.addWidget(self.btn_moveX_forward, 0,3)
+        grid_line0.addWidget(self.btn_moveX_backward, 0,4)
 
-		self.pos_X_label = pg.ValueLabel(siPrefix=True, suffix = 'm')
-		self.pos_X_label.setValue(0)
-		# self.pos_X_label.setStyleSheet('color: red')
+        grid_line1 = QGridLayout()
+        grid_line1.addWidget(QLabel('Y (mm)'), 0,0)
+        grid_line1.addWidget(self.label_Ypos, 0,1)
+        grid_line1.addWidget(self.entry_dY, 0,2)
+        grid_line1.addWidget(self.btn_moveY_forward, 0,3)
+        grid_line1.addWidget(self.btn_moveY_backward, 0,4)
 
-		self.pos_Y_label = pg.ValueLabel(siPrefix=True, suffix = 'm')
-		self.pos_Y_label.setValue(0)
+        grid_line2 = QGridLayout()
+        grid_line2.addWidget(QLabel('Z (um)'), 0,0)
+        grid_line2.addWidget(self.label_Zpos, 0,1)
+        grid_line2.addWidget(self.entry_dZ, 0,2)
+        grid_line2.addWidget(self.btn_moveZ_forward, 0,3)
+        grid_line2.addWidget(self.btn_moveZ_backward, 0,4)
 
-		self.pos_Z_label = pg.ValueLabel(siPrefix=True, suffix = 'm')
-		self.pos_Z_label.setValue(0)
+        self.grid = QGridLayout()
+        self.grid.addLayout(grid_line0,0,0)
+        self.grid.addLayout(grid_line1,1,0)
+        self.grid.addLayout(grid_line2,2,0)
+        self.setLayout(self.grid)
 
-		# self.pos_X_label = QLabel()
-		# self.pos_X_label.setText('{:.03f}'.format(0))
-
-		# self.pos_Y_label = QLabel()
-		# self.pos_Y_label.setText('{:.03f}'.format(0))
-
-		# self.pos_Z_label = QLabel()
-		# self.pos_Z_label.setText('{:.03f}'.format(0))
-
-		stage_pos_layout = QGridLayout()
-
-		stage_pos_layout.addWidget(QLabel('X-stage'),0,0)
-		stage_pos_layout.addWidget(self.pos_X_label, 1,0)
-		stage_pos_layout.addWidget(QLabel('Y-stage'),2,0)
-		stage_pos_layout.addWidget(self.pos_Y_label, 3,0)
-		stage_pos_layout.addWidget(QLabel('Z-stage'),4,0)
-		stage_pos_layout.addWidget(self.pos_Z_label, 5,0)
-
-		self.stage_position = QGroupBox('Stage positions')
-
-		self.stage_position.setLayout(stage_pos_layout)
-
-
-		# Stage zeroing buttons
-		self.zero_X = QPushButton('Zero X-stage')
-		
-		self.zero_Y = QPushButton('Zero Y-stage')
-	
-		self.zero_Z = QPushButton('Zero Z-stage')
-	
-		
-		# Homing Button
-		self.homing_button = pg.FeedbackButton('Run Homing')
-
-		stage_control = QVBoxLayout()
-
-		stage_control.addWidget(self.homing_button)
-		stage_control.addWidget(self.zero_X)
-		stage_control.addWidget(self.zero_Y)
-		stage_control.addWidget(self.zero_Z)
-
-		self.stage_control_group = QGroupBox('Stage control')
-
-		self.stage_control_group.setLayout(stage_control)
-
-		layout = QGridLayout()
-
-		layout.addWidget(self.stage_position, 0,0,1,1)
-		layout.addWidget(self.stage_control_group, 0,1,1,1)
-		
-
-		self.setLayout(layout)
-
-
-		# Connections
-		self.zero_X.clicked.connect(self.zero_X_stage)
-		self.zero_Y.clicked.connect(self.zero_Y_stage)
-		self.zero_Z.clicked.connect(self.zero_Z_stage)
-
-		self.homing_button.clicked.connect(self.homing_button_click)
-
-	def zero_X_stage(self):
-
-		self.internal_state.data['Zero_stage'] = 1
-		self.microcontroller.send_stage_zero_command('X')
-	
-	def zero_Y_stage(self):
-
-		self.internal_state.data['Zero_stage'] = 2
-		self.microcontroller.send_stage_zero_command('Y')
-
-	def zero_Z_stage(self):
-
-		self.internal_state.data['Zero_stage'] = 3
-		self.microcontroller.send_stage_zero_command('Z')
-
-	# Triggered by microController_Receiever
-	def update_display(self):
-		
-		# self.pos_X_label.setText('{:.03f}'.format(self.internal_state.data['X_stage']))
-		# self.pos_Y_label.setText('{:.03f}'.format(self.internal_state.data['Y_stage']))
-		# self.pos_Z_label.setText('{:.03f}'.format(self.internal_state.data['Theta_stage']))
-
-		self.pos_X_label.setValue(self.internal_state.data['X_stage']*1e-3)
-		self.pos_Y_label.setValue(self.internal_state.data['Y_stage']*1e-3)
-		self.pos_Z_label.setValue(self.internal_state.data['Z_stage']*1e-3)
-
-	def homing_button_click(self):
-
-		# Update the internal homing command state
-		self.internal_state.data['homing_command'] = True
-
-		# Send homing command to microcontroller
-		self.microcontroller.send_homing_command()
-
-		# self.homing_button.processing('Homing stages...')
-
-		#@@@@ Hard-coding this to check button function
-		# time.sleep(2.0)
-		# self.internal_state.data['homing_state'] = True
-
-	# Can implement later if necessary
-	def homing_button_feedback(self):
-
-		if(self.internal_state.data['homing_state']):
-			self.homing_button.success('Homing completed!')
-			self.homing_button.setText('Homing complete')
-
-		else:
-			self.homing_button.failure('Homing failed!')
+        self.btn_moveX_forward.clicked.connect(self.move_x_forward)
+        self.btn_moveX_backward.clicked.connect(self.move_x_backward)
+        self.btn_moveY_forward.clicked.connect(self.move_y_forward)
+        self.btn_moveY_backward.clicked.connect(self.move_y_backward)
+        self.btn_moveZ_forward.clicked.connect(self.move_z_forward)
+        self.btn_moveZ_backward.clicked.connect(self.move_z_backward)
+        
+    def move_x_forward(self):
+        self.navigationController.move_x(self.entry_dX.value())
+        print('move x')
+    def move_x_backward(self):
+        self.navigationController.move_x(-self.entry_dX.value())
+    def move_y_forward(self):
+        self.navigationController.move_y(self.entry_dY.value())
+    def move_y_backward(self):
+        self.navigationController.move_y(-self.entry_dY.value())
+    def move_z_forward(self):
+        self.navigationController.move_z(self.entry_dZ.value()/1000)
+    def move_z_backward(self):
+        self.navigationController.move_z(-self.entry_dZ.value()/1000)
 
 
 
