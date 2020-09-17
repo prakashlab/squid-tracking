@@ -22,7 +22,7 @@ import control.core as core
 import control.core_tracking as core_tracking
 import control.microcontroller as microcontroller
 
-SIMULATION = True
+SIMULATION = False
 
 class SquidGUI(QMainWindow):
 
@@ -63,11 +63,11 @@ class SquidGUI(QMainWindow):
 
 		else:
 			# TIS Camera object
-			self.camera = {key:camera.Camera(serial=CAMERAS[key]['serial'], width = CAMERAS[key]['px_format'][0], 
-				height = CAMERAS[key]['px_format'][1], framerate = CAMERAS[key]['fps']) for key in self.imaging_channels}
+			# self.camera = {key:camera.Camera(serial=CAMERAS[key]['serial'], width = CAMERAS[key]['px_format'][0], 
+			# 	height = CAMERAS[key]['px_format'][1], framerate = CAMERAS[key]['fps']) for key in self.imaging_channels}
 			# DaHheng camera object
-
-			self.microcontroller = microcontroller_tracking.Microcontroller()
+			self.camera = {key:camera.Camera() for key in self.imaging_channels}
+			self.microcontroller = microcontroller.Microcontroller_Simulation()
 		
 		self.internal_state = core_tracking.InternalState()
 
@@ -99,7 +99,7 @@ class SquidGUI(QMainWindow):
 		# load widgets
 		#------------------------------------------------------------------
 		self.cameraSettingWidget = {key: widgets.CameraSettingsWidget(self.camera[key],self.liveController[key]) for key in self.imaging_channels}
-		self.liveControlWidget = widgets.LiveControlWidget(self.streamHandler[TRACKING],self.liveController, self.trackingController, self.camera[TRACKING])
+		self.liveControlWidget = widgets.LiveControlWidget(self.streamHandler[TRACKING],self.liveController)
 		self.streamControlWidget = {key: widgets.StreamControlWidget(self.streamHandler[key], self.liveController[key], self.camera[key]) for key in self.imaging_channels}
 		self.navigationWidget = widgets_tracking.NavigationWidget(self.navigationController, self.internal_state, self.microcontroller)
 		self.trackingControlWidget = widgets_tracking.TrackingControllerWidget(self.streamHandler[TRACKING], self.trackingController, self.trackingDataSaver, self.internal_state, self.imageDisplayWindow[TRACKING], self.microcontroller)
@@ -164,9 +164,9 @@ class SquidGUI(QMainWindow):
 		# layout.addWidget(self.navigationWidget,2,0)
 		#layout.addWidget(self.autofocusWidget,3,0)
 		layout.addWidget(self.recordingControlWidget,1,1)
-		layout.addWidget(self.PID_Group_Widget,1,2)
+		# layout.addWidget(self.PID_Group_Widget,1,2)
 		# layout.addWidget(self.FocusTracking_Widget,2,0)
-		# layout.addWidget(self.cameraSettings_Tab,3,1,1,1)
+		layout.addWidget(self.cameraSettings_Tab,1,2,1,1)
 		# transfer the layout to the central widget
 		self.centralWidget = QWidget()
 		self.centralWidget.setLayout(layout)

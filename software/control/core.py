@@ -137,7 +137,7 @@ class StreamHandler(QObject):
         print('Updated color thresholds to {} and {}'.format(self.lower_HSV, self.upper_HSV))
 
 
-    def threshold_image(self, image_resized, color):
+    def threshold_image(self, image_resized, color, invert = False):
         if(color):
             thresh_image = image_processing.threshold_image(image_resized,self.lower_HSV,self.upper_HSV)  #The threshold image as one channel
 
@@ -145,7 +145,12 @@ class StreamHandler(QObject):
             # print(self.lower_HSV[2])
             # print(self.upper_HSV[2])
             # img_bgr = cv2.cvtColor(img, cv2.COLOR_GRAY2BGR)
+            # print(max(image_resized))
+            # print(min(image_resized))
+            image_resized = np.array(image_resized, dtype='uint8')
             thresh_image = image_processing.threshold_image_gray(image_resized, self.lower_HSV[2], self.upper_HSV[2])
+            if(invert==True):
+                thresh_image = 1 - thresh_image
 
         return thresh_image
 
@@ -200,7 +205,7 @@ class StreamHandler(QObject):
             # image_resized = imutils.resize(image, self.working_image_width)
 
             # Threshold the image based on the color-thresholds
-            image_thresh = 255*np.array(self.threshold_image(image_resized, color = camera.is_color), dtype = 'uint8')
+            image_thresh = 255*np.array(self.threshold_image(image_resized, color = camera.is_color, invert = True), dtype = 'uint8')
 
         else:
 

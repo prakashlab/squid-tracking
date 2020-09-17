@@ -140,13 +140,14 @@ class Camera(object):
     def set_software_triggered_acquisition(self):
         self.camera.TriggerMode.set(gx.GxSwitchEntry.ON)
         self.camera.TriggerSource.set(gx.GxTriggerSourceEntry.SOFTWARE)
+        print('Set software triggered aquisition')
 
     def set_hardware_triggered_acquisition(self):
         self.camera.TriggerMode.set(gx.GxSwitchEntry.ON)
         self.camera.TriggerSource.set(gx.GxTriggerSourceEntry.LINE0)
 
     def send_trigger(self):
-        print("sending trigger to camera")
+        # print("sending trigger to camera")
         self.camera.TriggerSoftware.send_command()
 
     def read_frame(self):
@@ -160,7 +161,7 @@ class Camera(object):
         return numpy_image
 
     def _on_frame_callback(self, user_param, raw_image):
-        print("In camera call back")
+        # print("In camera call back")
         if raw_image is None:
             print("Getting image failed.")
             return
@@ -181,9 +182,8 @@ class Camera(object):
         self.frame_ID = self.frame_ID + 1 # @@@ read frame ID from the camera
         self.timestamp = time.time()
         self.new_image_callback_external(self)
-
-        # self.frameID = self.frameID + 1
-        # print(self.frameID)
+       
+        # print(self.frame_ID)
 
 
 class Camera_Simulation(object):
