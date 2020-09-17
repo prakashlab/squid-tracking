@@ -79,10 +79,10 @@ constexpr float MAX_VELOCITY_Z_mm = 2;
 constexpr float MAX_ACCELERATION_X_mm = 200;  // 50 mm/s/s
 constexpr float MAX_ACCELERATION_Y_mm = 200;  // 50 mm/s/s
 constexpr float MAX_ACCELERATION_Z_mm = 20;   // 20 mm/s/s
-static const long X_NEG_LIMIT_MM = -12;
-static const long X_POS_LIMIT_MM = 12;
-static const long Y_NEG_LIMIT_MM = -12;
-static const long Y_POS_LIMIT_MM = 12;
+static const long X_NEG_LIMIT_MM = -13;
+static const long X_POS_LIMIT_MM = 13;
+static const long Y_NEG_LIMIT_MM = -13;
+static const long Y_POS_LIMIT_MM = 13;
 static const long Z_NEG_LIMIT_MM = -1;
 static const long Z_POS_LIMIT_MM = 1;
 

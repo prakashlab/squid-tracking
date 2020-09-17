@@ -259,6 +259,7 @@ class TrackingController(QObject):
 		
 					x_error, y_error = self.units_converter.px_to_mm(self.posError_image[0], self.image_width), self.units_converter.px_to_mm(self.posError_image[1], self.image_width), 
 
+					print('Position error: {}, {} mm'.format(x_error, y_error))
 				# Flip the sign of Z-error since image coordinates and physical coordinates are reversed.
 				# z_error = -z_error
 
@@ -291,7 +292,7 @@ class TrackingController(QObject):
 				X_order, Y_order, Z_order = self.get_motion_commands_xyz(x_error,y_error,z_error)
 
 				# New serial interface (send data directly to micro-controller object)
-				print('Command sent to micro-controller: {}, {}, {}'.format(X_order, Y_order, Z_order))
+				print('Command sent to micro-controller: {}, {}, {} steps'.format(X_order, Y_order, Z_order))
 				# self.microcontroller.send_motion_command_xytheta(X_order, Y_order, Theta_order)
 				# self.microcontroller.send_motion_command_xyz(X_order, Y_order, Z_order)  
 
