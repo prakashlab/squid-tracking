@@ -73,6 +73,10 @@ class TrackingControllerWidget(QFrame):
 
 		self.tracking_group.setLayout(tracking_group_layout)
 
+		# Invert thresholded image checkbox (useful when switching between BF and DF)
+		self.invert_image_checkbox = QCheckBox('Invert image')
+		self.invert_image_checkbox.setChecked(False)
+
 
 		# Image offset settings
 		self.tracking_setPoint_group = QGroupBox('Tracking set-point offset', alignment = Qt.AlignCenter)
@@ -88,14 +92,13 @@ class TrackingControllerWidget(QFrame):
 
 		# Image tracking offset - Y axis
 		self.label_y = QLabel('y (px)')
-
 		self.tracking_setPoint_offset_y = QSpinBox()
 		self.tracking_setPoint_offset_y.setMinimum(-round(self.trackingController.image_width/4)) 
 		self.tracking_setPoint_offset_y.setMaximum(round(self.trackingController.image_width/4)) 
 		self.tracking_setPoint_offset_y.setSingleStep(1)
 		self.tracking_setPoint_offset_y.setValue(0)
+		
 		# layout
-
 		tracking_setPoint_layout.addWidget(self.label_x,0,0,1,1)
 		tracking_setPoint_layout.addWidget(self.tracking_setPoint_offset_x,1,0,1,1)
 		tracking_setPoint_layout.addWidget(self.label_y, 0,1,1,1)
@@ -103,8 +106,6 @@ class TrackingControllerWidget(QFrame):
 
 		self.tracking_setPoint_group.setLayout(tracking_setPoint_layout)
 
-
-		
 
 		# Range sliders for image color thresholding
 		self.group_sliders = QGroupBox('Color thresholds', alignment = Qt.AlignCenter)
@@ -136,8 +137,9 @@ class TrackingControllerWidget(QFrame):
 		groupbox_track_layout.addWidget(self.btn_track, 0,0,1,1)
 		# groupbox_track_layout.addWidget(self.dropdown_TrackerSelection, 0,1,1,1)
 		groupbox_track_layout.addWidget(self.tracking_group,0,1,1,1)
-		groupbox_track_layout.addWidget(self.tracking_setPoint_group,0,2,1,1)
-		groupbox_track_layout.addWidget(self.group_sliders,1,0,1,3)
+		groupbox_track_layout.addWidget(self.tracking_setPoint_group,1,0,1,1)
+		groupbox_track_layout.addWidget(self.invert_image_checkbox,1,1)
+		groupbox_track_layout.addWidget(self.group_sliders,2,0,1,2)
 
 		# Track button connection
 		self.btn_track.clicked.connect(self.do_track_button_tasks)
@@ -148,6 +150,8 @@ class TrackingControllerWidget(QFrame):
 		# Image tracking setpoint
 		self.tracking_setPoint_offset_x.valueChanged.connect(self.update_tracking_setPoints)
 		self.tracking_setPoint_offset_y.valueChanged.connect(self.update_tracking_setPoints)
+
+		self.invert_image_checkbox.clicked.connect(self.update_invert_image_flag)
 
 
 		self.range_slider1.startValueChanged.connect(self.sliders_move)
@@ -195,6 +199,12 @@ class TrackingControllerWidget(QFrame):
 	def handle_aquisition_widget_track_signal(self):
 		self.btn_track.setChecked(True)
 
+	def update_invert_image_flag(self):
+
+		if(self.invert_image_checkbox.isChecked()):
+			self.streamHandler.update_invert_image_flag(True)
+		else:
+			self.streamHandler.update_invert_image_flag(False)
 
 	def update_tracker(self, index):
 

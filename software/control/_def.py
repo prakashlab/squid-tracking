@@ -167,7 +167,7 @@ CALIB_IMG_WIDTH = 1920
 
 WORKING_RES_DEFAULT = 0.5
 
-TRACKERS = ['nearest-nbr', 'csrt', 'daSIAMRPN']
+TRACKERS = ['nearest-nbr', 'csrt', 'kcf', 'mil', 'tld', 'medianflow','mosse','daSIAMRPN']
 DEFAULT_TRACKER = 'nearest-nbr'
 
 

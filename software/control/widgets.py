@@ -399,6 +399,7 @@ class RecordingWidget(QFrame):
 		for channel in self.imaging_channels:
 
 			self.checkbox[channel] = QCheckBox(channel)
+			self.checkbox[channel].setChecked(True)
 
 			# SpinBox for specifying save FPS of each stream
 
@@ -424,6 +425,7 @@ class RecordingWidget(QFrame):
 		
 
 		self.radioButton_tracking = QRadioButton("Track+Record")
+		self.radioButton_tracking.setChecked(True)
 		self.radioButton_recording = QRadioButton("Record")
 
 		self.btn_record = QPushButton("Record")

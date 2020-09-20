@@ -52,8 +52,6 @@ class StreamHandler(QObject):
     signal_new_frame_received -> microcontroller_Receiver.get_Data
 
     Slots
-
-
     '''
 
     def __init__(self, camera = None , crop_width=2000,crop_height=2000, working_resolution_scaling = WORKING_RES_DEFAULT, imaging_channel = TRACKING):
@@ -77,6 +75,8 @@ class StreamHandler(QObject):
         self.imaging_channel = imaging_channel
 
         self.track_flag = False
+
+        self.invert_image_flag = False
 
         self.handler_busy = False
 
@@ -136,8 +136,10 @@ class StreamHandler(QObject):
         #@@@Testing
         print('Updated color thresholds to {} and {}'.format(self.lower_HSV, self.upper_HSV))
 
-
-    def threshold_image(self, image_resized, color, invert = False):
+    def update_invert_image_flag(self, flag):
+        self.invert_image_flag = flag
+        
+    def threshold_image(self, image_resized, color):
         if(color):
             thresh_image = image_processing.threshold_image(image_resized,self.lower_HSV,self.upper_HSV)  #The threshold image as one channel
 
@@ -149,7 +151,7 @@ class StreamHandler(QObject):
             # print(min(image_resized))
             image_resized = np.array(image_resized, dtype='uint8')
             thresh_image = image_processing.threshold_image_gray(image_resized, self.lower_HSV[2], self.upper_HSV[2])
-            if(invert==True):
+            if(self.invert_image_flag==True):
                 thresh_image = 1 - thresh_image
 
         return thresh_image
@@ -205,7 +207,7 @@ class StreamHandler(QObject):
             # image_resized = imutils.resize(image, self.working_image_width)
 
             # Threshold the image based on the color-thresholds
-            image_thresh = 255*np.array(self.threshold_image(image_resized, color = camera.is_color, invert = True), dtype = 'uint8')
+            image_thresh = 255*np.array(self.threshold_image(image_resized, color = camera.is_color), dtype = 'uint8')
 
         else:
 
