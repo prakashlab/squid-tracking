@@ -597,17 +597,6 @@ class ImageDisplayWindow(QMainWindow):
         self.graphics_widget.img = pg.ImageItem(border='w')
         self.graphics_widget.view.addItem(self.graphics_widget.img)
 
-        ## Create ROI
-        self.ROI = pg.ROI((0.5,0.5),(500,500))
-        self.ROI.setZValue(10)
-        self.ROI.addScaleHandle((0,0), (1,1))
-        self.ROI.addScaleHandle((1,1), (0,0))
-        self.graphics_widget.view.addItem(self.ROI)
-        self.ROI.hide()
-        self.ROI.sigRegionChanged.connect(self.updateROI)
-        self.roi_pos = self.ROI.pos()
-        self.roi_size = self.ROI.size()
-
         ## Variables for annotating images
         self.DrawRect = False
         self.ptRect1 = None
@@ -676,6 +665,9 @@ class ImageDisplayWindow(QMainWindow):
                 image = cv2.flip(image, -1)
 
 
+     
+
+
         self.graphics_widget.img.setImage(image,autoLevels=False)
         # print('In ImageDisplayWindow display image')
     
@@ -711,15 +703,16 @@ class ImageDisplayWindow(QMainWindow):
 
         self.image_offset = new_image_offset
 
-    def updateROI(self):
-        self.roi_pos = self.ROI.pos()
-        self.roi_size = self.ROI.size()
 
-    def show_ROI_selector(self):
-        self.ROI.show()
 
-    def hide_ROI_selector(self):
-        self.ROI.hide()
 
-    def get_roi(self):
-        return self.roi_pos,self.roi_size
+
+
+
+
+
+
+
+
+
+        
