@@ -615,7 +615,6 @@ class ImageDisplayWindow(QMainWindow):
         self.roi_pos = self.ROI.pos()
         self.roi_size = self.ROI.size()
 
-
         ## Variables for annotating images
         self.DrawRect = False
         self.ptRect1 = None
@@ -686,6 +685,9 @@ class ImageDisplayWindow(QMainWindow):
                 image = cv2.flip(image, -1)
 
 
+     
+
+
         self.graphics_widget.img.setImage(image,autoLevels=False)
         # print('In ImageDisplayWindow display image')
     
@@ -714,25 +716,15 @@ class ImageDisplayWindow(QMainWindow):
 
     def update_image_center_width(self,image):
         self.image_center, self.image_width = image_processing.get_image_center_width(image)
-        
         self.tracking_center = self.image_center + self.image_offset
 
     def update_image_offset(self, new_image_offset):
-
         self.image_offset = new_image_offset
-
-    def updateROI(self):
-        self.roi_pos = self.ROI.pos()
-        self.roi_size = self.ROI.size()
-
         print('ROI pos: {}'.format(self.roi_pos))
         print('ROI size: {}'.format(self.roi_size))
 
     def show_ROI_selector():
         self.ROI.show()
-
-    def hide_ROI_selector(self):
-        self.ROI.hide()
 
     def send_bbox(self):
         self.updateROI()
@@ -744,4 +736,3 @@ class ImageDisplayWindow(QMainWindow):
 
         self.roi_bbox.emit(np.array([xmin, ymin, width, height]))
         # print('Sent bbox from ImageDisplay: {}'.format([xmin, ymin, width, height]))
-
