@@ -1,6 +1,6 @@
-# SQUID : Tracking microscopy for everyone
+# SQUID : Research microscopy for everyone
 
-Tracking microscopy built on top of the octopi open-hardware platform. 
+Open-hardware and Open-software modular microscopy platform, built on top of the octopi open-hardware platform. 
 
 Tracking and other modules derived from Scale-free Vertical Tracking Microscope (a.k.a Gravity Machine) developed by Krishnamurthy et al.: [Nature Methods](https://www.nature.com/articles/s41592-020-0924-7), [Biorxiv](https://www.biorxiv.org/content/10.1101/610246v1).
 
