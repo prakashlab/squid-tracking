@@ -28,6 +28,8 @@ class TrackingControllerWidget(QFrame):
 	Text boxes for base path and Experiment ID.
 
 	'''
+	show_roi = Signal(bool)
+
 	def __init__(self, streamHandler, trackingController, trackingDataSaver, internal_state, ImageDisplayWindow, microcontroller, main=None, *args, **kwargs):
 		super().__init__(*args, **kwargs)
 
@@ -182,8 +184,6 @@ class TrackingControllerWidget(QFrame):
 		self.range_slider2.endValueChanged.connect(self.sliders_move)
 		self.range_slider3.endValueChanged.connect(self.sliders_move)
 
-		
-
 		self.setLayout(groupbox_track_layout)
 
 
@@ -232,8 +232,11 @@ class TrackingControllerWidget(QFrame):
 
 		if(self.tracking_init_threshold.isChecked()):
 			self.trackingController.tracker_image.update_init_method("threshold")
+			self.show_roi.emit(False)
 		elif(self.tracking_init_roi.isChecked()):
 			self.trackingController.tracker_image.update_init_method("roi")
+			self.show_roi.emit(True)
+
 
 
 	def update_tracker(self, index):

@@ -723,8 +723,15 @@ class ImageDisplayWindow(QMainWindow):
         print('ROI pos: {}'.format(self.roi_pos))
         print('ROI size: {}'.format(self.roi_size))
 
-    def show_ROI_selector():
-        self.ROI.show()
+    def updateROI(self):
+        self.roi_pos = self.ROI.pos()
+        self.roi_size = self.ROI.size()
+
+    def toggle_ROI_selector(self, flag):
+        if(flag == True):
+            self.ROI.show()
+        else:
+            self.ROI.hide()
 
     def send_bbox(self):
         self.updateROI()

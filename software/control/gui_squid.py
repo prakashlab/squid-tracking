@@ -152,7 +152,7 @@ class SquidGUI(QMainWindow):
 		self.trackingController.get_roi_bbox.connect(self.imageDisplayWindow[TRACKING].send_bbox)
 		self.imageDisplayWindow[TRACKING].roi_bbox.connect(self.trackingController.tracker_image.set_roi_bbox)
 		# self.microcontroller_Rec.update_display.connect(self.navigationWidget.update_display)
-
+		self.trackingControlWidget.show_roi.connect(self.imageDisplayWindow[TRACKING].toggle_ROI_selector)
 
 		#-----------------------------------------------------
 		# Layout widgets
