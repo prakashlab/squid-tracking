@@ -111,6 +111,10 @@ class Tracking:
 
     DEFAULT_TRACKER = "csrt"
 
+    INIT_METHODS = ["threshold", "roi"]
+    
+    DEFAULT_INIT_METHOD = "threshold"
+
     
     def __init__(self):
         pass

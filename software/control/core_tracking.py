@@ -47,6 +47,8 @@ class TrackingController(QObject):
 
 	save_data_signal = Signal()
 
+	get_roi_bbox = Signal()
+
 	''' 
 	Connection map
 
@@ -151,7 +153,7 @@ class TrackingController(QObject):
 		self.image = image
 
 		# @@@testing
-		print('In Tracking controller new frame')
+		# print('In Tracking controller new frame')
 
 		tracking_triggered = self.internal_state.data['track_obj_image_hrdware']
 
@@ -180,7 +182,7 @@ class TrackingController(QObject):
 			
 			self.update_elapsed_time()
 
-			print('In track function')
+			# print('In track function')
 
 			# Update image parameters
 			# TO DO: Only call this when image resolution changes
@@ -259,7 +261,7 @@ class TrackingController(QObject):
 		
 					x_error, y_error = self.units_converter.px_to_mm(self.posError_image[0], self.image_width), self.units_converter.px_to_mm(self.posError_image[1], self.image_width), 
 
-					print('Position error: {}, {} mm'.format(x_error, y_error))
+					# print('Position error: {}, {} mm'.format(x_error, y_error))
 				# Flip the sign of Z-error since image coordinates and physical coordinates are reversed.
 				# z_error = -z_error
 
@@ -292,7 +294,7 @@ class TrackingController(QObject):
 				X_order, Y_order, Z_order = self.get_motion_commands_xyz(x_error,y_error,z_error)
 
 				# New serial interface (send data directly to micro-controller object)
-				print('Command sent to micro-controller: {}, {}, {} steps'.format(X_order, Y_order, Z_order))
+				# print('Command sent to micro-controller: {}, {}, {} steps'.format(X_order, Y_order, Z_order))
 				# self.microcontroller.send_motion_command_xytheta(X_order, Y_order, Theta_order)
 				# self.microcontroller.send_motion_command_xyz(X_order, Y_order, Z_order)  
 
@@ -321,6 +323,8 @@ class TrackingController(QObject):
 		self.objectFound = False
 
 		self.tracking_triggered_prev = False
+
+		self.tracker_image.reset()
 
 		#Time
 		self.begining_Time = time.time()           #Time begin the first time we click on the start_tracking button
@@ -442,6 +446,10 @@ class TrackingController(QObject):
 		self.update_tracking_setpoint()
 		#@@@Testing
 		# print('Updated image offset to :{}'.format(self.image_offset))
+
+	def update_roi_bbox(self):
+
+		self.get_roi_bbox.emit()
 
 	def set_searchArea(self):
 
