@@ -49,10 +49,16 @@ class TrackingControllerWidget(QFrame):
 
 		self.add_components()
 
+		# Initialize states in underlying objects
+		self.update_tracker_init_method()
+		self.update_invert_image_flag()
+		self.sliders_move()
+
+
 
 	def add_components(self):
 
-		self.tracking_group = QGroupBox('Tracking settings', alignment = Qt.AlignCenter)
+		self.tracking_group = QGroupBox('Tracker', alignment = Qt.AlignCenter)
 
 		tracking_group_layout = QHBoxLayout()
 
@@ -70,12 +76,22 @@ class TrackingControllerWidget(QFrame):
 		self.trackingController.tracker_image.update_tracker_type(self.dropdown_TrackerSelection.currentText())
 
 		tracking_group_layout.addWidget(self.dropdown_TrackerSelection)
-
 		self.tracking_group.setLayout(tracking_group_layout)
 
 		# Invert thresholded image checkbox (useful when switching between BF and DF)
 		self.invert_image_checkbox = QCheckBox('Invert image')
 		self.invert_image_checkbox.setChecked(False)
+
+		self.tracking_init_threshold = QRadioButton("Threshold")
+		self.tracking_init_roi = QRadioButton("ROI")
+		self.tracking_init_threshold.setChecked(True)
+
+		# Layout
+		self.tracking_init_group = QGroupBox('Tracking init method')
+		self.tracking_init_layout = QVBoxLayout()
+		self.tracking_init_layout.addWidget(self.tracking_init_threshold)
+		self.tracking_init_layout.addWidget(self.tracking_init_roi)
+		self.tracking_init_group.setLayout(self.tracking_init_layout)
 
 
 		# Image offset settings
@@ -100,8 +116,8 @@ class TrackingControllerWidget(QFrame):
 		
 		# layout
 		tracking_setPoint_layout.addWidget(self.label_x,0,0,1,1)
-		tracking_setPoint_layout.addWidget(self.tracking_setPoint_offset_x,1,0,1,1)
-		tracking_setPoint_layout.addWidget(self.label_y, 0,1,1,1)
+		tracking_setPoint_layout.addWidget(self.tracking_setPoint_offset_x,0,1,1,1)
+		tracking_setPoint_layout.addWidget(self.label_y, 1,0,1,1)
 		tracking_setPoint_layout.addWidget(self.tracking_setPoint_offset_y, 1,1,1,1)
 
 		self.tracking_setPoint_group.setLayout(tracking_setPoint_layout)
@@ -137,9 +153,12 @@ class TrackingControllerWidget(QFrame):
 		groupbox_track_layout.addWidget(self.btn_track, 0,0,1,1)
 		# groupbox_track_layout.addWidget(self.dropdown_TrackerSelection, 0,1,1,1)
 		groupbox_track_layout.addWidget(self.tracking_group,0,1,1,1)
-		groupbox_track_layout.addWidget(self.tracking_setPoint_group,1,0,1,1)
-		groupbox_track_layout.addWidget(self.invert_image_checkbox,1,1)
-		groupbox_track_layout.addWidget(self.group_sliders,2,0,1,2)
+		groupbox_track_layout.addWidget(self.tracking_init_group,0,2,1,1)
+		groupbox_track_layout.addWidget(self.tracking_setPoint_group,1,0,1,2)
+		groupbox_track_layout.addWidget(self.invert_image_checkbox,1,2,1,1)
+		groupbox_track_layout.addWidget(self.group_sliders,2,0,1,3)
+		
+
 
 		# Track button connection
 		self.btn_track.clicked.connect(self.do_track_button_tasks)
@@ -153,6 +172,8 @@ class TrackingControllerWidget(QFrame):
 
 		self.invert_image_checkbox.clicked.connect(self.update_invert_image_flag)
 
+		self.tracking_init_threshold.clicked.connect(self.update_tracker_init_method)
+		self.tracking_init_roi.clicked.connect(self.update_tracker_init_method)
 
 		self.range_slider1.startValueChanged.connect(self.sliders_move)
 		self.range_slider2.startValueChanged.connect(self.sliders_move)
@@ -178,15 +199,16 @@ class TrackingControllerWidget(QFrame):
 
 			print('Set track_obj_image to : {}'.format(self.internal_state.data['track_obj_image']))
 			
+			if(self.tracking_init_roi.isChecked()):
+				self.trackingController.update_roi_bbox()
+
 			self.trackingDataSaver.start_new_track()
 			self.streamHandler.start_tracking()
 
 		else:
 			self.streamHandler.stop_tracking()
 			self.internal_state.data['track_obj_image'] = False
-
 			# Resets the track deques and counters
-
 			self.trackingController.initialise_track()
 
 	# This function is connected to the signal from tracking Controller triggered by 
@@ -205,6 +227,14 @@ class TrackingControllerWidget(QFrame):
 			self.streamHandler.update_invert_image_flag(True)
 		else:
 			self.streamHandler.update_invert_image_flag(False)
+
+	def update_tracker_init_method(self):
+
+		if(self.tracking_init_threshold.isChecked()):
+			self.trackingController.tracker_image.update_init_method("threshold")
+		elif(self.tracking_init_roi.isChecked()):
+			self.trackingController.tracker_image.update_init_method("roi")
+
 
 	def update_tracker(self, index):
 

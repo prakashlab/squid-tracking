@@ -22,7 +22,7 @@ import control.core as core
 import control.core_tracking as core_tracking
 import control.microcontroller as microcontroller
 
-SIMULATION = False
+SIMULATION = True
 
 class SquidGUI(QMainWindow):
 
@@ -148,6 +148,9 @@ class SquidGUI(QMainWindow):
 			self.streamHandler[channel].signal_fps.connect(self.streamControlWidget[channel].update_stream_fps)
 			self.streamHandler[channel].signal_fps_display.connect(self.streamControlWidget[channel].update_display_fps)
 
+		# Connect roi from ImageDisplayWindow to TrackingController.
+		self.trackingController.get_roi_bbox.connect(self.imageDisplayWindow[TRACKING].send_bbox)
+		self.imageDisplayWindow[TRACKING].roi_bbox.connect(self.trackingController.tracker_image.set_roi_bbox)
 		# self.microcontroller_Rec.update_display.connect(self.navigationWidget.update_display)
 
 

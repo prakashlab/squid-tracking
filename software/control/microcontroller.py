@@ -87,7 +87,7 @@ class Microcontroller():
         cmd[3] = int(n_microsteps) & 0xff
         self.serial.write(cmd)
         time.sleep(WaitTime.BASE + WaitTime.Z*abs(delta))
-        print('Command sent to uController: {}'.format(n_microsteps))
+        # print('Command sent to uController: {}'.format(n_microsteps))
 
     def move_x_nonblocking(self,delta):
         direction = int((np.sign(delta)+1)/2)
@@ -100,7 +100,7 @@ class Microcontroller():
         cmd[2] = int(n_microsteps) >> 8
         cmd[3] = int(n_microsteps) & 0xff
         self.serial.write(cmd)
-        print('Command sent to uController: {}'.format(n_microsteps))
+        # print('Command sent to uController: {}'.format(n_microsteps))
 
     def move_y_nonblocking(self,delta):
         direction = int((np.sign(delta)+1)/2)
@@ -113,7 +113,7 @@ class Microcontroller():
         cmd[2] = int(n_microsteps) >> 8
         cmd[3] = int(n_microsteps) & 0xff
         self.serial.write(cmd)
-        print('Command sent to uController: {}'.format(n_microsteps))
+        # print('Command sent to uController: {}'.format(n_microsteps))
 
     def move_z_nonblocking(self,delta):
         direction = int((np.sign(delta)+1)/2)

@@ -415,7 +415,7 @@ class LiveController(QObject):
             self.timestamp_last = timestamp_now
             self.fps_real = self.counter
             self.counter = 0
-            print('real trigger fps is ' + str(self.fps_real))
+            # print('real trigger fps is ' + str(self.fps_real))
 
     def _start_software_triggerred_acquisition(self):
         self.timer_software_trigger.start()
@@ -580,6 +580,8 @@ class ImageDisplay(QObject):
 # from gravity machine
 class ImageDisplayWindow(QMainWindow):
 
+    roi_bbox = Signal(np.ndarray)
+
     def __init__(self, window_title='', DrawCrossHairs = False, rotate_image_angle = 0, flip_image = None):
         super().__init__()
         self.setWindowTitle(window_title)
@@ -596,6 +598,22 @@ class ImageDisplayWindow(QMainWindow):
         ## Create image item
         self.graphics_widget.img = pg.ImageItem(border='w')
         self.graphics_widget.view.addItem(self.graphics_widget.img)
+
+        self.image_width = None
+        self.image_height = None
+
+        ## Create ROI
+        self.roi_pos = (0.5,0.5)
+        self.roi_size = (500,500)
+        self.ROI = pg.ROI(self.roi_pos, self.roi_size, scaleSnap=True, translateSnap=True)
+        self.ROI.setZValue(10)
+        self.ROI.addScaleHandle((0,0), (1,1))
+        self.ROI.addScaleHandle((1,1), (0,0))
+        self.graphics_widget.view.addItem(self.ROI)
+        self.ROI.hide()
+        self.ROI.sigRegionChanged.connect(self.updateROI)
+        self.roi_pos = self.ROI.pos()
+        self.roi_size = self.ROI.size()
 
         ## Variables for annotating images
         self.DrawRect = False
@@ -621,6 +639,8 @@ class ImageDisplayWindow(QMainWindow):
     def display_image(self,image, imaging_channel = TRACKING):
         
         if(imaging_channel == TRACKING):
+
+            self.image_height, self.image_width = image_processing.get_image_height_width(image)
 
 
             if(self.DrawRect):
@@ -696,23 +716,23 @@ class ImageDisplayWindow(QMainWindow):
 
     def update_image_center_width(self,image):
         self.image_center, self.image_width = image_processing.get_image_center_width(image)
-        
         self.tracking_center = self.image_center + self.image_offset
 
     def update_image_offset(self, new_image_offset):
-
         self.image_offset = new_image_offset
+        print('ROI pos: {}'.format(self.roi_pos))
+        print('ROI size: {}'.format(self.roi_size))
 
+    def show_ROI_selector():
+        self.ROI.show()
 
+    def send_bbox(self):
+        self.updateROI()
+        width = self.roi_size[0]
+        height = self.roi_size[1]
+        xmin = max(0, self.roi_pos[0])
+        ymin = max(0, self.image_height - height - self.roi_pos[1])
+        # print('Bbox from ImageDisplay: {}'.format([xmin, ymin, width, height]))
 
-
-
-
-
-
-
-
-
-
-
-        
+        self.roi_bbox.emit(np.array([xmin, ymin, width, height]))
+        # print('Sent bbox from ImageDisplay: {}'.format([xmin, ymin, width, height]))
