@@ -509,7 +509,7 @@ class microcontroller_Receiver(QObject):
 	Connection Map:
 	StreamHandler (rec new image) -> getData_microcontroller
 	'''
-	update_display = Signal()
+	update_stage_display = Signal(float, float, float)
 
 	def __init__(self, microcontroller, internal_state):
 		QObject.__init__(self)
@@ -576,11 +576,11 @@ class microcontroller_Receiver(QObject):
 			# 	# Update internal state
 			# 	if(key in INTERNAL_STATE_VARIABLES):
 			# 		self.internal_state.data[key] = data[key]
+			self.update_stage_display.emit(self.x_pos,self.y_pos,self.z_pos)
 
 		else:
 			pass
 
-		self.update_display.emit()
 
 	def stop(self):
 

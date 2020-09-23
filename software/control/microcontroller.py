@@ -59,7 +59,8 @@ class Microcontroller():
         cmd[3] = int(n_microsteps) & 0xff
         self.serial.write(cmd)
         time.sleep(WaitTime.BASE + WaitTime.X*abs(delta))
-        print('Command sent to uController: {}'.format(n_microsteps))
+        print('Moving  x stage')
+        print('Command sent to uController: {} {}'.format(np.sign(delta),n_microsteps))
 
     def move_y(self,delta):
         direction = int((np.sign(delta)+1)/2)
@@ -73,7 +74,8 @@ class Microcontroller():
         cmd[3] = int(n_microsteps) & 0xff
         self.serial.write(cmd)
         time.sleep(WaitTime.BASE + WaitTime.Y*abs(delta))
-        print('Command sent to uController: {}'.format(n_microsteps))
+        print('Moving  y stage')
+        print('Command sent to uController: {} {}'.format(np.sign(delta),n_microsteps))
 
     def move_z(self,delta):
         direction = int((np.sign(delta)+1)/2)
@@ -87,7 +89,7 @@ class Microcontroller():
         cmd[3] = int(n_microsteps) & 0xff
         self.serial.write(cmd)
         time.sleep(WaitTime.BASE + WaitTime.Z*abs(delta))
-        # print('Command sent to uController: {}'.format(n_microsteps))
+        print('Command sent to uController: {} {}'.format(np.sign(delta),n_microsteps))
 
     def move_x_nonblocking(self,delta):
         direction = int((np.sign(delta)+1)/2)
@@ -202,7 +204,7 @@ class Microcontroller():
         # get rid of old data
         num_bytes_in_rx_buffer = self.serial.in_waiting
         if num_bytes_in_rx_buffer > self.rx_buffer_length:
-            print('getting rid of old data')
+            # print('getting rid of old data')
             for i in range(num_bytes_in_rx_buffer-self.rx_buffer_length):
                 self.serial.read()
         

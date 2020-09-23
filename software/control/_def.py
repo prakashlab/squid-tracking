@@ -180,7 +180,7 @@ CROPPED_IMG_RATIO = 10
 
 FocusTracking = {'Cropped image ratio':{'default':10}}
 
-OBJECTIVES = {'4x':{'magnification':4, 'NA':0.13, 'PixelPermm':386}}
+OBJECTIVES = {'4x':{'magnification':4, 'NA':0.13, 'PixelPermm':386}, '10x':{'magnification':10, 'NA':0.25, 'PixelPermm':990}}
 
 DEFAULT_OBJECTIVE = '4x'
   
@@ -242,7 +242,7 @@ elif TRACKING_CONFIG == 'XYZ':
         'imaging channels', 'Objective', 'basePath', 'experimentID']
 
     # Based on the number of imaging channels, there will also be 1 or more image names saved.
-    SAVE_DATA = ['Time', 'X_objStage', 'Y_objStage', 'Z_objStage', 'X_image', 
+    SAVE_DATA = ['Time', 'X_stage', 'Y_stage', 'Z_stage', 'X_image', 
         'Y_image', 'track_focus', 'track_obj_stage','liquidLens_Freq', 'liquidLens_Amp', 'FocusPhase']
 
     MOTION_COMMANDS = ['X_order', 'Y_order', 'Z_order']

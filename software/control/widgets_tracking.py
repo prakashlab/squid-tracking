@@ -515,6 +515,12 @@ class NavigationWidget(QFrame):
         self.navigationController.move_z(self.entry_dZ.value()/1000)
     def move_z_backward(self):
         self.navigationController.move_z(-self.entry_dZ.value()/1000)
+    
+    def update_display(self, X_stage, Y_stage, Z_stage):
+
+    	self.label_Xpos.setNum(round(X_stage,2))
+    	self.label_Ypos.setNum(round(Y_stage,2))
+    	self.label_Zpos.setNum(round(Z_stage,2))
 
 
 

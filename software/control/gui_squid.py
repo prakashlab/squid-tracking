@@ -58,8 +58,8 @@ class SquidGUI(QMainWindow):
 		if SIMULATION is True:
 			# Define a camera object for each unique image-stream.
 			self.camera = {key:camera.Camera_Simulation() for key in self.imaging_channels}
-			self.microcontroller = microcontroller.Microcontroller_Simulation()
-			# self.microcontroller = microcontroller_tracking.Microcontroller()
+			# self.microcontroller = microcontroller.Microcontroller_Simulation()
+			self.microcontroller = microcontroller.Microcontroller()
 
 		else:
 			# TIS Camera object
@@ -154,6 +154,7 @@ class SquidGUI(QMainWindow):
 		# self.microcontroller_Rec.update_display.connect(self.navigationWidget.update_display)
 		self.trackingControlWidget.show_roi.connect(self.imageDisplayWindow[TRACKING].toggle_ROI_selector)
 
+		self.microcontroller_Rec.update_stage_display.connect(self.navigationWidget.update_display)
 		#-----------------------------------------------------
 		# Layout widgets
 		#-----------------------------------------------------
