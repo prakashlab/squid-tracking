@@ -186,6 +186,22 @@ def find_centroid_basic_Rect(image):
 
     return isCentroidFound,centroid, bbox
 
+def scale_square_bbox(bbox, scale_factor, square = True):
+
+    xmin, ymin, width, height = bbox
+
+    if(square==True):
+        min_dim = min(width, height)
+        width, height = min_dim, min_dim
+
+    new_width, new_height = scale_factor*width, scale_factor*height
+
+    new_xmin = xmin - (new_width - width)/2
+    new_ymin = ymin - (new_height - height)/2
+
+    new_bbox = (new_xmin, new_ymin, new_width, new_height)
+    return new_bbox
+
 def get_image_center_width(image):
     ImShape=image.shape
     ImH,ImW=ImShape[0],ImShape[1]

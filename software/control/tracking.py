@@ -23,7 +23,7 @@ class Tracker_Image(object):
 
 	'''
 
-	def __init__(self):
+	def __init__(self, color = False):
 		
 		 # Define list of trackers being used(maybe do this as a definition?)
 		# OpenCV tracking suite
@@ -69,6 +69,8 @@ class Tracker_Image(object):
 
 		self.searchArea = None
 
+		self.color = color
+
 
 		try:
 			# load net
@@ -106,6 +108,7 @@ class Tracker_Image(object):
 			else:
 				self.isCentroidFound, self.centroid_image, self.bbox = image_processing.find_centroid_basic_Rect(thresh_image)
 
+			self.bbox = image_processing.scale_square_bbox(self.bbox, Tracking.BBOX_SCALE_FACTOR, square = True)
 			# print('Starting tracker with initial bbox: {}'.format(self.bbox))
 			self.init_tracker(image, self.centroid_image, self.bbox)
 
@@ -176,7 +179,12 @@ class Tracker_Image(object):
 		if(self.tracker_type in self.OPENCV_OBJECT_TRACKERS.keys()):
 
 			print('Initializing openCV tracker')
-			self.tracker.init(image, bbox)
+			print(self.tracker_type)
+			print(bbox)
+			if(self.color == False):
+				image_bgr = cv2.cvtColor(image, cv2.COLOR_GRAY2BGR)
+
+			self.tracker.init(image_bgr, bbox)
 
 		# Initialize Neural Net based Tracker
 		elif(self.tracker_type in self.NEURALNETTRACKERS.keys()):
@@ -197,9 +205,14 @@ class Tracker_Image(object):
 
 		if(self.tracker_type in self.OPENCV_OBJECT_TRACKERS.keys()):
 			self.origLoc = np.array([0,0])
-			# (x,y,w,h)
-			ok, new_bbox = self.tracker.update(image)
+			# (x,y,w,h)\
+			if(self.color==False):
+				image_bgr = cv2.cvtColor(image, cv2.COLOR_GRAY2BGR)
 
+			ok, new_bbox = self.tracker.update(image_bgr)
+
+			print(ok)
+			print(new_bbox)
 			return ok, new_bbox
 
 				

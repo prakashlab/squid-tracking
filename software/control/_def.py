@@ -1,7 +1,5 @@
 import os
 
-SIMULATION = True
-
 TRACKING_CONFIG = 'XYZ'
 # TRACKING_CONFIG = 'XYT'
 
@@ -108,6 +106,8 @@ class Tracking:
     SEARCH_AREA_RATIO = 10
     
     CROPPED_IMG_RATIO = 10
+
+    BBOX_SCALE_FACTOR = 2
 
     DEFAULT_TRACKER = "csrt"
 

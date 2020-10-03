@@ -2,7 +2,7 @@ import cv2
 
 cv2.TrackerCSRT_create
 try:
-	self.OPENCV_OBJECT_TRACKERS = {
+	OPENCV_OBJECT_TRACKERS = {
 	"csrt": cv2.TrackerCSRT_create,
 	"kcf": cv2.TrackerKCF_create,
 	"boosting": cv2.TrackerBoosting_create,
@@ -11,5 +11,5 @@ try:
 	"medianflow": cv2.TrackerMedianFlow_create,
 	"mosse": cv2.TrackerMOSSE_create
 	}
-except:
-	print('Warning: OpenCV-Contrib trackers unavailable!')
+except Exception as e:
+    print(e)
