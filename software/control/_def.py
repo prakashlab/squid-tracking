@@ -180,7 +180,7 @@ CROPPED_IMG_RATIO = 10
 
 FocusTracking = {'Cropped image ratio':{'default':10}}
 
-OBJECTIVES = {'4x':{'magnification':4, 'NA':0.13, 'PixelPermm':386}, '10x':{'magnification':10, 'NA':0.25, 'PixelPermm':990}}
+OBJECTIVES = {'4x':{'magnification':4, 'NA':0.13, 'PixelPermm':386}, '10x':{'magnification':10, 'NA':0.25, 'PixelPermm':990}, '20x':{'magnification':20, 'NA':0.4, 'PixelPermm':1980}, '40x':{'magnification':40, 'NA':0.6,'PixelPermm':3960}}
 
 DEFAULT_OBJECTIVE = '4x'
   
