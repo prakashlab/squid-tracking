@@ -638,6 +638,8 @@ class ImageDisplayWindow(QMainWindow):
 
     def display_image(self,image, imaging_channel = TRACKING):
         
+        image = np.copy(image) # Avoid overwriting the source image
+        
         if(imaging_channel == TRACKING):
 
             self.image_height, self.image_width = image_processing.get_image_height_width(image)
