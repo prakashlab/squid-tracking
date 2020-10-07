@@ -113,11 +113,12 @@ class LiveControlWidget(QGroupBox):
 	resolution_scaling_signal = Signal(int)
 	show_window = Signal(bool)
 
-	def __init__(self, streamHandler, liveController, main=None, *args, **kwargs):
+	def __init__(self, streamHandler, liveController, internalState, main=None, *args, **kwargs):
 		super().__init__(*args, **kwargs)
 		self.setTitle('Live Controller')
 		self.liveController = liveController
 		self.streamHandler = streamHandler
+		self.internal_state = internalState
 		self.imaging_channels = CAMERAS.keys()
 
 
@@ -209,7 +210,8 @@ class LiveControlWidget(QGroupBox):
 
 	def update_pixel_size(self):
 		self.objective = self.dropdown_objectiveSelection.currentText()
-		print('new objective: {}'.format(self.objective))
+		self.internal_state.data['Objective'] = self.objective
+		print('Updated internal state objective {}'.format(self.internal_state.data['Objective'] ))
 		self.objective_signal.emit(self.objective)
 		
 	def toggle_live(self,pressed):
