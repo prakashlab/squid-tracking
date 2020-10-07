@@ -139,7 +139,7 @@ class SquidGUI(QMainWindow):
 		self.streamHandler[TRACKING].packet_image_for_tracking.connect(self.trackingController.on_new_frame)
 		# @@@ Currently the resolution-scaling only controls the TRACKING stream
 		self.streamHandler[TRACKING].signal_working_resolution.connect(self.liveControlWidget.update_working_resolution)
-		self.trackingController.centroid_image.connect(self.imageDisplayWindow[TRACKING].draw_circle)
+		# self.trackingController.centroid_image.connect(self.imageDisplayWindow[TRACKING].draw_circle)
 		self.trackingController.Rect_pt1_pt2.connect(self.imageDisplayWindow[TRACKING].draw_rectangle)
 		
 		self.trackingController.save_data_signal.connect(self.trackingDataSaver.enqueue)

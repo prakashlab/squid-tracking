@@ -107,7 +107,7 @@ class Tracking:
     
     CROPPED_IMG_RATIO = 10
 
-    BBOX_SCALE_FACTOR = 2
+    BBOX_SCALE_FACTOR = 3
 
     DEFAULT_TRACKER = "csrt"
 

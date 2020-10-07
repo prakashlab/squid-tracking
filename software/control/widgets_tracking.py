@@ -593,7 +593,7 @@ class PID_Widget(QGroupBox):
 		self.setTitle(name)
 	
 		# Slider Groupe P
-		defaultP = Pmax/2
+		defaultP = Pmax/10
 		stepP = Pmax/100
 
 		self.labelP = QLabel('P')
@@ -635,7 +635,7 @@ class PID_Widget(QGroupBox):
 		group_sliderI.setLayout(sliderI_layout)
 		
 		# Slider Groupe D
-		defaultD = Dmax/4
+		defaultD = Dmax/10
 		stepD = Dmax/100
 
 		self.labelD = QLabel('D')
