@@ -36,7 +36,6 @@ class Units_Converter:
         # --------------------------------------------------
 
         self.StepsPerRev_Z = Motors.STEPS_PER_REV_Z
-        self.mmPerRev_Z = Motors.STEPS_PER_REV_Z
 
 
         # --------------------------------------------------

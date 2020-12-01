@@ -108,8 +108,8 @@ class TrackingControllerWidget(QFrame):
 		self.tracking_setPoint_offset_x.setSingleStep(1)
 		self.tracking_setPoint_offset_x.setValue(0)
 
-		# Image tracking offset - Y axis
-		self.label_y = QLabel('y (px)')
+		# Image tracking offset - Z axis
+		self.label_y = QLabel('z (px)')
 		self.tracking_setPoint_offset_y = QSpinBox()
 		self.tracking_setPoint_offset_y.setMinimum(-round(self.trackingController.image_width/4)) 
 		self.tracking_setPoint_offset_y.setMaximum(round(self.trackingController.image_width/4)) 
@@ -577,9 +577,9 @@ class PID_Group_Widget(QFrame):
 		self.PID_widget_y.spinboxD.valueChanged.connect(self.trackingController.pid_controller_y.update_D)
 
 		# Theta
-		self.PID_widget_z.spinboxP.valueChanged.connect(self.trackingController.pid_controller_z.update_P)
-		self.PID_widget_z.spinboxI.valueChanged.connect(self.trackingController.pid_controller_z.update_I)
-		self.PID_widget_z.spinboxD.valueChanged.connect(self.trackingController.pid_controller_z.update_D)
+		self.PID_widget_z.spinboxP.valueChanged.connect(self.trackingController.pid_controller_theta.update_P)
+		self.PID_widget_z.spinboxI.valueChanged.connect(self.trackingController.pid_controller_theta.update_I)
+		self.PID_widget_z.spinboxD.valueChanged.connect(self.trackingController.pid_controller_theta.update_D)
 
 
 

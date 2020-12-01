@@ -387,7 +387,7 @@ class TrackingController(QObject):
 		# Convert from mm to steps (these are rounded to the nearest integer).
 		x_error_steps = int(Motion.STEPS_PER_MM_XY*x_error)
 		y_error_steps = int(Motion.STEPS_PER_MM_XY*y_error)
-		z_error_steps = int(self.units_converter.Z_mm_to_step(z_error, self.internal_state.data['X_stage']))
+		theta_error_steps = int(self.units_converter.Z_mm_to_step(z_error, self.internal_state.data['X_stage']))
 
 		if self.resetPID:
 			self.pid_controller_x.initiate(x_error_steps,self.Time[-1]) #reset the PID
@@ -406,7 +406,7 @@ class TrackingController(QObject):
 			Y_order = y_error_steps #@@@ NonPID focus tracking; may need to reverse the sign
 			Y_order = round(Y_order,2)
 
-			Theta_order = self.pid_controller_z.update(theta_error_steps,self.Time[-1])
+			Theta_order = self.pid_controller_theta.update(theta_error_steps,self.Time[-1])
 			Theta_order = round(Theta_order,2)
 
 

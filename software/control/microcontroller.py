@@ -91,7 +91,7 @@ class Microcontroller():
         time.sleep(WaitTime.BASE + WaitTime.Z*abs(delta))
         print('Command sent to uController: {} {}'.format(np.sign(delta),n_microsteps))
 
-     def move_theta(self,delta):
+    def move_theta(self,delta):
         direction = int((np.sign(delta)+1)/2)
         n_microsteps = abs(delta*Motion.STEPS_PER_MM_Z)
         if n_microsteps > 65535:
