@@ -26,11 +26,18 @@ class Units_Converter:
         # --------------------------------------------------
         #  Y Stepper (Linear Stage)
         # --------------------------------------------------
-
         self.StepsPerRev_Y = Motors.STEPS_PER_REV_Y
         self.mmPerRev_Y = Motors.STEPS_PER_REV_Y 
         # StepsPerRev_Y = 20
         # mmPerStep_Y = 0.001524;     # Pitch of the lead screw in mm
+
+        # --------------------------------------------------
+        #  Z Stepper (Linear Stage)
+        # --------------------------------------------------
+
+        self.StepsPerRev_Z = Motors.STEPS_PER_REV_Z
+        self.mmPerRev_Z = Motors.STEPS_PER_REV_Z
+
 
         # --------------------------------------------------
         # Z stepper (Rotation stage) (vertical motion compensation)
@@ -79,72 +86,4 @@ class Units_Converter:
     def mm_to_px(self, Dist,resolution_width):
         return Dist*self.pixelPermm*resolution_width/self.calib_img_width
 
-    #---------------------------------------------------
-    # Transforming mm to stepper motor steps.
-    #---------------------------------------------------
-    def X_mm_to_step(self, Xmm):
-        Xstep = (Xmm/self.mmPerRev_X)*self.StepsPerRev_X
-        return Xstep
-
-    def Y_mm_to_step(self, Ymm):
-        Ystep = (Ymm/self.mmPerRev_Y)*self.StepsPerRev_Y
-        return Ystep
-
-    def mmPerRev_Z(self, Xpos_mm):                            #Xpos_mm position in the centerlign of the fluid channel's referenciel
-        return 2*np.pi*(self.Rcenter)#+Xpos_mm)
-
-
-    def Z_mm_to_step(self, Zmm, Xpos_mm):
-        Zstep = (Zmm/self.mmPerRev_Z(Xpos_mm))*self.StepsPerRev_Theta
-        return Zstep
-
-    #---------------------------------------------------
-    # Transforming encoder counts to mm
-    #---------------------------------------------------
-    def X_count_to_mm(self, X_count):
-        Xmm = X_count/self.CountPermm_X
-        return Xmm
-
-    def Y_count_to_mm(self, Y_count):
-        Ymm = Y_count/self.CountPermm_Y
-        return Ymm
-
-    def Theta_count_to_rad(self, Theta_count):
-        
-        return 2*np.pi*(Theta_count/self.CountsPerRev_Theta)
-
-    #---------------------------------------------------
-    # Transforming stepper motor steps to mm
-    #---------------------------------------------------
-     
-    def X_step_to_mm(self, Xstep):                #Arduino card send the data for X and Y in Microstep
-        Xmm = Xstep*self.mmPerRev_X/(self.StepsPerRev_X)
-        return Xmm
-
-    def Y_step_to_mm(self, Ystep):
-        Ymm=Ystep*self.mmPerRev_Y/(self.StepsPerRev_Y)
-        return Ymm
-
-    def Theta_step_to_mm(self, Zstep, Xpos_mm):
-        Zmm = Zstep*self.mmPerRev_Z(Xpos_mm)/self.StepsPerRev_Theta
-        return Zmm
-    #---------------------------------------------------
-    #Give the absolute position of the image in the referentiel of the centerline of the flow channel
-    def X_arduino_to_mm(self, Xarduino):
-        Xmm = self.X_count_to_mm(Xarduino)
-        Xpos_mm = Xmm + self.DeltaX_Arduino_mm - self.Rcenter
-        return Xpos_mm
-
-    def Y_arduino_to_mm(self, Yarduino):
-        Ymm = self.Y_count_to_mm(Yarduino)
-        Ypos_mm = Ymm + self.DeltaY_Arduino_mm
-        
-        return Ypos_mm
-
-    def theta_arduino_to_rad(self, Zarduino):
-        theta = Zarduino/self.CountsPerRev_Theta*2*np.pi       # 2018-09-01 Major correcton. We are using encoder counts for the Z position so this should be EncoderCounts and not Stepper Motor pulses
-        return theta
-
-    def rad_to_mm(self, ThetaWheel,Xobjet):
-        return ThetaWheel*(self.Rcenter + Xobjet)          # 2018_09_01: by Deepak. Note major Error previously the radian value was divided by 2*pi which makes the calculation of distance incorrect. 
-        #ThetaWheel is already in radians so there should be no dividing 2*pi factor. Have checked by manually rotating the wheel that this now corresponds to the actual physical distance. To completely confirm will run calibration experiments again.
+    

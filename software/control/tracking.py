@@ -23,19 +23,23 @@ class Tracker_Image(object):
 
 	'''
 
-	def __init__(self):
+	def __init__(self, color = False):
 		
 		 # Define list of trackers being used(maybe do this as a definition?)
 		# OpenCV tracking suite
-		self.OPENCV_OBJECT_TRACKERS = {
-		"csrt": cv2.TrackerCSRT_create,
-		"kcf": cv2.TrackerKCF_create,
-		"boosting": cv2.TrackerBoosting_create,
-		"mil": cv2.TrackerMIL_create,
-		"tld": cv2.TrackerTLD_create,
-		"medianflow": cv2.TrackerMedianFlow_create,
-		"mosse": cv2.TrackerMOSSE_create
-		}
+		# self.OPENCV_OBJECT_TRACKERS = {}
+		try:
+			self.OPENCV_OBJECT_TRACKERS = {
+			"csrt": cv2.TrackerCSRT_create,
+			"kcf": cv2.TrackerKCF_create,
+			"boosting": cv2.TrackerBoosting_create,
+			"mil": cv2.TrackerMIL_create,
+			"tld": cv2.TrackerTLD_create,
+			"medianflow": cv2.TrackerMedianFlow_create,
+			"mosse": cv2.TrackerMOSSE_create
+			}
+		except:
+			print('Warning: OpenCV-Contrib trackers unavailable!')
 		# Neural Net based trackers
 		self.NEURALNETTRACKERS = {"daSiamRPN":[]}
 
@@ -44,12 +48,16 @@ class Tracker_Image(object):
 
 		self.create_tracker()
 
+		# Init method for tracker
+		self.init_method = Tracking.DEFAULT_INIT_METHOD
+
 		# Centroid of object from the image
 		self.centroid_image = None # (2,1)
 		# Centroid of object along optical axis
 		self.centroid_focus = None # (1,)
 		self.bbox = None
 		self.rect_pts = None
+		self.roi_bbox = None
 
 		self.origLoc = np.array([0,0])
 
@@ -60,6 +68,8 @@ class Tracker_Image(object):
 		self.trackerActive = False
 
 		self.searchArea = None
+
+		self.color = color
 
 
 		try:
@@ -87,28 +97,27 @@ class Tracker_Image(object):
 	def track(self,image, thresh_image, start_flag = False):
 		
 	
-		# Try to find an object
+		# Initialize the tracker
 		if(start_flag == True or self.trackerActive == False):
-			# Find centroid based on simple image thresholding
-
-			# Threshold the image based on the set thresholding parameters
-			# Get the latest thresholded image from the relevant Queue
-			# thresh_image = image_processing.threshold_image(image, lower_HSV, upper_HSV)  #The threshold image as one channel
-
-			#@@@ Debugging
-			# print('Track start: Using thresholded image...')
-
-
-			self.isCentroidFound, self.centroid_image, self.bbox = image_processing.find_centroid_basic_Rect(thresh_image)
 			
+			# Tracker initialization
+			if(self.init_method=="roi"):
+				self.bbox = tuple(self.roi_bbox)
+				self.centroid_image = self.centroid_from_bbox(self.bbox)
+				self.isCentroidFound = True
+			else:
+				self.isCentroidFound, self.centroid_image, self.bbox = image_processing.find_centroid_basic_Rect(thresh_image)
+
+			if(self.bbox is not None):
+				self.bbox = image_processing.scale_square_bbox(self.bbox, Tracking.BBOX_SCALE_FACTOR, square = True)
 			# print('Starting tracker with initial bbox: {}'.format(self.bbox))
-			self.init_tracker(image, self.centroid_image, self.bbox)
+				self.init_tracker(image, self.centroid_image, self.bbox)
 
-			self.trackerActive = True
+				self.trackerActive = True
 
-			self.rect_pts = self.rectpts_from_bbox(self.bbox)
+				self.rect_pts = self.rectpts_from_bbox(self.bbox)
 
-
+		# Continue tracking an object using tracking
 		else:
 			# Find centroid using the tracking.
 
@@ -136,6 +145,11 @@ class Tracker_Image(object):
 
 		return self.isCentroidFound, self.centroid_image, self.rect_pts
 
+	def reset(self):
+		self.start_flag = True
+		self.trackerActive = False
+		self.isCentroidFound = False
+
 	def create_tracker(self):
 
 		if(self.tracker_type in self.OPENCV_OBJECT_TRACKERS.keys()):
@@ -147,7 +161,6 @@ class Tracker_Image(object):
 			print('Using {} tracker'.format(self.tracker_type))
 
 	# Signal from Tracking Widget connects to this Function
-
 	def update_tracker_type(self, tracker_type):
 		self.tracker_type = tracker_type
 
@@ -156,12 +169,23 @@ class Tracker_Image(object):
 		# Update the actual tracker
 		self.create_tracker()
 
+	def update_init_method(self, method):
+
+		self.init_method = method
+		print("Tracking init method set to : {}".format(self.init_method))
+
 	def init_tracker(self, image, centroid, bbox):
 
 		# Initialize the OpenCV based tracker
 		if(self.tracker_type in self.OPENCV_OBJECT_TRACKERS.keys()):
 
-			self.tracker.init(image, bbox)
+			print('Initializing openCV tracker')
+			print(self.tracker_type)
+			print(bbox)
+			if(self.color == False):
+				image_bgr = cv2.cvtColor(image, cv2.COLOR_GRAY2BGR)
+
+			self.tracker.init(image_bgr, bbox)
 
 		# Initialize Neural Net based Tracker
 		elif(self.tracker_type in self.NEURALNETTRACKERS.keys()):
@@ -182,9 +206,14 @@ class Tracker_Image(object):
 
 		if(self.tracker_type in self.OPENCV_OBJECT_TRACKERS.keys()):
 			self.origLoc = np.array([0,0])
-			# (x,y,w,h)
-			ok, new_bbox = self.tracker.update(image)
+			# (x,y,w,h)\
+			if(self.color==False):
+				image_bgr = cv2.cvtColor(image, cv2.COLOR_GRAY2BGR)
 
+			ok, new_bbox = self.tracker.update(image_bgr)
+
+			print(ok)
+			print(new_bbox)
 			return ok, new_bbox
 
 				
@@ -250,6 +279,11 @@ class Tracker_Image(object):
 	def update_searchArea(self, value):
 
 		self.searchArea = value
+
+	def set_roi_bbox(self, bbox):
+		# Updates roi bbox from ImageDisplayWindow
+		self.roi_bbox = bbox
+		print('Rec bbox from ImageDisplay: {}'.format(self.roi_bbox))
 
 
 
