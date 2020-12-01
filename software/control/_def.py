@@ -1,7 +1,7 @@
 import os
 
-TRACKING_CONFIG = 'XYZ'
-# TRACKING_CONFIG = 'XYT'
+# TRACKING_CONFIG = 'XYZ'
+TRACKING_CONFIG = 'XYT'
 
 class TriggerMode:
     SOFTWARE = 'Software Trigger'

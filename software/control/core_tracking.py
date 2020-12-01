@@ -60,7 +60,7 @@ class TrackingController(QObject):
 	start_tracking_signal -> Tracking Widget
 
 	'''
-	def __init__(self, microcontroller, internal_state , image_axis = ['X', 'Y'], focus_axis = ['Z'], focus_tracker = 'liq-lens'):
+	def __init__(self, microcontroller, internal_state , focus_tracker = 'liq-lens'):
 		QObject.__init__(self)
 		self.microcontroller = microcontroller
 		self.internal_state = internal_state
@@ -70,11 +70,10 @@ class TrackingController(QObject):
 
 		# Set the reference image width based on the camera sensor size used for calibration
 		# This allows physical distances be calculated even if the image res is down-sampled.
+		# @@@ This needs to be removed. We should be able to calculate this when the image size changes without
+		# knowing the calib image width
 		self.units_converter.set_calib_imWidth(CALIB_IMG_WIDTH)
 		
-		self.image_axis = image_axis
-		self.focus_axis = focus_axis
-
 		self.image = None
 
 		# Focus Tracker type
@@ -257,9 +256,8 @@ class TrackingController(QObject):
 
 				# Get the error and convert it to mm
 				# x_error, z_error are in mm
-				for index, axis in enumerate(self.image_axis):
 		
-					x_error, y_error = self.units_converter.px_to_mm(self.posError_image[0], self.image_width), self.units_converter.px_to_mm(self.posError_image[1], self.image_width), 
+				x_error, y_error = self.units_converter.px_to_mm(self.posError_image[0], self.image_width), self.units_converter.px_to_mm(self.posError_image[1], self.image_width), 
 
 					# print('Position error: {}, {} mm'.format(x_error, y_error))
 				# Flip the sign of Z-error since image coordinates and physical coordinates are reversed.
