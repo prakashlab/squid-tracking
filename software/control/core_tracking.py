@@ -136,8 +136,17 @@ class TrackingController(QObject):
 
 		self.X_image = deque(maxlen=self.dequeLen)
 		self.Z_image = deque(maxlen=self.dequeLen)
+
+		self.X_stage = deque(maxlen=self.dequeLen)
+		self.Y_stage = deque(maxlen=self.dequeLen)
+		self.Theta_stage = deque(maxlen=self.dequeLen)
+
+		self.X_objStage = deque(maxlen=self.dequeLen)
+		self.Y_objStage = deque(maxlen=self.dequeLen)
+		self.Z_objStage = deque(maxlen=self.dequeLen)
+
 		# Subset of INTERNAL_STATE_MODEL that is updated by Tracking_Controller (self)
-		self.internal_state_vars = ['Time','X_image', 'Z_image']
+		self.internal_state_vars = ['Time','X_image', 'Z_image', 'X_objStage', 'Y_objStage', 'Z_objStage']
 
 		
 		self.tracker_focus.cropped_imSize = int(self.image_width/CROPPED_IMG_RATIO)
@@ -213,7 +222,6 @@ class TrackingController(QObject):
 
 				
 			self.objectFound, self.centroid, self.rect_pts = self.tracker_image.track(image, thresh_image, start_flag = self.start_flag)
-			
 			self.tracking_frame_counter += 1
 	
 			#-----------------------------------------------------
@@ -230,15 +238,6 @@ class TrackingController(QObject):
 			# cv2.imshow('Image with centroid', image)
 			# cv2.waitKey(1)
 			#-----------------------------------------------------
-
-
-			# Deepak: Good to avoid core image processing here. 
-			# This belongs in streamHandler, or a separate object.
-			# crop the image, resize the image 
-			# [to fill]
-
-		
-
 			# Things to do if an object is detected.
 			if(self.objectFound):
 
@@ -247,16 +246,12 @@ class TrackingController(QObject):
 					self.resetPID = True
 
 				self.stage_auto_prev = self.stage_auto
-
 				# Find the object's position relative to the tracking set point on the image
 				self.posError_image = self.centroid - self.image_setPoint
-
 				# Get the error and convert it to mm
 				# x_error, z_error are in mm
-		
 				x_error, z_error = self.units_converter.px_to_mm(self.posError_image[0], self.image_width), self.units_converter.px_to_mm(self.posError_image[1], self.image_width), 
-
-					# print('Position error: {}, {} mm'.format(x_error, y_error))
+				# print('Position error: {}, {} mm'.format(x_error, y_error))
 				# Flip the sign of Z-error since image coordinates and physical coordinates are reversed.
 				# z_error = -z_error
 
@@ -273,16 +268,13 @@ class TrackingController(QObject):
 				else:
 					y_error = 0
 
-				
-
 				# Emit the detected centroid position so other widgets can access it.
 				self.centroid_image.emit(self.centroid)
-				
 				self.Rect_pt1_pt2.emit(self.rect_pts)
 
-
+				self.update_stage_position(self.internal_state.data['X_stage'], self.internal_state.data['Y_stage'], self.internal_state.data['Theta_stage'])
 				self.update_image_position()
-
+				self.update_obj_position()
 				# get motion commands
 				# Error is in mm.
 				# print('Image error: {}, {}, {} mm'.format(x_error, y_error, z_error))
@@ -322,22 +314,43 @@ class TrackingController(QObject):
 		self.begining_Time = time.time()           #Time begin the first time we click on the start_tracking button
 		self.Time = deque(maxlen=self.dequeLen)
 
-		# self.X_image = deque(maxlen=self.dequeLen)
-		# self.Z_image = deque(maxlen=self.dequeLen)
 		self.X_image = deque(maxlen=self.dequeLen)
 		self.Z_image = deque(maxlen=self.dequeLen)
+
+		self.X_stage = deque(maxlen=self.dequeLen)
+		self.Y_stage = deque(maxlen=self.dequeLen)
+		self.Theta_stage = deque(maxlen=self.dequeLen)
+
+		self.X_objStage = deque(maxlen=self.dequeLen)
+		self.Y_objStage = deque(maxlen=self.dequeLen)
+		self.Z_objStage = deque(maxlen=self.dequeLen)
 
 	def update_elapsed_time(self):
 
 		self.Time.append(time.time() - self.begining_Time)
 
+	def update_stage_position(self, X,Y,Theta):
+
+		self.X_stage.append(X)
+		self.Y_stage.append(Y)
+		self.Theta_stage.append(Theta)
 
 	def update_image_position(self):
 		# Object position relative to image center (in mm)
-		
 		self.X_image.append(self.units_converter.px_to_mm(self.centroid[0] - self.image_center[0], self.image_width))
 		self.Z_image.append(self.units_converter.px_to_mm(self.centroid[1] - self.image_center[1], self.image_width))
 
+
+	def update_obj_position(self):
+
+		self.X_objStage.append(self.X_stage[-1] + self.X_image[-1])
+
+		self.Y_objStage.append(self.Y_stage[-1])
+
+		if(len(self.Time)>1):
+			self.Z_objStage.append(self.Z_objStage[-1]+(self.Z_image[-1]-self.Z_image[-2])- self.units_converter.rad_to_mm(self.Theta_stage[-1]-self.Theta_stage[-2],self.X_objStage[-1]))
+		else:
+			self.Z_objStage.append(0)
 	# def get_motion_commands_xyz(self, x_error, y_error, z_error):
 	# 	# Convert from mm to steps (these are rounded to the nearest integer).
 	# 	x_error_steps = int(Motion.STEPS_PER_MM_XY*x_error)
