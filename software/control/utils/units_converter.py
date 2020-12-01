@@ -76,4 +76,18 @@ class Units_Converter:
     def mm_to_px(self, Dist,resolution_width):
         return Dist*self.pixelPermm*resolution_width/self.calib_img_width
 
-    
+    #---------------------------------------------------
+    # Transforming mm to stepper motor steps.
+    #---------------------------------------------------
+    def mmPerRev_Z(self, Xpos_mm):                            #Xpos_mm position in the centerlign of the fluid channel's referenciel
+        return 2*np.pi*(self.Rcenter+Xpos_mm)
+
+
+    def Z_mm_to_step(self, Zmm, Xpos_mm):
+        Zstep = (Zmm/self.mmPerRev_Z(Xpos_mm))*self.StepsPerRev_Theta
+        return Zstep
+
+    #---------------------------------------------------
+    def rad_to_mm(self, ThetaWheel, Xobjet):
+        return ThetaWheel*(self.Rcenter + Xobjet)          # 2018_09_01: by Deepak. Note major Error previously the radian value was divided by 2*pi which makes the calculation of distance incorrect. 
+        #ThetaWheel is already in radians so there should be no dividing 2*pi factor. Have checked by manually rotating the wheel that this now corresponds to the actual physical distance. To completely confirm will run calibration experiments again.
