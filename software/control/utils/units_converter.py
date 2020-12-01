@@ -58,16 +58,6 @@ class Units_Converter:
         # Theta encoder
         # --------------------------------------------------
         self.CountsPerRev_Theta = Encoders.COUNTS_PER_REV_THETA
-        # --------------------------------------------------
-        # Distance in mm between the center of the Wheel and the origin of Arduino's Xpos
-        # --------------------------------------------------
-        self.DeltaX_Arduino_mm = 99.325 # Measured value for GM v2.0 setup (Berg)
-
-        # --------------------------------------------------
-        # Distance in mm between the front wall(adajancent to the fluid, nearest to camera)  and the origin of Arduino's Ypos
-        # --------------------------------------------------
-        self.DeltaY_Arduino_mm = 0 # 10x Y offset so that the chamber wall (adjacent to the fluid) closest to the 
-        # self.DeltaY_Arduino_mm = -2.18 # 4x objective
     # --------------------------------------------------
     # Functions
     # --------------------------------------------------

@@ -32,6 +32,17 @@ class AF:
     def __init__(self):
         pass
 
+class Chamber:
+    # Chamber dimensions in mm
+    WIDTH = 5
+    R_I = 85
+    R_O = 110
+    LENGTH = (R_O - R_I)
+    R_CENTER = (R_I + R_O)/2.0
+
+    def __init__(self):
+        pass
+
 # For Squid
 class Motion:
     STEPS_PER_MM_XY = 1600 # microsteps
@@ -77,16 +88,7 @@ class Encoders:
         pass
 
 
-class Chamber:
-    # Chamber dimensions in mm
-    WIDTH = 5
-    R_I = 85
-    R_O = 110
-    LENGTH = (R_O - R_I)
-    R_CENTER = (R_I + R_O)/2
 
-    def __init__(self):
-        pass
 
 
 class Acquisition:
