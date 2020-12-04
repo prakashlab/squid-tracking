@@ -125,7 +125,7 @@ class Tracking:
 class MicrocontrollerDef:
      # Time interval for reading micro Controller (ms)
     UCONTROLLER_READ_INTERVAL = 25 
-    MSG_LENGTH = 9
+    MSG_LENGTH = 12
     CMD_LENGTH = 4
     N_BYTES_POS = 3
 
@@ -225,8 +225,8 @@ if TRACKING_CONFIG == 'XYT':
     REC_DATA = ['FocusPhase', 'X_stage', 'Y_stage', 'Theta_stage', 'track_obj_image_hrdware', 'track_obj_stage', 'homing_complete']
 
 
-    INITIAL_VALUES = {'Time':0, 'X_objStage':0, 'Y_objStage':0, 'Z_objStage':0, 'X_stage':0, 'Y_stage':0,
-        'Theta_stage':0, 'X_image':0, 'Z_image':0, 'track_obj_image':False, 'track_obj_image_hrdware':False, 'track_focus':False, 
+    INITIAL_VALUES = {'Time':0, 'X_objStage':0, 'Y_objStage':0, 'Z_objStage':0, 'X_stage':0.0, 'Y_stage':0.0,
+        'Theta_stage':0.0, 'X_image':0, 'Z_image':0, 'track_obj_image':False, 'track_obj_image_hrdware':False, 'track_focus':False, 
         'track_obj_stage':False, 'Acquisition':False, 'homing_command':False, 'homing_complete':False, 'Zero_stage':0, 'liquidLens_Freq': liquidLens['Freq']['default'], 
         'liquidLens_Amp': liquidLens['Amp']['default'] , 'FocusPhase':0, 'optical_path': DEFAULT_OPTICAL_PATH, 
         'imaging channels': OPTICAL_PATHS[DEFAULT_OPTICAL_PATH],  'Objective':DEFAULT_OBJECTIVE, 'basePath':'/', 'experimentID':'track'}
@@ -266,10 +266,5 @@ elif TRACKING_CONFIG == 'XYZ':
 
     DEFAULT_PLOTS = ['X', 'Y']
 
-
-
-# 
-print(INTERNAL_STATE_VARIABLES)
-print(INITIAL_VALUES.keys())
 assert INTERNAL_STATE_VARIABLES == list(INITIAL_VALUES.keys()), "Variable mismatch: One or more state variables may not be initialized"
 

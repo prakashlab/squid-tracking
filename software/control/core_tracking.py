@@ -272,8 +272,10 @@ class TrackingController(QObject):
 				self.centroid_image.emit(self.centroid)
 				self.Rect_pt1_pt2.emit(self.rect_pts)
 
-				self.update_stage_position(self.internal_state.data['X_stage'], self.internal_state.data['Y_stage'], self.internal_state.data['Theta_stage'])
+				X_stage, Y_stage, Theta_stage = self.internal_state.data['X_stage'], self.internal_state.data['Y_stage'], self.internal_state.data['Theta_stage']
+				
 				self.update_image_position()
+				self.update_stage_position(X_stage, Y_stage, Theta_stage)
 				self.update_obj_position()
 				# get motion commands
 				# Error is in mm.
@@ -321,6 +323,11 @@ class TrackingController(QObject):
 		self.Y_stage = deque(maxlen=self.dequeLen)
 		self.Theta_stage = deque(maxlen=self.dequeLen)
 
+		for ii in range(self.dequeLen):
+			self.X_stage.append(0)
+			self.Y_stage.append(0)
+			self.Theta_stage.append(0)
+
 		self.X_objStage = deque(maxlen=self.dequeLen)
 		self.Y_objStage = deque(maxlen=self.dequeLen)
 		self.Z_objStage = deque(maxlen=self.dequeLen)
@@ -329,7 +336,7 @@ class TrackingController(QObject):
 
 		self.Time.append(time.time() - self.begining_Time)
 
-	def update_stage_position(self, X,Y,Theta):
+	def update_stage_position(self,X,Y,Theta):
 
 		self.X_stage.append(X)
 		self.Y_stage.append(Y)
@@ -387,7 +394,9 @@ class TrackingController(QObject):
 		# Convert from mm to steps (these are rounded to the nearest integer).
 		x_error_steps = int(Motion.STEPS_PER_MM_XY*x_error)
 		y_error_steps = int(Motion.STEPS_PER_MM_XY*y_error)
-		theta_error_steps = int(self.units_converter.Z_mm_to_step(z_error, self.internal_state.data['X_stage']))
+
+		print(self.X_stage[-1])
+		theta_error_steps = int(self.units_converter.Z_mm_to_step(z_error, self.X_stage[-1]))
 
 		if self.resetPID:
 			self.pid_controller_x.initiate(x_error_steps,self.Time[-1]) #reset the PID
@@ -506,6 +515,8 @@ class InternalState():
 
 			self.data[key] = INITIAL_VALUES[key]
 
+		print(self.data)
+
 		
 class microcontroller_Receiver(QObject):
 
@@ -514,7 +525,8 @@ class microcontroller_Receiver(QObject):
 	Connection Map:
 	StreamHandler (rec new image) -> getData_microcontroller
 	'''
-	update_stage_display = Signal(float, float, float)
+	update_stage_position = Signal(float, float, float)
+
 
 	def __init__(self, microcontroller, internal_state):
 		QObject.__init__(self)
@@ -537,7 +549,7 @@ class microcontroller_Receiver(QObject):
 
 		self.x_pos = 0
 		self.y_pos = 0
-		self.z_pos = 0
+		self.theta_pos = 0
 
 
 		# self.read_Thread = Thread(target = self.getData_microcontroller)
@@ -561,31 +573,47 @@ class microcontroller_Receiver(QObject):
 		data = self.microcontroller.read_received_packet_nowait()
 
 		if(data is not None):
-
 			# Parse the data
-			# X stage position (mm)
-			self.x_pos = byte_operations.unsigned_to_signed(data[0:3],MicrocontrollerDef.N_BYTES_POS)/Motion.STEPS_PER_MM_XY 
-			# Y stage position (mm)
-			self.y_pos = byte_operations.unsigned_to_signed(data[3:6],MicrocontrollerDef.N_BYTES_POS)/Motion.STEPS_PER_MM_XY
-			# Theta stage position (encoder counts to radians)
-			self.theta_pos = 2*np.pi*byte_operations.unsigned_to_signed(data[6:9],MicrocontrollerDef.N_BYTES_POS)/Encoders.COUNTS_PER_REV_THETA 
+			if(data[0] == ord('M')):
 
-			self.RecData['X_stage'] = self.x_pos
-			self.RecData['Y_stage'] = self.y_pos
-			self.RecData['Theta_stage'] = self.theta_pos
+				phase = byte_operations.data2byte_to_int(data[1],data[2])*2*np.pi/65535.
 
-			for key in REC_DATA:
-				if(key in INTERNAL_STATE_VARIABLES):
-					self.internal_state.data[key] = self.RecData[key]
+				# X stage position (mm)
+				self.x_pos = byte_operations.unsigned_to_signed(data[3:6],MicrocontrollerDef.N_BYTES_POS)/Motion.STEPS_PER_MM_XY 
+				# Y stage position (mm)
+				self.y_pos = byte_operations.unsigned_to_signed(data[6:9],MicrocontrollerDef.N_BYTES_POS)/Motion.STEPS_PER_MM_XY
+				# Theta stage position (encoder counts to radians)
+				self.theta_pos = 2*np.pi*byte_operations.unsigned_to_signed(data[9:12],MicrocontrollerDef.N_BYTES_POS)/Encoders.COUNTS_PER_REV_THETA 
+
+				self.RecData['X_stage'] = self.x_pos
+				self.RecData['Y_stage'] = self.y_pos
+				self.RecData['Theta_stage'] = self.theta_pos
+
+				print(self.x_pos, self.y_pos, self.theta_pos)
+
+				self.update_stage_position.emit(self.x_pos,self.y_pos,self.theta_pos)
+
+				for key in REC_DATA:
+					if(key in INTERNAL_STATE_VARIABLES):
+						self.internal_state.data[key] = self.RecData[key]
+
+			elif(data[0] == ord('F')):
+				print('Flag recvd')
+
+				if(data[1] == ord('S')):
+					print('Stage Mode state recvd: {}'.format(data[2]))
+					pass
+				elif(data[1] == ord('H')):
+					print('Homing flag state recvd: {}'.format(data[2]))
+					pass
+				elif(data[1] == ord('T')):
+					print('Trigger track signal recvd: {}'.format(data[2]))
+				elif(data[1] == ord('F')):
+					print('Focus tracking flag changed in uController: {}'.format(data[2]))
+					pass
+
 
 			# Calculate the object's position based on the data received data from uController
-			# print('Read packet ... parsing')
-			# for key in REC_DATA:
-			# 	self.RecData[key] = data[key]
-			# 	# Update internal state
-			# 	if(key in INTERNAL_STATE_VARIABLES):
-			# 		self.internal_state.data[key] = data[key]
-			self.update_stage_display.emit(self.x_pos,self.y_pos,self.theta_pos)
 
 		else:
 			pass

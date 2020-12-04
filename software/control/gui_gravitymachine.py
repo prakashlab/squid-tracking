@@ -154,7 +154,8 @@ class GravityMachine_GUI(QMainWindow):
 		# self.microcontroller_Rec.update_display.connect(self.navigationWidget.update_display)
 		self.trackingControlWidget.show_roi.connect(self.imageDisplayWindow[TRACKING].toggle_ROI_selector)
 
-		self.microcontroller_Rec.update_stage_display.connect(self.navigationWidget.update_display)
+		self.microcontroller_Rec.update_stage_position.connect(self.navigationWidget.update_display)
+		# self.microcontroller_Rec.update_stage_position.connect(self.trackingController.update_stage_position)
 		#-----------------------------------------------------
 		# Layout widgets
 		#-----------------------------------------------------
@@ -167,10 +168,10 @@ class GravityMachine_GUI(QMainWindow):
 		# layout.addWidget(self.PID_Group_Widget,2,0)
 		# layout.addWidget(self.navigationWidget,2,0)
 		#layout.addWidget(self.autofocusWidget,3,0)
-		layout.addWidget(self.recordingControlWidget,1,1)
-		layout.addWidget(self.PID_Group_Widget,2,0)
-		# layout.addWidget(self.FocusTracking_Widget,2,0)
-		layout.addWidget(self.cameraSettings_Tab,1,2,1,1)
+		# layout.addWidget(self.recordingControlWidget,1,1)
+		# layout.addWidget(self.PID_Group_Widget,2,0)
+		layout.addWidget(self.FocusTracking_Widget,1,1)
+		# layout.addWidget(self.cameraSettings_Tab,1,2,1,1)
 		# transfer the layout to the central widget
 		self.centralWidget = QWidget()
 		self.centralWidget.setLayout(layout)

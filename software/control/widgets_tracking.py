@@ -455,18 +455,18 @@ class NavigationWidget(QFrame):
         self.btn_moveY_backward = QPushButton('Backward')
         self.btn_moveY_backward.setDefault(False)
 
-        self.label_Zpos = QLabel()
-        self.label_Zpos.setNum(0)
-        self.label_Zpos.setFrameStyle(QFrame.Panel | QFrame.Sunken)
-        self.entry_dZ = QDoubleSpinBox()
-        self.entry_dZ.setMinimum(0) 
-        self.entry_dZ.setMaximum(1000) 
-        self.entry_dZ.setSingleStep(0.2)
-        self.entry_dZ.setValue(0)
-        self.btn_moveZ_forward = QPushButton('Forward')
-        self.btn_moveZ_forward.setDefault(False)
-        self.btn_moveZ_backward = QPushButton('Backward')
-        self.btn_moveZ_backward.setDefault(False)
+        self.label_Thetapos = QLabel()
+        self.label_Thetapos.setNum(0)
+        self.label_Thetapos.setFrameStyle(QFrame.Panel | QFrame.Sunken)
+        self.entry_dTheta = QDoubleSpinBox()
+        self.entry_dTheta.setMinimum(0) 
+        self.entry_dTheta.setMaximum(1000) 
+        self.entry_dTheta.setSingleStep(0.2)
+        self.entry_dTheta.setValue(0)
+        self.btn_moveTheta_forward = QPushButton('Forward')
+        self.btn_moveTheta_forward.setDefault(False)
+        self.btn_moveTheta_backward = QPushButton('Backward')
+        self.btn_moveTheta_backward.setDefault(False)
         
         grid_line0 = QGridLayout()
         grid_line0.addWidget(QLabel('X (mm)'), 0,0)
@@ -483,11 +483,11 @@ class NavigationWidget(QFrame):
         grid_line1.addWidget(self.btn_moveY_backward, 0,4)
 
         grid_line2 = QGridLayout()
-        grid_line2.addWidget(QLabel('Z (um)'), 0,0)
-        grid_line2.addWidget(self.label_Zpos, 0,1)
-        grid_line2.addWidget(self.entry_dZ, 0,2)
-        grid_line2.addWidget(self.btn_moveZ_forward, 0,3)
-        grid_line2.addWidget(self.btn_moveZ_backward, 0,4)
+        grid_line2.addWidget(QLabel('Theta (radians)'), 0,0)
+        grid_line2.addWidget(self.label_Thetapos, 0,1)
+        grid_line2.addWidget(self.entry_dTheta, 0,2)
+        grid_line2.addWidget(self.btn_moveTheta_forward, 0,3)
+        grid_line2.addWidget(self.btn_moveTheta_backward, 0,4)
 
         self.grid = QGridLayout()
         self.grid.addLayout(grid_line0,0,0)
@@ -499,8 +499,8 @@ class NavigationWidget(QFrame):
         self.btn_moveX_backward.clicked.connect(self.move_x_backward)
         self.btn_moveY_forward.clicked.connect(self.move_y_forward)
         self.btn_moveY_backward.clicked.connect(self.move_y_backward)
-        self.btn_moveZ_forward.clicked.connect(self.move_z_forward)
-        self.btn_moveZ_backward.clicked.connect(self.move_z_backward)
+        self.btn_moveTheta_forward.clicked.connect(self.move_theta_forward)
+        self.btn_moveTheta_backward.clicked.connect(self.move_theta_backward)
         
     def move_x_forward(self):
         self.navigationController.move_x(self.entry_dX.value())
@@ -511,17 +511,16 @@ class NavigationWidget(QFrame):
         self.navigationController.move_y(self.entry_dY.value())
     def move_y_backward(self):
         self.navigationController.move_y(-self.entry_dY.value())
-    def move_z_forward(self):
-        self.navigationController.move_z(self.entry_dZ.value()/1000)
-    def move_z_backward(self):
-        self.navigationController.move_z(-self.entry_dZ.value()/1000)
+    def move_theta_forward(self):
+        self.navigationController.move_theta(self.entry_dTheta.value()/1000)
+    def move_theta_backward(self):
+        self.navigationController.move_theta(-self.entry_dTheta.value()/1000)
     
-    def update_display(self, X_stage, Y_stage, Z_stage):
+    def update_display(self, X_stage, Y_stage, Theta_stage):
 
     	self.label_Xpos.setNum(round(X_stage,2))
     	self.label_Ypos.setNum(round(Y_stage,2))
-    	self.label_Zpos.setNum(round(Z_stage,2))
-
+    	self.label_Thetapos.setNum(round(Theta_stage,2))
 
 
 class PID_Group_Widget(QFrame):

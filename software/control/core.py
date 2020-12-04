@@ -501,12 +501,14 @@ class NavigationController(QObject):
     xPos = Signal(float)
     yPos = Signal(float)
     zPos = Signal(float)
+    thetaPos = Signal(float)
 
     def __init__(self,microcontroller):
         QObject.__init__(self)
         self.microcontroller = microcontroller
         self.x_pos = 0
         self.y_pos = 0
+        self.theta_pos = 0
         self.z_pos = 0
 
     def move_x(self,delta):
@@ -523,6 +525,11 @@ class NavigationController(QObject):
         self.microcontroller.move_z(delta)
         self.z_pos = self.z_pos + delta
         self.zPos.emit(self.z_pos*1000)
+
+    def move_theta(self,delta):
+        self.microcontroller.move_theta(delta)
+        self.theta_pos = self.theta_pos + delta
+        self.thetaPos.emit(self.theta_pos)
 
         
 
