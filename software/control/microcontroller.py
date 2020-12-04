@@ -93,7 +93,7 @@ class Microcontroller():
 
     def move_theta(self,delta):
         direction = int((np.sign(delta)+1)/2)
-        n_microsteps = abs(delta*Motion.STEPS_PER_MM_Z)
+        n_microsteps = abs(delta*Motion.STEPS_PER_REV_THETA_SHAFT/(2*np.pi))
         if n_microsteps > 65535:
             n_microsteps = 65535
         cmd = bytearray(self.tx_buffer_length)
@@ -145,7 +145,7 @@ class Microcontroller():
 
     def move_theta_nonblocking(self,delta):
         direction = int((np.sign(delta)+1)/2)
-        n_microsteps = abs(delta)
+        n_microsteps = abs(delta*Motion.STEPS_PER_REV_THETA_SHAFT/(2*np.pi))
         if n_microsteps > 65535:
             n_microsteps = 65535
         cmd = bytearray(self.tx_buffer_length)
@@ -158,69 +158,52 @@ class Microcontroller():
     # Convert below functions to be compatible with squid/octopi serial interface.
     def send_tracking_command(self, tracking_flag):
         cmd = bytearray(self.tx_buffer_length)
-        cmd[0] = ord('F')
-        cmd[1] = ord('O')
-        cmd[2] = tracking_flag
-
-        self.serial.write(cmd)
-
-    def send_focus_tracking_command(self, focus_tracking_flag):
-        cmd = bytearray(self.tx_buffer_length)
-        cmd[0] = ord('F')
-        cmd[1] = ord('L')
-        cmd[2] = focus_tracking_flag
+        cmd[0] = 4
+        cmd[1] = tracking_flag
 
         self.serial.write(cmd)
 
     def send_homing_command(self):
         cmd = bytearray(self.tx_buffer_length)
-        cmd[0] = ord('F')
-        cmd[1] = ord('H')
+        cmd[0] = 5
 
         self.serial.write(cmd)
 
     def send_stage_zero_command(self, stage):
-
         cmd = bytearray(self.tx_buffer_length)
-        cmd[0] = ord('0')
-        cmd[1] = ord(stage)
+        cmd[0] = 6
+        cmd[1] = stage
+
+        self.serial.write(cmd)
+
+    def send_focus_tracking_command(self, focus_tracking_flag):
+        cmd = bytearray(self.tx_buffer_length)
+        cmd[0] = 7
+        cmd[1] = focus_tracking_flag
 
         self.serial.write(cmd)
 
     def send_liquid_lens_freq(self, freq):
         cmd = bytearray(self.tx_buffer_length)
-        cmd[0] = ord('P')
-        cmd[1] = ord('L')
-        cmd[2] = ord('F')
-
-        cmd[3], cmd[4] = split_int_2byte(round(freq*100)) 
+        cmd[0] = 8
+        cmd[1] = 0
+        cmd[2], cmd[3] = split_int_2byte(round(freq*100)) 
 
         self.serial.write(cmd)
 
     def send_liquid_lens_amp(self, amp):
         cmd = bytearray(self.tx_buffer_length)
-        cmd[0] = ord('P')
-        cmd[1] = ord('L')
-        cmd[2] = ord('A')
-
-        cmd[3], cmd[4] = split_int_2byte(round(amp*100)) 
+        cmd[0] = 8
+        cmd[1] = 1
+        cmd[2], cmd[3] = split_int_2byte(round(amp*100)) 
 
         self.serial.write(cmd)
 
     def send_liquid_lens_offset(self, offset):
         cmd = bytearray(self.tx_buffer_length)
-        cmd[0] = ord('P')
-        cmd[1] = ord('L')
-        cmd[2] = ord('O')
-
-        cmd[3], cmd[4] = split_int_2byte(round(offset*100)) 
-
-        self.serial.write(cmd)
-
-    def send_triggering_command(self, trigger_state):
-        cmd = bytearray(self.tx_buffer_length)
-        cmd[0] = ord('T')
-        cmd[1] = ord(trigger_state)
+        cmd[0] = 8
+        cmd[1] = 2
+        cmd[2], cmd[3] = split_int_2byte(round(offset*100)) 
 
         self.serial.write(cmd)
 

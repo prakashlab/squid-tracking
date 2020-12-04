@@ -1,11 +1,6 @@
 /********************************************************
-  uController code for gravity machine
-  Axes convention:
-  X (Linear stage): +ve radially outwards at 3'O Clock Position 
-  Y (Linear stage): +ve Away from the camera
-  Z (Linear stage): +ve upwards from gravity
-  Theta (Rotational stage): CW +ve
-  -by Deepak Krishnamurthy & François BENOIT du REY
+  uController firmware for gravity machine
+  -by Deepak Krishnamurthy, François BENOIT du REY, Ethan Li
 ********************************************************/
 //=================================================================================
 // HEADER FILES
@@ -18,7 +13,7 @@
 // If we want to run in open-loop mode, uncomment this line or set it with a build flag:
 #define RUN_OPEN_LOOP
 // For testing (pinging ucontroller and listening to answer)
-#define TESTING;
+//#define TESTING;
 #define DISABLE_LIMIT_SWITCHES
 //#define USE_SERIAL_MONITOR
 //=================================================================================
@@ -29,49 +24,6 @@ const double pi = 3.1415926535897;
 /***************************************************************************************************/
 /***************************************** Communications ******************************************/
 /***************************************************************************************************/
-
-/* Command parsing scheme
- *  
-byte[0]: Command type 
-  0: move stages
-  1: Object tracking
-  2: Focus tracking
-  3: Set focus tracking parameters
-  4: Home stages
-  5: Set stage positions to zero.
-
-For motion commands (byte[0] == 0)
-bytes[1] = direction of motion.
-
-bytes[2-3]: X motion command in microsteps (unsigned 2 byte int)
-
-bytes[4] = direction of motion.
-
-bytes[5-6]: Y motion command in microsteps (unsigned 2 byte int)
-
-bytes[7] = direction of motion.
-
-bytes[8-9]: Z motion command in microsteps (signed 2 byte int)
-
-(For non-motion commands byte[0]!=0)
-byte[1]: Sub-parameter being set 
-  For set parameter commands: 5, 7
-    sets the parameter whose value is being set
-      eg. for focus tracking:
-       0: liquid lens frequency
-       1: liquid lens amplitude
-      eg. for setting stage positions to zero:
-       0: x-stage
-       1: y-stage
-       2: theta-stage
-       
-bytes[2-3]: Value of the parameter
-  For set parameter commands:
-    byte[2]: Upper 8 bits of parameter value
-    byte[3]: lower 8 bits of parameter value
-    
-*/
-
 static const int CMD_LENGTH = 4;
 static const int MSG_LENGTH = 12;
 static const int N_BYTES_POS = 3;
@@ -338,6 +290,10 @@ volatile bool flag_send_pos_update = false;
 volatile int counter_read_joystick = 0;
 volatile bool flag_read_joystick = false;
 static const int interval_read_joystick = 100000; // in us
+
+volatile long int counter_send_flag_update = 0;
+volatile bool flag_send_flag_update = false;
+static const int interval_send_flag_update = 500000; // in us
 
 //=================================================================================
 // Liquid Lens variable
@@ -1096,7 +1052,6 @@ void HandleInputEncoderInterrupt()
 void HandleTriggerTrackButton()
 {
   serial_send_flag('T', 1);
-  sendData = false;
 }
 
 // https://www.nongnu.org/avr-libc/user-manual/group__util__crc.html
@@ -1160,18 +1115,29 @@ void timer_interrupt_handler(){
   //@@@ for debugging
 //  analogWrite(DAC0, phase_code/64);
 
-  counter_read_joystick = counter_read_joystick + 1;
-  if(counter_read_joystick==interval_read_joystick/TIMER_PERIOD)
-  {
-    flag_read_joystick = true;
-    counter_read_joystick = 0;
-  }
-  
+
+  // Position update counter
   counter_send_pos_update = counter_send_pos_update + 1;
   if(counter_send_pos_update == interval_send_pos_update/TIMER_PERIOD)
   {
     flag_send_pos_update = true;
     counter_send_pos_update = 0;
+  }
+
+  // Flag-update counter
+  counter_send_flag_update = counter_send_flag_update + 1;
+  if(counter_send_flag_update == interval_send_flag_update/TIMER_PERIOD)
+  {
+    flag_send_flag_update = true;
+    counter_send_flag_update = 0;
+  }
+
+  // Joystick reading counter
+  counter_read_joystick = counter_read_joystick + 1;
+  if(counter_read_joystick==interval_read_joystick/TIMER_PERIOD)
+  {
+    flag_read_joystick = true;
+    counter_read_joystick = 0;
   }
 
   // Tracking camera trigger
@@ -1581,6 +1547,9 @@ void setup()
   //-------------------------------------------------------------------------------
   //pinMode(lightPWM, OUTPUT);
 
+  // Send homing state to computer
+//  serial_send_flag('H', 0);
+  
   delay(1000);
 
   // initialize timer
@@ -1588,7 +1557,7 @@ void setup()
   Timer3.start(TIMER_PERIOD); // Calls every 500 us
   startTriggering = true;
 
-
+  
 }
 
 //%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -1600,11 +1569,11 @@ void setup()
 
 void loop()
 {
-  StageManualModePrev = StageManualMode;
-  StageManualMode = digitalRead(ManualPin);
-
+  
   #ifdef RUN_OPEN_LOOP
     StageManualMode = LOW;
+    StageLocked = false;
+
   #endif
   
   #ifdef TESTING
@@ -1614,17 +1583,17 @@ void loop()
    #endif
     
 
-  
-  currMillisRec = millis();
   sensitivityChange=LOW;
-
 
   //-------------------------------------------------------------------------------
   // Read the sensitivity of the joystick at a fixed frequency
   //-------------------------------------------------------------------------------
   
    if(flag_read_joystick)
-    {      
+    { 
+      StageManualModePrev = StageManualMode;
+      StageManualMode = digitalRead(ManualPin);  
+      
       #ifdef USE_ANALOG_LIMIT_SWITCHES
       readLimitSwitchAnalog();
       #else
@@ -1741,7 +1710,6 @@ void loop()
   //-------------------------------------------------------------------------------
   // Serial sending block (Send data to computer)
   //-------------------------------------------------------------------------------
-  // uController only sends data when image is triggered.
   /* Data sent to computer
    *  1. Phase code
    *  2. X position of stage (open-loop stepper position or closed-loop encoder position)
@@ -1753,7 +1721,6 @@ void loop()
    */  
   if (flag_send_pos_update)
   {
-
     #ifdef USE_SERIAL_MONITOR
       serial_send_monitor();
     #else
@@ -1761,31 +1728,48 @@ void loop()
     #endif
     flag_send_pos_update = false;
   }
+  // Update certain status flags periodically
+  if(flag_send_flag_update)
+  {
+    serial_send_flag('S', StageManualMode);
+    flag_send_flag_update = false;
+    
+  }
   //-------------------------------------------------------------------------------
   // Serial Receiving Block 
   //-------------------------------------------------------------------------------
 
   //Data reception: the data is read at the frequency of the computer
+  while (SerialUSB.available()) 
+  { 
+    buffer_rx[buffer_rx_ptr] = SerialUSB.read();
+    buffer_rx_ptr = buffer_rx_ptr + 1;
+    if (buffer_rx_ptr == CMD_LENGTH) 
+    {
+      buffer_rx_ptr = 0;
    
-   if(SerialUSB.available())
-   {
-      buffer_rx_ptr=0;
-      int cyclesElapsed = 0;
-      while(buffer_rx_ptr < CMD_LENGTH ){ 
-        buffer_rx[buffer_rx_ptr] = SerialUSB.read();
-        buffer_rx_ptr++;
-        // timeout:
-        if(cyclesElapsed++>=10000)
-          break;
-      }
-      //Data analysis: if the right message is read, lets compute the data and update arduino position
-      isReceived = false;
-      
-      if (buffer_rx_ptr == CMD_LENGTH) 
-      {
+//   if(SerialUSB.available())
+//   {
+//      buffer_rx_ptr=0;
+//      int cyclesElapsed = 0;
+//      while(buffer_rx_ptr < CMD_LENGTH ){ 
+//        buffer_rx[buffer_rx_ptr] = SerialUSB.read();
+//        buffer_rx_ptr++;
+//        // timeout:
+//        if(cyclesElapsed++>=10000)
+//          break;
+//      }
+//      //Data analysis: if the right message is read, lets compute the data and update arduino position
+//      isReceived = false;
+//      
+//      if (buffer_rx_ptr == CMD_LENGTH) 
+//      {
         isReceived=true;
 
         //Motion commands
+        Step_X =0;
+        Step_Y=0;
+        Step_Theta = 0;
         
         if(buffer_rx[0]==0)
         {
@@ -1802,86 +1786,77 @@ void loop()
           Step_Theta = long(buffer_rx[1]*2-1)*(long(buffer_rx[2])*256 + long(buffer_rx[3])); // relative position to move in full-steps
 
         }
-        // Set parameter command 
-        else if(buffer_rx[0] == 'P')
+        // Object tracking flag
+        else if(buffer_rx[0]==4)
         {
-
-          if(buffer_rx[1]=='L')
+          if(buffer_rx[1] == 0)
           {
-            if(buffer_rx[2]=='F')
-            {
-              liquidLens_freq = float(int(buffer_rx[3]) + int(buffer_rx[4]) *256)/100;
-            }
-            else if(buffer_rx[2]=='O')
-            {
-              liquidLens_offset = float(int(buffer_rx[3]) + int(buffer_rx[4]) *256)/100;
-            }
-            else if(buffer_rx[2]=='A')
-            {
-              liquidLens_amp = float(int(buffer_rx[3]) + int(buffer_rx[4]) *256)/100;
-            }
+            flag_tracking = false;
           }
-
-          // we can also add camera triggering frrq in the future
-          
-        }
-        // Set flag commands
-        else if(buffer_rx[0] == 'F')
-        {
-          if(buffer_rx[1] == 'O') // Set tracking object flag
-          { 
-            if(buffer_rx[2] == 1)
-            {
-              flag_tracking = true;
-            }
-            else
-            {
-              flag_tracking = false;
-            }
-            
-          }
-          else if(buffer_rx[1] == 'L') // Set focus tracking object using liquid lens flag
+          else if(buffer_rx[1] == 1)
           {
-             if(buffer_rx[2] == 1)
-            {
-              flag_focus_tracking = true;
-            }
-            else
-            {
-              flag_focus_tracking = false;
-            }
-
-            // Send the flag back to the computer to test round-trip serial comm
-            serial_send_flag('F', flag_focus_tracking);
-            
-          }
-          else if(buffer_rx[1] == 'H') // Set Homing flag to true
-          { 
-             flag_homing = true;
+            flag_tracking = true;
           }
           
         }
-        // Zero-stages command 
-        else if(buffer_rx[0] == '0')
-        {
-          if(buffer_rx[1] == 'X')
+        // Homing flag
+        else if(buffer_rx[0]==5)
+        { 
+          if(buffer_rx[1] == 0)
           {
-            Zero_Stage_X();
+            flag_homing = false;
           }
-          else if(buffer_rx[1]=='Y')
+          else if(buffer_rx[1] == 1)
+          {
+            flag_homing = true;
+          }
+        }
+         // Stage zeroing
+        else if(buffer_rx[0]==6)
+        { 
+          if(buffer_rx[1] == 0)
+          {
+            Zero_Stage_X();;
+          }
+          else if(buffer_rx[1] == 1)
           {
             Zero_Stage_Y();
           }
-          else if(buffer_rx[1]=='T')
+          else if(buffer_rx[1] == 3)
           {
             Zero_Stage_Theta();
           }
-        
-//          // Testing
-//          serial_send_flag('S', StageManualMode);
-//          sendData=false;
+        }
+        // Focus tracking flag
+        else if(buffer_rx[0]==7)
+        { 
+          if(buffer_rx[1] == 0)
+          {
+            flag_focus_tracking = false;
+          }
+          else if(buffer_rx[1] == 1)
+          {
+            flag_focus_tracking = true;
+          }
+        }
+        else if(buffer_rx[0]==8)
+        {
+          if(buffer_rx[1]==0)
+          {
+            liquidLens_freq = float(int(buffer_rx[2]) + int(buffer_rx[3]) *256)/100;
+          }
+          else if(buffer_rx[1]==1)
+          {
+            liquidLens_amp = float(int(buffer_rx[2]) + int(buffer_rx[3]) *256)/100;
+
+          }
+          else if(buffer_rx[1]==2)
+          {
+            liquidLens_offset = float(int(buffer_rx[2]) + int(buffer_rx[3]) *256)/100;
+          }
           
         }
+        
         //-------------------------------------------------------------------------------
         // Automatic Input Block
         //-------------------------------------------------------------------------------
@@ -1889,7 +1864,7 @@ void loop()
         // If an object is detected then move the stage based on the commanded error signal
         if(StageManualMode == LOW && StageLocked == false)
         { 
-          stepperTHETA.move((long) round(microSteps_Theta/MAX_MICROSTEPS * Step_Theta));
+          stepperTHETA.move((long) round((microSteps_Theta/MAX_MICROSTEPS) * Step_Theta));
 
           #ifdef DISABLE_LIMIT_SWITCHES
             stepperX.move((long) round((microSteps_X/MAX_MICROSTEPS) * Step_X));
@@ -1906,7 +1881,7 @@ void loop()
  
     
     if (flag_homing==1 || inProgress == true)
-  {
+    { 
 
       if(flag_homing==1 && inProgress == false)
       { 
@@ -1917,6 +1892,7 @@ void loop()
           microSteps_Old_Y = YHoming_SetSpeed();
 
           inProgress = true;
+          serial_send_flag('H',1);
        }
       //--------------------------
       // X-homing routine 
@@ -1971,18 +1947,15 @@ void loop()
 
           // Also set some Homing_Complete flag to true and send it to the computer
           
-          serial_send_flag('H', flag_homing_complete);
+          serial_send_flag('H', 2);
           sendData=false;
       }
   }
   //+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-  //Step the stepper (This block should run as frequently as possible)
+  //Step the stepper (This block should run every loop or as frequently as possible)
   //+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-    
-  
   stepperX.run();
   stepperY.run();
-  //stepperZ.run()
   stepperTHETA.run();
 
   

@@ -43,25 +43,21 @@ class Chamber:
     def __init__(self):
         pass
 
-# For Squid
 class Motion:
+    # squid
     STEPS_PER_MM_XY = 1600 # microsteps
     STEPS_PER_MM_Z = 5333  # microsteps
-    def __init__(self):
-        pass
-
-
-class Motors:
+   
+    # Gravity Machine
     STEPS_PER_REV_X = 200
     MM_PER_REV_X = 1
+
 
     STEPS_PER_REV_Y = 200
     MM_PER_REV_Y = 1
 
     STEPS_PER_REV_Z = 200
     MM_PER_REV_Z = 1
-
-   
 
     STEPS_PER_REV_THETA_MOTOR = 200
 
@@ -81,7 +77,7 @@ class Encoders:
 
     COUNTS_PER_REV_THETA_MOTOR = 600
 
-    COUNTS_PER_REV_THETA = COUNTS_PER_REV_THETA_MOTOR*Motors.GEAR_RATIO_THETA
+    COUNTS_PER_REV_THETA = COUNTS_PER_REV_THETA_MOTOR*Motion.GEAR_RATIO_THETA
 
 
     def __init__(self):
@@ -128,6 +124,7 @@ class MicrocontrollerDef:
     MSG_LENGTH = 12
     CMD_LENGTH = 4
     N_BYTES_POS = 3
+    RUN_OPENLOOP = False # Determines whether stepper/enoders are used to calculate stage positions.
 
     def __init__(self):
         pass
@@ -138,7 +135,7 @@ class PID_parameters:
 
     STEP_PER_MM_TYPICAL = 200
 
-    PID_OUTPUT_MAX = MAX_DISTANCE*STEP_PER_MM_TYPICAL*Motors.MAX_MICROSTEPS
+    PID_OUTPUT_MAX = MAX_DISTANCE*STEP_PER_MM_TYPICAL*Motion.MAX_MICROSTEPS
 
 
 
@@ -210,7 +207,7 @@ liquidLens = {'type': 'optotune', 'Freq':{'default':2, 'min':0.1, 'max':20, 'ste
 if TRACKING_CONFIG == 'XYT':
     INTERNAL_STATE_VARIABLES = ['Time', 'X_objStage', 'Y_objStage', 'Z_objStage', 'X_stage', 'Y_stage',
         'Theta_stage', 'X_image', 'Z_image', 'track_obj_image','track_obj_image_hrdware', 'track_focus', 'track_obj_stage', 
-        'Acquisition', 'homing_command', 'homing_complete',  'Zero_stage', 'liquidLens_Freq', 'liquidLens_Amp', 'FocusPhase', 'optical_path', 
+        'Acquisition', 'homing_status',  'Zero_stage', 'liquidLens_Freq', 'liquidLens_Amp', 'FocusPhase', 'optical_path', 
         'imaging channels', 'Objective', 'basePath', 'experimentID']
 
     # Based on the number of imaging channels, there will also be 1 or more image names saved.
@@ -219,15 +216,15 @@ if TRACKING_CONFIG == 'XYT':
 
     MOTION_COMMANDS = ['X_order', 'Y_order', 'Theta_order']
 
-    SEND_DATA = ['liquidLens_Freq', 'track_focus' , 'homing_command', 'track_obj_image' , 'X_order', 'Y_order', 'Theta_order', 'Zero_stage']
+    SEND_DATA = ['liquidLens_Freq', 'track_focus', 'track_obj_image' , 'X_order', 'Y_order', 'Theta_order', 'Zero_stage']
 
 
-    REC_DATA = ['FocusPhase', 'X_stage', 'Y_stage', 'Theta_stage', 'track_obj_image_hrdware', 'track_obj_stage', 'homing_complete']
+    REC_DATA = ['FocusPhase', 'X_stage', 'Y_stage', 'Theta_stage', 'track_obj_image_hrdware', 'track_obj_stage', 'homing_status']
 
 
     INITIAL_VALUES = {'Time':0, 'X_objStage':0, 'Y_objStage':0, 'Z_objStage':0, 'X_stage':0.0, 'Y_stage':0.0,
         'Theta_stage':0.0, 'X_image':0, 'Z_image':0, 'track_obj_image':False, 'track_obj_image_hrdware':False, 'track_focus':False, 
-        'track_obj_stage':False, 'Acquisition':False, 'homing_command':False, 'homing_complete':False, 'Zero_stage':0, 'liquidLens_Freq': liquidLens['Freq']['default'], 
+        'track_obj_stage':False, 'Acquisition':False, 'homing_status': 'not-complete', 'Zero_stage':0, 'liquidLens_Freq': liquidLens['Freq']['default'], 
         'liquidLens_Amp': liquidLens['Amp']['default'] , 'FocusPhase':0, 'optical_path': DEFAULT_OPTICAL_PATH, 
         'imaging channels': OPTICAL_PATHS[DEFAULT_OPTICAL_PATH],  'Objective':DEFAULT_OBJECTIVE, 'basePath':'/', 'experimentID':'track'}
 
@@ -240,7 +237,7 @@ if TRACKING_CONFIG == 'XYT':
 elif TRACKING_CONFIG == 'XYZ':
     INTERNAL_STATE_VARIABLES = ['Time', 'X_objStage', 'Y_objStage', 'Z_objStage', 'X_stage', 'Y_stage',
         'Z_stage', 'X_image', 'Y_image', 'track_obj_image','track_obj_image_hrdware', 'track_focus', 'track_obj_stage', 
-        'Acquisition', 'homing_command', 'homing_complete',  'Zero_stage', 'liquidLens_Freq', 'liquidLens_Amp', 'FocusPhase', 'optical_path', 
+        'Acquisition', 'homing_status',  'Zero_stage', 'liquidLens_Freq', 'liquidLens_Amp', 'FocusPhase', 'optical_path', 
         'imaging channels', 'Objective', 'basePath', 'experimentID']
 
     # Based on the number of imaging channels, there will also be 1 or more image names saved.
@@ -249,14 +246,14 @@ elif TRACKING_CONFIG == 'XYZ':
 
     MOTION_COMMANDS = ['X_order', 'Y_order', 'Z_order']
 
-    SEND_DATA = ['liquidLens_Freq', 'track_focus' , 'homing_command', 'track_obj_image' , 'X_order', 'Y_order', 'Z_order', 'Zero_stage']
+    SEND_DATA = ['liquidLens_Freq', 'track_focus' , 'track_obj_image' , 'X_order', 'Y_order', 'Z_order', 'Zero_stage']
 
     REC_DATA = ['X_stage', 'Y_stage', 'Z_stage']
 
 
     INITIAL_VALUES = {'Time':0, 'X_objStage':0, 'Y_objStage':0, 'Z_objStage':0, 'X_stage':0, 'Y_stage':0,
         'Z_stage':0, 'X_image':0, 'Y_image':0, 'track_obj_image':False, 'track_obj_image_hrdware':False, 'track_focus':False, 
-        'track_obj_stage':False, 'Acquisition':False, 'homing_command':False, 'homing_complete':False, 'Zero_stage':0, 'liquidLens_Freq': liquidLens['Freq']['default'], 
+        'track_obj_stage':False, 'Acquisition':False, 'homing_status': 'not-complete', 'Zero_stage':0, 'liquidLens_Freq': liquidLens['Freq']['default'], 
         'liquidLens_Amp': liquidLens['Amp']['default'] , 'FocusPhase':0, 'optical_path': DEFAULT_OPTICAL_PATH, 
         'imaging channels': OPTICAL_PATHS[DEFAULT_OPTICAL_PATH],  'Objective':DEFAULT_OBJECTIVE, 'basePath':'/', 'experimentID':'track'}
 

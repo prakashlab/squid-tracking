@@ -20,14 +20,14 @@ class Units_Converter:
         #  X Stepper (Linear Stage)
         # --------------------------------------------------
 
-        self.StepsPerRev_X = Motors.STEPS_PER_REV_X
-        self.mmPerRev_X = Motors.MM_PER_REV_X            # Pitch of the lead screw in mm
+        self.StepsPerRev_X = Motion.STEPS_PER_REV_X
+        self.mmPerRev_X = Motion.MM_PER_REV_X            # Pitch of the lead screw in mm
 
         # --------------------------------------------------
         #  Y Stepper (Linear Stage)
         # --------------------------------------------------
-        self.StepsPerRev_Y = Motors.STEPS_PER_REV_Y
-        self.mmPerRev_Y = Motors.STEPS_PER_REV_Y 
+        self.StepsPerRev_Y = Motion.STEPS_PER_REV_Y
+        self.mmPerRev_Y = Motion.STEPS_PER_REV_Y 
         # StepsPerRev_Y = 20
         # mmPerStep_Y = 0.001524;     # Pitch of the lead screw in mm
 
@@ -35,7 +35,7 @@ class Units_Converter:
         #  Z Stepper (Linear Stage)
         # --------------------------------------------------
 
-        self.StepsPerRev_Z = Motors.STEPS_PER_REV_Z
+        self.StepsPerRev_Z = Motion.STEPS_PER_REV_Z
 
 
         # --------------------------------------------------
@@ -43,7 +43,7 @@ class Units_Converter:
         # --------------------------------------------------
         # Rcenter = 87.5 										# Radius to the center line of the fluidic chamber in mm (Wheel 16, 17): Ri=80 mm, Ro=95 mm
         self.Rcenter = Chamber.R_CENTER                                  # radius to the center-line of the fluidic chamber in mm (Wheel 18). Ri=80 mm R0= 110 mm
-        self.StepsPerRev_Theta = Motors.STEPS_PER_REV_THETA_SHAFT            # No:of steps of the main motor shaft for 1 Rev of the output shaft
+        self.StepsPerRev_Theta = Motion.STEPS_PER_REV_THETA_SHAFT            # No:of steps of the main motor shaft for 1 Rev of the output shaft
 
         # --------------------------------------------------
         # X encoder (linear)

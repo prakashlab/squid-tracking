@@ -506,32 +506,38 @@ class NavigationController(QObject):
     def __init__(self,microcontroller):
         QObject.__init__(self)
         self.microcontroller = microcontroller
-        self.x_pos = 0
-        self.y_pos = 0
-        self.theta_pos = 0
-        self.z_pos = 0
+        self.x_pos = 0 # in mm
+        self.y_pos = 0 # in mm
+        self.theta_pos = 0 # in radians
+        self.z_pos = 0 # in mm
 
     def move_x(self,delta):
         self.microcontroller.move_x(delta)
         self.x_pos = self.x_pos + delta
-        self.xPos.emit(self.x_pos)
 
     def move_y(self,delta):
         self.microcontroller.move_y(delta)
         self.y_pos = self.y_pos + delta
-        self.yPos.emit(self.y_pos)
 
     def move_z(self,delta):
         self.microcontroller.move_z(delta)
         self.z_pos = self.z_pos + delta
-        self.zPos.emit(self.z_pos*1000)
 
     def move_theta(self,delta):
         self.microcontroller.move_theta(delta)
         self.theta_pos = self.theta_pos + delta
-        self.thetaPos.emit(self.theta_pos)
 
-        
+    # For closed loop operation get stage positions from uController.
+    def update_stage_positions(self, x_pos, y_pos, theta_pos):
+        self.x_pos = x_pos
+        self.y_pos = y_pos
+        self.theta_pos = theta_pos
+
+    # @@@ Implement later. Make the NavigationController the central node for stage positions.
+    def emit_stage_positions(self):
+        pass
+
+
 
 class ImageDisplay(QObject):
 

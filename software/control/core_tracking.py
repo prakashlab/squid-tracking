@@ -526,7 +526,7 @@ class microcontroller_Receiver(QObject):
 	StreamHandler (rec new image) -> getData_microcontroller
 	'''
 	update_stage_position = Signal(float, float, float)
-
+	update_homing_state = Signal()
 
 	def __init__(self, microcontroller, internal_state):
 		QObject.__init__(self)
@@ -551,25 +551,8 @@ class microcontroller_Receiver(QObject):
 		self.y_pos = 0
 		self.theta_pos = 0
 
-
-		# self.read_Thread = Thread(target = self.getData_microcontroller)
-		# self.read_Thread.start()
-
-	# This function is triggered by the "rec new image signal" from StreamHandler
 	def getData_microcontroller(self):
-		# for debugging
-		# while True:
 
-		# 	if self.stop_signal_received:
-		# 		return
-		# 	self.time_now = time.time()
-
-			# if(self.time_now - self.time_prev >= UCONTROLLER_READ_INTERVAL):
-				
-				# print(self.time_now)
-				# print("Receiving data from uController")
-
-		# print("Receiving data from uController")
 		data = self.microcontroller.read_received_packet_nowait()
 
 		if(data is not None):
@@ -589,7 +572,6 @@ class microcontroller_Receiver(QObject):
 				self.RecData['Y_stage'] = self.y_pos
 				self.RecData['Theta_stage'] = self.theta_pos
 
-				print(self.x_pos, self.y_pos, self.theta_pos)
 
 				self.update_stage_position.emit(self.x_pos,self.y_pos,self.theta_pos)
 
@@ -601,19 +583,28 @@ class microcontroller_Receiver(QObject):
 				print('Flag recvd')
 
 				if(data[1] == ord('S')):
-					print('Stage Mode state recvd: {}'.format(data[2]))
-					pass
+					# print('Automated stage tracking flag recvd: {}'.format(data[2]))
+					self.internal_state.data['track_obj_stage'] = data[2]
+					
 				elif(data[1] == ord('H')):
 					print('Homing flag state recvd: {}'.format(data[2]))
-					pass
+					if(data[2] == 0):
+						self.internal_state.data['homing-state'] = 'not-complete'
+
+					elif(data[2] == 1):
+						self.internal_state.data['homing-state'] = 'in-progress'
+					elif(data[2] == 2):
+						self.internal_state.data['homing-state'] = 'complete'
+					
+					print('Homing state: {}'.format(self.internal_state.data['homing-state']))
+
 				elif(data[1] == ord('T')):
-					print('Trigger track signal recvd: {}'.format(data[2]))
+					print('Start image tracking signa recvd: {}'.format(data[2]))
+					self.internal_state.data['track_obj_image_hrdware'] = data[2]
+
 				elif(data[1] == ord('F')):
 					print('Focus tracking flag changed in uController: {}'.format(data[2]))
-					pass
 
-
-			# Calculate the object's position based on the data received data from uController
 
 		else:
 			pass
