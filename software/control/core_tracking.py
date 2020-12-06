@@ -392,8 +392,8 @@ class TrackingController(QObject):
 		# Take an error signal and pass it through a PID algorithm
 
 		# Convert from mm to steps (these are rounded to the nearest integer).
-		x_error_steps = int(Motion.STEPS_PER_MM_XY*x_error)
-		y_error_steps = int(Motion.STEPS_PER_MM_XY*y_error)
+		x_error_steps = int(Motion.STEPS_PER_MM_X*x_error)
+		y_error_steps = int(Motion.STEPS_PER_MM_Y*y_error)
 
 		print(self.X_stage[-1])
 		theta_error_steps = int(self.units_converter.Z_mm_to_step(z_error, self.X_stage[-1]))
@@ -559,28 +559,29 @@ class microcontroller_Receiver(QObject):
 			# Parse the data
 			if(data[0] == ord('M')):
 
-				phase = byte_operations.data2byte_to_int(data[1],data[2])*2*np.pi/65535.
+				phase = byte_operations.data2byte_to_int(data[1], data[2])*2*np.pi/65535.
 
 				# X stage position (mm)
-				self.x_pos = byte_operations.unsigned_to_signed(data[3:6],MicrocontrollerDef.N_BYTES_POS)/Motion.STEPS_PER_MM_XY 
+				self.x_pos = byte_operations.unsigned_to_signed(data[3:6],MicrocontrollerDef.N_BYTES_POS)/(Motion.STEPS_PER_MM_X*Motion.MAX_MICROSTEPS) 
 				# Y stage position (mm)
-				self.y_pos = byte_operations.unsigned_to_signed(data[6:9],MicrocontrollerDef.N_BYTES_POS)/Motion.STEPS_PER_MM_XY
+				self.y_pos = byte_operations.unsigned_to_signed(data[6:9],MicrocontrollerDef.N_BYTES_POS)/(Motion.STEPS_PER_MM_Y*Motion.MAX_MICROSTEPS)
 				# Theta stage position (encoder counts to radians)
-				self.theta_pos = 2*np.pi*byte_operations.unsigned_to_signed(data[9:12],MicrocontrollerDef.N_BYTES_POS)/Encoders.COUNTS_PER_REV_THETA 
+				self.theta_pos = 2*np.pi*byte_operations.unsigned_to_signed(data[9:12],MicrocontrollerDef.N_BYTES_POS)/(Motion.STEPS_PER_REV_THETA_SHAFT*Motion.MAX_MICROSTEPS) 
 
 				self.RecData['X_stage'] = self.x_pos
 				self.RecData['Y_stage'] = self.y_pos
 				self.RecData['Theta_stage'] = self.theta_pos
 
+				print(self.x_pos, self.y_pos, self.theta_pos)
 
-				self.update_stage_position.emit(self.x_pos,self.y_pos,self.theta_pos)
+				self.update_stage_position.emit(self.x_pos, self.y_pos, self.theta_pos)
 
 				for key in REC_DATA:
 					if(key in INTERNAL_STATE_VARIABLES):
 						self.internal_state.data[key] = self.RecData[key]
 
 			elif(data[0] == ord('F')):
-				print('Flag recvd')
+				# print('Flag recvd')
 
 				if(data[1] == ord('S')):
 					# print('Automated stage tracking flag recvd: {}'.format(data[2]))

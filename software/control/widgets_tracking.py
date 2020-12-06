@@ -378,8 +378,8 @@ class NavigationWidget(QFrame):
         self.label_Thetapos.setFrameStyle(QFrame.Panel | QFrame.Sunken)
         self.entry_dTheta = QDoubleSpinBox()
         self.entry_dTheta.setMinimum(0) 
-        self.entry_dTheta.setMaximum(1000) 
-        self.entry_dTheta.setSingleStep(0.2)
+        self.entry_dTheta.setMaximum(2*np.pi) 
+        self.entry_dTheta.setSingleStep(0.01)
         self.entry_dTheta.setValue(0)
         self.btn_moveTheta_forward = QPushButton('Forward')
         self.btn_moveTheta_forward.setDefault(False)
@@ -422,7 +422,6 @@ class NavigationWidget(QFrame):
         
     def move_x_forward(self):
         self.navigationController.move_x(self.entry_dX.value())
-        print('move x')
     def move_x_backward(self):
         self.navigationController.move_x(-self.entry_dX.value())
     def move_y_forward(self):
@@ -430,15 +429,14 @@ class NavigationWidget(QFrame):
     def move_y_backward(self):
         self.navigationController.move_y(-self.entry_dY.value())
     def move_theta_forward(self):
-        self.navigationController.move_theta(self.entry_dTheta.value()/1000)
+        self.navigationController.move_theta(self.entry_dTheta.value())
     def move_theta_backward(self):
-        self.navigationController.move_theta(-self.entry_dTheta.value()/1000)
+        self.navigationController.move_theta(-self.entry_dTheta.value())
     
     def update_display(self, X_stage, Y_stage, Theta_stage):
-
-    	self.label_Xpos.setNum(round(X_stage,2))
-    	self.label_Ypos.setNum(round(Y_stage,2))
-    	self.label_Thetapos.setNum(round(Theta_stage,2))
+    	self.label_Xpos.setText('{:.02f}'.format(round(X_stage,2)))
+    	self.label_Ypos.setText('{:.02f}'.format(round(Y_stage,2)))
+    	self.label_Thetapos.setText('{:.02f}'.format(round(Theta_stage,2)))
 
 
 class PID_Group_Widget(QFrame):

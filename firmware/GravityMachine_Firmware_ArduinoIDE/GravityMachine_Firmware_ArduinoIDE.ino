@@ -10,12 +10,10 @@
 #include <DueTimer.h>
 #include <Wire.h>
 
-// If we want to run in open-loop mode, uncomment this line or set it with a build flag:
-#define RUN_OPEN_LOOP
-// For testing (pinging ucontroller and listening to answer)
-//#define TESTING;
-#define DISABLE_LIMIT_SWITCHES
-//#define USE_SERIAL_MONITOR
+#define RUN_OPEN_LOOP // If we want to run in open-loop (no encoders) mode, uncomment this line or set it with a build flag:
+#define TESTING;  // For testing without all hardware connected (dev of firmware + software when only uController is available)
+#define DISABLE_LIMIT_SWITCHES // use when no limit switches are available/ connected:
+//#define USE_SERIAL_MONITOR // Send data to Serial monitor instead of USB port (for debugging). 
 //=================================================================================
 // Mathematical constants
 //=================================================================================
@@ -204,7 +202,7 @@ bool ms1_X,ms2_X,ms3_X,ms1_Y,ms2_Y,ms3_Y,ms1_Z,ms2_Z,ms3_Z, ms1_Theta, ms2_Theta
 int microSteps_X = 1, microSteps_Y = 1, microSteps_Z = 1, microSteps_Theta = 1;            // no:of fractional steps per full step
 int microSteps_Old_X=1, microSteps_Old_Y = 1, microSteps_Old_Z = 1;
 // Max no:of microsteps supported by the stepper driver. This is used to get sub-step resolution motions.
-float MAX_MICROSTEPS = 64;  
+float MAX_MICROSTEPS = 16;  
 //--------------------------------------------------
 // Variables to store lower and upper limits of the stage:
 //--------------------------------------------------
@@ -1282,17 +1280,17 @@ void HandleOptotuneSYNCInterrupt() {
       x_EncoderTicks = CurrPos_X;
       y_EncoderTicks = CurrPos_Y;
       theta_EncoderTicks = CurrPos_Theta;
-    #else 
-      #ifdef TESTING
-        x_EncoderTicks = Step_X/MAX_MICROSTEPS;
-        y_EncoderTicks = Step_Y/MAX_MICROSTEPS;
-        theta_EncoderTicks = Step_Theta/MAX_MICROSTEPS;
-      #endif
     #endif
+
+//    #ifdef RUN_OPEN_LOOP
+//      x_EncoderTicks = Step_X;
+//      y_EncoderTicks = Step_Y;
+//      theta_EncoderTicks = Step_Theta;
+//    #endif
     
     CurrPos_X_code = x_EncoderTicks;  //right sens of the motor
     
-    long X_pos_NBytesUnsigned = signed2NBytesUnsigned(CurrPos_X_code,N_BYTES_POS);
+    long X_pos_NBytesUnsigned = signed2NBytesUnsigned(CurrPos_X_code, N_BYTES_POS);
     
     buffer_tx[3] = byte(X_pos_NBytesUnsigned>>16);
     buffer_tx[4] = byte((X_pos_NBytesUnsigned>>8)%256);
@@ -1300,14 +1298,14 @@ void HandleOptotuneSYNCInterrupt() {
     
     CurrPos_Y_code = y_EncoderTicks;
 
-    long Y_pos_NBytesUnsigned = signed2NBytesUnsigned(CurrPos_Y_code,N_BYTES_POS);
+    long Y_pos_NBytesUnsigned = signed2NBytesUnsigned(CurrPos_Y_code, N_BYTES_POS);
 
     buffer_tx[6] = byte(Y_pos_NBytesUnsigned>>16);
     buffer_tx[7] = byte((Y_pos_NBytesUnsigned>>8)%256);
     buffer_tx[8] = byte(Y_pos_NBytesUnsigned%256);
 
     CurrPos_Theta_code = theta_EncoderTicks;
-    long Theta_pos_NBytesUnsigned = signed2NBytesUnsigned(CurrPos_Theta_code,N_BYTES_POS);
+    long Theta_pos_NBytesUnsigned = signed2NBytesUnsigned(CurrPos_Theta_code, N_BYTES_POS);
 
     buffer_tx[9] = byte(Theta_pos_NBytesUnsigned>>16);
     buffer_tx[10] = byte((Theta_pos_NBytesUnsigned>>8)%256);
@@ -1330,7 +1328,7 @@ void HandleOptotuneSYNCInterrupt() {
 
      for(int count=3;count<MSG_LENGTH;count++)
      {
-        buffer_tx[count] = byte(0);
+        buffer_tx[count] = byte(10);
      }
 
      digitalWrite(sendSerial_indicator_pin,HIGH);
@@ -1570,16 +1568,10 @@ void setup()
 void loop()
 {
   
-  #ifdef RUN_OPEN_LOOP
-    StageManualMode = LOW;
-    StageLocked = false;
-
-  #endif
-  
   #ifdef TESTING
     StageManualMode = LOW;
     StageLocked = false;
-    
+    flag_read_joystick = false;
    #endif
     
 
@@ -1653,20 +1645,17 @@ void loop()
     stepperSpeedZ = microstep_to_manualSpeed(microSteps_Z, maxManualSpeedX);
     stepperSpeedTheta = microstep_to_manualSpeed(microSteps_Theta, maxManualSpeedTheta);
     sensitivityChange=HIGH;
-
   }
     
   //-------------------------------------------------------------------------------
   // set the speed in accordance to the microstepping if it has changed
   //-------------------------------------------------------------------------------
-
   if (sensitivityChange){
     stepperX.setMaxSpeed(stepperSpeedX);
     stepperY.setMaxSpeed(stepperSpeedY);
     stepperZ.setMaxSpeed(stepperSpeedZ);
     stepperTHETA.setMaxSpeed(stepperSpeedTheta);
   }
-
   //-------------------------------------------------------------------------------
   // Manual Input Block
   //-------------------------------------------------------------------------------
@@ -1697,10 +1686,10 @@ void loop()
   
   // CurrPos_Z_Stepper = stepperZ.currentPosition();
 
-  CurrPos_X += (CurrPos_X_Stepper - PrevPos_X_Stepper)*16/microSteps_X;
-  CurrPos_Y += (CurrPos_Y_Stepper - PrevPos_Y_Stepper)*16/microSteps_Y;
-  CurrPos_Theta += (CurrPos_Theta_Stepper - PrevPos_Theta_Stepper)*16/microSteps_Theta;
-  // CurrPos_Z += (CurrPos_Z_Stepper - PrevPos_Z_Stepper)*16/microSteps_Z;
+  CurrPos_X += (CurrPos_X_Stepper - PrevPos_X_Stepper)*MAX_MICROSTEPS/microSteps_X;
+  CurrPos_Y += (CurrPos_Y_Stepper - PrevPos_Y_Stepper)*MAX_MICROSTEPS/microSteps_Y;
+  CurrPos_Theta += (CurrPos_Theta_Stepper - PrevPos_Theta_Stepper)*MAX_MICROSTEPS/microSteps_Theta;
+  // CurrPos_Z += (CurrPos_Z_Stepper - PrevPos_Z_Stepper)*MAX_MICROSTEPS/microSteps_Z;
   
   PrevPos_X_Stepper = CurrPos_X_Stepper;
   PrevPos_Y_Stepper = CurrPos_Y_Stepper;
@@ -1710,15 +1699,6 @@ void loop()
   //-------------------------------------------------------------------------------
   // Serial sending block (Send data to computer)
   //-------------------------------------------------------------------------------
-  /* Data sent to computer
-   *  1. Phase code
-   *  2. X position of stage (open-loop stepper position or closed-loop encoder position)
-   *  3. Y position of stage (open-loop stepper position or closed-loop encoder position)
-   *  4. Theta position of stage (open-loop stepper position or closed-loop encoder position)
-   *  5. Stage Auto/Manual mode
-   *  6. Start tracking (triggered by hardware button)
-   *  7. Homing completed flag 
-   */  
   if (flag_send_pos_update)
   {
     #ifdef USE_SERIAL_MONITOR
@@ -1746,45 +1726,26 @@ void loop()
     buffer_rx_ptr = buffer_rx_ptr + 1;
     if (buffer_rx_ptr == CMD_LENGTH) 
     {
-      buffer_rx_ptr = 0;
-   
-//   if(SerialUSB.available())
-//   {
-//      buffer_rx_ptr=0;
-//      int cyclesElapsed = 0;
-//      while(buffer_rx_ptr < CMD_LENGTH ){ 
-//        buffer_rx[buffer_rx_ptr] = SerialUSB.read();
-//        buffer_rx_ptr++;
-//        // timeout:
-//        if(cyclesElapsed++>=10000)
-//          break;
-//      }
-//      //Data analysis: if the right message is read, lets compute the data and update arduino position
-//      isReceived = false;
-//      
-//      if (buffer_rx_ptr == CMD_LENGTH) 
-//      {
+        buffer_rx_ptr = 0;
+ 
         isReceived=true;
 
         //Motion commands
         Step_X =0;
-        Step_Y=0;
+        Step_Y = 0;
         Step_Theta = 0;
         
         if(buffer_rx[0]==0)
         {
           Step_X = long(buffer_rx[1]*2-1)*(long(buffer_rx[2])*256 + long(buffer_rx[3])); // relative position to move in full-steps
-
         }
         else if(buffer_rx[0]==1)
         {
           Step_Y = long(buffer_rx[1]*2-1)*(long(buffer_rx[2])*256 + long(buffer_rx[3])); // relative position to move in full-steps
-
         }
         else if(buffer_rx[0]==3)
         {
           Step_Theta = long(buffer_rx[1]*2-1)*(long(buffer_rx[2])*256 + long(buffer_rx[3])); // relative position to move in full-steps
-
         }
         // Object tracking flag
         else if(buffer_rx[0]==4)
@@ -1873,8 +1834,7 @@ void loop()
             stepperX.move((long) round((microSteps_X/MAX_MICROSTEPS) * Step_X *((Step_X>0)*_xLimPos + (Step_X<0) *_xLimNeg)));
             stepperY.move((long) round((microSteps_Y/MAX_MICROSTEPS) * Step_Y * ((Step_Y>0)*_yLimPos + (Step_Y<0) *_yLimNeg)));
           #endif  
-        }
-        
+        } 
       }
     }
 

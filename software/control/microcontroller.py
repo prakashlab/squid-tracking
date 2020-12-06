@@ -49,14 +49,14 @@ class Microcontroller():
 
     def move_x(self,delta):
         direction = int((np.sign(delta)+1)/2)
-        n_microsteps = abs(delta*Motion.STEPS_PER_MM_XY)
+        n_microsteps = abs(delta*Motion.STEPS_PER_MM_X*Motion.MAX_MICROSTEPS)
         if n_microsteps > 65535:
             n_microsteps = 65535
         cmd = bytearray(self.tx_buffer_length)
         cmd[0] = 0
         cmd[1] = direction
-        cmd[2] = int(n_microsteps) >> 8
-        cmd[3] = int(n_microsteps) & 0xff
+        cmd[2] = round(n_microsteps) >> 8
+        cmd[3] = round(n_microsteps) & 0xff
         self.serial.write(cmd)
         time.sleep(WaitTime.BASE + WaitTime.X*abs(delta))
         print('Moving  x stage')
@@ -64,14 +64,14 @@ class Microcontroller():
 
     def move_y(self,delta):
         direction = int((np.sign(delta)+1)/2)
-        n_microsteps = abs(delta*Motion.STEPS_PER_MM_XY)
+        n_microsteps = abs(delta*Motion.STEPS_PER_MM_Y*Motion.MAX_MICROSTEPS)
         if n_microsteps > 65535:
             n_microsteps = 65535
         cmd = bytearray(self.tx_buffer_length)
         cmd[0] = 1
         cmd[1] = direction
-        cmd[2] = int(n_microsteps) >> 8
-        cmd[3] = int(n_microsteps) & 0xff
+        cmd[2] = round(n_microsteps) >> 8
+        cmd[3] = round(n_microsteps) & 0xff
         self.serial.write(cmd)
         time.sleep(WaitTime.BASE + WaitTime.Y*abs(delta))
         print('Moving  y stage')
@@ -79,35 +79,35 @@ class Microcontroller():
 
     def move_z(self,delta):
         direction = int((np.sign(delta)+1)/2)
-        n_microsteps = abs(delta*Motion.STEPS_PER_MM_Z)
+        n_microsteps = abs(delta*Motion.STEPS_PER_MM_Z*Motion.MAX_MICROSTEPS)
         if n_microsteps > 65535:
             n_microsteps = 65535
         cmd = bytearray(self.tx_buffer_length)
         cmd[0] = 2
         cmd[1] = 1-direction
-        cmd[2] = int(n_microsteps) >> 8
-        cmd[3] = int(n_microsteps) & 0xff
+        cmd[2] = round(n_microsteps) >> 8
+        cmd[3] = round(n_microsteps) & 0xff
         self.serial.write(cmd)
         time.sleep(WaitTime.BASE + WaitTime.Z*abs(delta))
         print('Z command sent to uController: {} {}'.format(np.sign(delta),n_microsteps))
 
     def move_theta(self,delta):
         direction = int((np.sign(delta)+1)/2)
-        n_microsteps = abs(delta*Motion.STEPS_PER_REV_THETA_SHAFT/(2*np.pi))
+        n_microsteps = abs(delta*Motion.MAX_MICROSTEPS*Motion.STEPS_PER_REV_THETA_SHAFT/(2*np.pi))
         if n_microsteps > 65535:
             n_microsteps = 65535
         cmd = bytearray(self.tx_buffer_length)
         cmd[0] = 3
         cmd[1] = 1-direction
-        cmd[2] = int(n_microsteps) >> 8
-        cmd[3] = int(n_microsteps) & 0xff
+        cmd[2] = round(n_microsteps) >> 8
+        cmd[3] = round(n_microsteps) & 0xff
         self.serial.write(cmd)
         time.sleep(WaitTime.BASE + WaitTime.Z*abs(delta))
         print('Theta command sent to uController: {} {}'.format(np.sign(delta),n_microsteps))
 
     def move_x_nonblocking(self,delta):
         direction = int((np.sign(delta)+1)/2)
-        n_microsteps = abs(delta)
+        n_microsteps = abs(delta*Motion.MAX_MICROSTEPS*Motion.STEPS_PER_MM_X)
         if n_microsteps > 65535:
             n_microsteps = 65535
         cmd = bytearray(self.tx_buffer_length)
@@ -120,7 +120,7 @@ class Microcontroller():
 
     def move_y_nonblocking(self,delta):
         direction = int((np.sign(delta)+1)/2)
-        n_microsteps = abs(delta)
+        n_microsteps = abs(delta*Motion.MAX_MICROSTEPS*Motion.STEPS_PER_MM_Y)
         if n_microsteps > 65535:
             n_microsteps = 65535
         cmd = bytearray(self.tx_buffer_length)
@@ -145,7 +145,7 @@ class Microcontroller():
 
     def move_theta_nonblocking(self,delta):
         direction = int((np.sign(delta)+1)/2)
-        n_microsteps = abs(delta*Motion.STEPS_PER_REV_THETA_SHAFT/(2*np.pi))
+        n_microsteps = abs(delta*Motion.MAX_MICROSTEPS*Motion.STEPS_PER_REV_THETA_SHAFT/(2*np.pi))
         if n_microsteps > 65535:
             n_microsteps = 65535
         cmd = bytearray(self.tx_buffer_length)

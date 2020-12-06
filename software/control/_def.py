@@ -51,21 +51,25 @@ class Motion:
     # Gravity Machine
     STEPS_PER_REV_X = 200
     MM_PER_REV_X = 1
+    STEPS_PER_MM_X = round(STEPS_PER_REV_X/MM_PER_REV_X)
+
 
 
     STEPS_PER_REV_Y = 200
     MM_PER_REV_Y = 1
+    STEPS_PER_MM_Y = round(STEPS_PER_REV_Y/MM_PER_REV_Y)
 
     STEPS_PER_REV_Z = 200
     MM_PER_REV_Z = 1
+    STEPS_PER_MM_Z = round(STEPS_PER_REV_Z/MM_PER_REV_Z)
 
     STEPS_PER_REV_THETA_MOTOR = 200
 
     GEAR_RATIO_THETA = 99+1044/float(2057) 
     
-    STEPS_PER_REV_THETA_SHAFT = GEAR_RATIO_THETA*STEPS_PER_REV_THETA_MOTOR
+    STEPS_PER_REV_THETA_SHAFT = round(GEAR_RATIO_THETA*STEPS_PER_REV_THETA_MOTOR)
 
-    MAX_MICROSTEPS = 64
+    MAX_MICROSTEPS = 16
 
     def __init__(self):
         pass
@@ -124,7 +128,7 @@ class MicrocontrollerDef:
     MSG_LENGTH = 12
     CMD_LENGTH = 4
     N_BYTES_POS = 3
-    RUN_OPENLOOP = False # Determines whether stepper/enoders are used to calculate stage positions.
+    RUN_OPENLOOP = False # Determines whether stepper/encoders are used to calculate stage positions.
 
     def __init__(self):
         pass
