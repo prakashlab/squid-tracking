@@ -2,6 +2,7 @@ import argparse
 import cv2
 import time
 import numpy as np
+import os
 try:
     import control.gxipy as gx
 except:
@@ -139,12 +140,14 @@ class Camera(object):
     def set_software_triggered_acquisition(self):
         self.camera.TriggerMode.set(gx.GxSwitchEntry.ON)
         self.camera.TriggerSource.set(gx.GxTriggerSourceEntry.SOFTWARE)
+        print('Set software triggered aquisition')
 
     def set_hardware_triggered_acquisition(self):
         self.camera.TriggerMode.set(gx.GxSwitchEntry.ON)
         self.camera.TriggerSource.set(gx.GxTriggerSourceEntry.LINE0)
 
     def send_trigger(self):
+        # print("sending trigger to camera")
         self.camera.TriggerSoftware.send_command()
 
     def read_frame(self):
@@ -158,6 +161,7 @@ class Camera(object):
         return numpy_image
 
     def _on_frame_callback(self, user_param, raw_image):
+        # print("In camera call back")
         if raw_image is None:
             print("Getting image failed.")
             return
@@ -178,41 +182,38 @@ class Camera(object):
         self.frame_ID = self.frame_ID + 1 # @@@ read frame ID from the camera
         self.timestamp = time.time()
         self.new_image_callback_external(self)
-
-        # self.frameID = self.frameID + 1
-        # print(self.frameID)
+       
+        # print(self.frame_ID)
 
 
 class Camera_Simulation(object):
-    
-    def __init__(self,sn=None):
-        # many to be purged
-        self.sn = sn
-        self.device_info_list = None
-        self.device_index = 0
-        self.camera = None
-        self.is_color = None
-        self.gamma_lut = None
-        self.contrast_lut = None
-        self.color_correction_param = None
 
-        self.exposure_time = 0
-        self.analog_gain = 0
-        self.frame_ID = -1
-        self.timestamp = 0
-
+    def __init__(self,sn=None,width=2000,height=2000,framerate=30,color=False):
+        self.height = height
+        self.width = width
+        self.sample = None
+        self.samplelocked = False
+        self.newsample = False
+        self.gotimage = False
+        self.img_mat = None
+        self.new_image_callback_external = None
         self.image_locked = False
-        self.current_frame = None
+        self.is_streaming = False
+        self.is_color = color
 
-        self.callback_is_enabled = False
-        self.callback_was_enabled_before_autofocus = False
-        self.callback_was_enabled_before_multipoint = False
-
-        self.GAIN_MAX = 24
+        self.GAIN_MAX = 480
         self.GAIN_MIN = 0
         self.GAIN_STEP = 1
-        self.EXPOSURE_TIME_MS_MIN = 0.01
+        self.EXPOSURE_TIME_MS_MIN = 0.02
         self.EXPOSURE_TIME_MS_MAX = 4000
+
+        # Path for getting an image stream from disk
+        self.path = '/Users/deepak/Dropbox/GravityMachine/ExperimentResults/TestData/seacucmber4_auto_verylong_goodtrack/images'
+        
+        # self.path = '/Users/deepak/Dropbox/GravityMachine/ExperimentResults/TestData/Stentor'
+        if(os.path.exists(self.path)):
+            self.FileList = os.listdir(self.path)
+    
 
     def open(self,index=0):
         pass
@@ -221,10 +222,10 @@ class Camera_Simulation(object):
         self.new_image_callback_external = function
 
     def enable_callback(self):
-        self.callback_is_enabled = True
+        pass
 
     def disable_callback(self):
-        self.callback_is_enabled = False
+        pass
 
     def open_by_sn(self,sn):
         pass
@@ -233,10 +234,10 @@ class Camera_Simulation(object):
         pass
 
     def set_exposure_time(self,exposure_time):
-        pass
+        print('Set exposure time to: {}'.format(exposure_time))
 
     def set_analog_gain(self,analog_gain):
-        pass
+        print('Set analog gain to: {}'.format(analog_gain))
 
     def get_awb_ratios(self):
         pass
@@ -260,20 +261,55 @@ class Camera_Simulation(object):
         pass
 
     def send_trigger(self):
+
+
         self.frame_ID = self.frame_ID + 1
         self.timestamp = time.time()
         if self.frame_ID == 1:
-            self.current_frame = np.random.randint(255,size=(2000,2000),dtype=np.uint8)
-            self.current_frame[901:1100,901:1100] = 200
+            if(self.is_color == False):
+                self.current_frame = np.random.randint(50,size=(2000,2000),dtype=np.uint8)
+                self.current_frame[800:1000,900:1100] = 200
+                # self.current_frame[250:400,400:600] = 200
+                cv2.circle(self.current_frame,(400,400), 100, (200,0,0), -1)
+
+            elif(self.is_color == True):
+                self.current_frame = np.random.randint(50,size=(2000,2000,3),dtype=np.uint8)
+                self.current_frame[800:1000,900:1100,1] = 200
+                self.current_frame[250:400,400:600,1] = 200
         else:
-            self.current_frame = np.roll(self.current_frame,10,axis=0)
-            pass 
+            self.current_frame = np.roll(self.current_frame,10,axis=1)
+            # pass 
             # self.current_frame = np.random.randint(255,size=(768,1024),dtype=np.uint8)
         if self.new_image_callback_external is not None:
             self.new_image_callback_external(self)
 
-    def read_frame(self):
-        return self.current_frame
+    # def send_trigger(self):
 
-    def _on_frame_callback(self, user_param, raw_image):
+    #     self.frame_ID = self.frame_ID + 1
+    #     self.timestamp = time.time()
+
+    #     if(self.frame_ID == len(self.FileList)):
+    #         self.frame_ID = 0
+
+    #     file = self.FileList[self.frame_ID]
+
+    #     image = cv2.imread(os.path.join(self.path, file),0)
+    #     self.current_frame = image
+
+    #     if self.new_image_callback_external is not None:
+    #         self.new_image_callback_external(self)
+
+    def read_frame(self):
+        pass
+
+    def _on_new_buffer(self, appsink):
+        pass
+
+    def _get_property(self, PropertyName):
+        pass
+
+    def _set_property(self, PropertyName, value):
+        pass
+
+    def _gstbuffer_to_opencv(self):
         pass

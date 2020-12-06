@@ -20,24 +20,30 @@ class Units_Converter:
         #  X Stepper (Linear Stage)
         # --------------------------------------------------
 
-        self.StepsPerRev_X = Motors.STEPS_PER_REV_X
-        self.mmPerRev_X = Motors.MM_PER_REV_X            # Pitch of the lead screw in mm
+        self.StepsPerRev_X = Motion.STEPS_PER_REV_X
+        self.mmPerRev_X = Motion.MM_PER_REV_X            # Pitch of the lead screw in mm
 
         # --------------------------------------------------
         #  Y Stepper (Linear Stage)
         # --------------------------------------------------
-
-        self.StepsPerRev_Y = Motors.STEPS_PER_REV_Y
-        self.mmPerRev_Y = Motors.STEPS_PER_REV_Y 
+        self.StepsPerRev_Y = Motion.STEPS_PER_REV_Y
+        self.mmPerRev_Y = Motion.STEPS_PER_REV_Y 
         # StepsPerRev_Y = 20
         # mmPerStep_Y = 0.001524;     # Pitch of the lead screw in mm
+
+        # --------------------------------------------------
+        #  Z Stepper (Linear Stage)
+        # --------------------------------------------------
+
+        self.StepsPerRev_Z = Motion.STEPS_PER_REV_Z
+
 
         # --------------------------------------------------
         # Z stepper (Rotation stage) (vertical motion compensation)
         # --------------------------------------------------
         # Rcenter = 87.5 										# Radius to the center line of the fluidic chamber in mm (Wheel 16, 17): Ri=80 mm, Ro=95 mm
         self.Rcenter = Chamber.R_CENTER                                  # radius to the center-line of the fluidic chamber in mm (Wheel 18). Ri=80 mm R0= 110 mm
-        self.StepsPerRev_Theta = Motors.STEPS_PER_REV_THETA_SHAFT            # No:of steps of the main motor shaft for 1 Rev of the output shaft
+        self.StepsPerRev_Theta = Motion.STEPS_PER_REV_THETA_SHAFT            # No:of steps of the main motor shaft for 1 Rev of the output shaft
 
         # --------------------------------------------------
         # X encoder (linear)
@@ -51,16 +57,6 @@ class Units_Converter:
         # Theta encoder
         # --------------------------------------------------
         self.CountsPerRev_Theta = Encoders.COUNTS_PER_REV_THETA
-        # --------------------------------------------------
-        # Distance in mm between the center of the Wheel and the origin of Arduino's Xpos
-        # --------------------------------------------------
-        self.DeltaX_Arduino_mm = 99.325 # Measured value for GM v2.0 setup (Berg)
-
-        # --------------------------------------------------
-        # Distance in mm between the front wall(adajancent to the fluid, nearest to camera)  and the origin of Arduino's Ypos
-        # --------------------------------------------------
-        self.DeltaY_Arduino_mm = 0 # 10x Y offset so that the chamber wall (adjacent to the fluid) closest to the 
-        # self.DeltaY_Arduino_mm = -2.18 # 4x objective
     # --------------------------------------------------
     # Functions
     # --------------------------------------------------
@@ -82,69 +78,13 @@ class Units_Converter:
     #---------------------------------------------------
     # Transforming mm to stepper motor steps.
     #---------------------------------------------------
-    def X_mm_to_step(self, Xmm):
-        Xstep = (Xmm/self.mmPerRev_X)*self.StepsPerRev_X
-        return Xstep
-
-    def Y_mm_to_step(self, Ymm):
-        Ystep = (Ymm/self.mmPerRev_Y)*self.StepsPerRev_Y
-        return Ystep
-
     def mmPerRev_Z(self, Xpos_mm):                            #Xpos_mm position in the centerlign of the fluid channel's referenciel
-        return 2*np.pi*(self.Rcenter)#+Xpos_mm)
-
+        return 2*np.pi*(self.Rcenter+Xpos_mm)
 
     def Z_mm_to_step(self, Zmm, Xpos_mm):
         Zstep = (Zmm/self.mmPerRev_Z(Xpos_mm))*self.StepsPerRev_Theta
         return Zstep
-
     #---------------------------------------------------
-    # Transforming encoder counts to mm
-    #---------------------------------------------------
-    def X_count_to_mm(self, X_count):
-        Xmm = X_count/self.CountPermm_X
-        return Xmm
-
-    def Y_count_to_mm(self, Y_count):
-        Ymm = Y_count/self.CountPermm_Y
-        return Ymm
-
-    def Theta_count_to_rad(self, Theta_count):
-        
-        return 2*np.pi*(Theta_count/self.CountsPerRev_Theta)
-
-    #---------------------------------------------------
-    # Transforming stepper motor steps to mm
-    #---------------------------------------------------
-     
-    def X_step_to_mm(self, Xstep):                #Arduino card send the data for X and Y in Microstep
-        Xmm = Xstep*self.mmPerRev_X/(self.StepsPerRev_X)
-        return Xmm
-
-    def Y_step_to_mm(self, Ystep):
-        Ymm=Ystep*self.mmPerRev_Y/(self.StepsPerRev_Y)
-        return Ymm
-
-    def Theta_step_to_mm(self, Zstep, Xpos_mm):
-        Zmm = Zstep*self.mmPerRev_Z(Xpos_mm)/self.StepsPerRev_Theta
-        return Zmm
-    #---------------------------------------------------
-    #Give the absolute position of the image in the referentiel of the centerline of the flow channel
-    def X_arduino_to_mm(self, Xarduino):
-        Xmm = self.X_count_to_mm(Xarduino)
-        Xpos_mm = Xmm + self.DeltaX_Arduino_mm - self.Rcenter
-        return Xpos_mm
-
-    def Y_arduino_to_mm(self, Yarduino):
-        Ymm = self.Y_count_to_mm(Yarduino)
-        Ypos_mm = Ymm + self.DeltaY_Arduino_mm
-        
-        return Ypos_mm
-
-    def theta_arduino_to_rad(self, Zarduino):
-        theta = Zarduino/self.CountsPerRev_Theta*2*np.pi       # 2018-09-01 Major correcton. We are using encoder counts for the Z position so this should be EncoderCounts and not Stepper Motor pulses
-        return theta
-
-    def rad_to_mm(self, ThetaWheel,Xobjet):
-        return ThetaWheel*(self.Rcenter + Xobjet)          # 2018_09_01: by Deepak. Note major Error previously the radian value was divided by 2*pi which makes the calculation of distance incorrect. 
+    def rad_to_mm(self, ThetaWheel, Xobj):
+        return ThetaWheel*(self.Rcenter + Xobj)          # 2018_09_01: by Deepak. Note major Error previously the radian value was divided by 2*pi which makes the calculation of distance incorrect. 
         #ThetaWheel is already in radians so there should be no dividing 2*pi factor. Have checked by manually rotating the wheel that this now corresponds to the actual physical distance. To completely confirm will run calibration experiments again.

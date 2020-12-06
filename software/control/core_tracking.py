@@ -17,6 +17,7 @@ import control.utils.image_processing as image_processing
 
 import control.utils.PID as PID
 from control.utils.units_converter import Units_Converter
+import control.utils.byte_operations as byte_operations
 
 import control.utils.CSV_Tool as CSV_Tool
 
@@ -46,6 +47,8 @@ class TrackingController(QObject):
 
 	save_data_signal = Signal()
 
+	get_roi_bbox = Signal()
+
 	''' 
 	Connection map
 
@@ -57,7 +60,7 @@ class TrackingController(QObject):
 	start_tracking_signal -> Tracking Widget
 
 	'''
-	def __init__(self, microcontroller, internal_state , image_axis = ['X', 'Z'], focus_axis = ['Y'], focus_tracker = 'liq-lens'):
+	def __init__(self, microcontroller, internal_state , focus_tracker = 'liq-lens'):
 		QObject.__init__(self)
 		self.microcontroller = microcontroller
 		self.internal_state = internal_state
@@ -67,11 +70,10 @@ class TrackingController(QObject):
 
 		# Set the reference image width based on the camera sensor size used for calibration
 		# This allows physical distances be calculated even if the image res is down-sampled.
+		# @@@ This needs to be removed. We should be able to calculate this when the image size changes without
+		# knowing the calib image width
 		self.units_converter.set_calib_imWidth(CALIB_IMG_WIDTH)
 		
-		self.image_axis = image_axis
-		self.focus_axis = focus_axis
-
 		self.image = None
 
 		# Focus Tracker type
@@ -131,28 +133,23 @@ class TrackingController(QObject):
 		self.begining_Time = time.time()           #Time begin the first time we click on the start_tracking button
 		self.Time = deque(maxlen=self.dequeLen)
 
-		# Stage position
-		self.X_stage = deque(maxlen=self.dequeLen)
-		self.Y_stage = deque(maxlen=self.dequeLen)
-		self.Theta_stage = deque(maxlen=self.dequeLen)
 
 		self.X_image = deque(maxlen=self.dequeLen)
 		self.Z_image = deque(maxlen=self.dequeLen)
 
-		# Object position relative to the stage. 
-		# This is what is recorded as the measured object position
+		self.X_stage = deque(maxlen=self.dequeLen)
+		self.Y_stage = deque(maxlen=self.dequeLen)
+		self.Theta_stage = deque(maxlen=self.dequeLen)
+
 		self.X_objStage = deque(maxlen=self.dequeLen)
 		self.Y_objStage = deque(maxlen=self.dequeLen)
 		self.Z_objStage = deque(maxlen=self.dequeLen)
 
 		# Subset of INTERNAL_STATE_MODEL that is updated by Tracking_Controller (self)
-		self.internal_state_vars = ['Time','X_objStage', 'Y_objStage', 'Z_objStage','X_image', 'Z_image']
+		self.internal_state_vars = ['Time','X_image', 'Z_image', 'X_objStage', 'Y_objStage', 'Z_objStage']
 
 		
 		self.tracker_focus.cropped_imSize = int(self.image_width/CROPPED_IMG_RATIO)
-
-
-
 
 
 	# Triggered by signal from StreamHandler
@@ -163,30 +160,23 @@ class TrackingController(QObject):
 		# @@@testing
 		# print('In Tracking controller new frame')
 
-		# Get the required values from internal state
-
-		FocusPhase = self.internal_state.data['FocusPhase']
-
-		# Stage positions in mm
-		X_stage, Y_stage, Theta_stage = self.internal_state.data['X_stage'], self.internal_state.data['Y_stage'], self.internal_state.data['Theta_stage']
-
 		tracking_triggered = self.internal_state.data['track_obj_image_hrdware']
 
 		self.stage_auto = self.internal_state.data['track_obj_stage']
 
 		# If image tracking is triggered using hardware button
 		# Need to distinguish between Hardware button and Software button-based triggers
-		if tracking_triggered and tracking_triggered != self.tracking_triggered_prev:
-			''' @@@@@ Then emit the start_tracking signal to change the track button 
-			state of the Tracking Widget.
-			 EMIT (tracking_triggered)
-			'''
-			# This Toggles the state of the Track Button.
-			self.start_tracking_signal.emit()
-			self.internal_state.data['track_obj_image_hrdware'] = False
+		# if tracking_triggered and tracking_triggered != self.tracking_triggered_prev:
+		# 	''' @@@@@ Then emit the start_tracking signal to change the track button 
+		# 	state of the Tracking Widget.
+		# 	 EMIT (tracking_triggered)
+		# 	'''
+		# 	# This Toggles the state of the Track Button.
+		# 	self.start_tracking_signal.emit()
+		# 	self.internal_state.data['track_obj_image_hrdware'] = False
 
 			
-		self.tracking_triggered_prev = tracking_triggered
+		# self.tracking_triggered_prev = tracking_triggered
 
 		''' 
 			Note that this needs to be a local copy since on the internal_state 
@@ -232,7 +222,6 @@ class TrackingController(QObject):
 
 				
 			self.objectFound, self.centroid, self.rect_pts = self.tracker_image.track(image, thresh_image, start_flag = self.start_flag)
-			
 			self.tracking_frame_counter += 1
 	
 			#-----------------------------------------------------
@@ -249,15 +238,6 @@ class TrackingController(QObject):
 			# cv2.imshow('Image with centroid', image)
 			# cv2.waitKey(1)
 			#-----------------------------------------------------
-
-
-			# Deepak: Good to avoid core image processing here. 
-			# This belongs in streamHandler, or a separate object.
-			# crop the image, resize the image 
-			# [to fill]
-
-		
-
 			# Things to do if an object is detected.
 			if(self.objectFound):
 
@@ -266,21 +246,18 @@ class TrackingController(QObject):
 					self.resetPID = True
 
 				self.stage_auto_prev = self.stage_auto
-
 				# Find the object's position relative to the tracking set point on the image
 				self.posError_image = self.centroid - self.image_setPoint
-
 				# Get the error and convert it to mm
 				# x_error, z_error are in mm
 				x_error, z_error = self.units_converter.px_to_mm(self.posError_image[0], self.image_width), self.units_converter.px_to_mm(self.posError_image[1], self.image_width), 
-
+				# print('Position error: {}, {} mm'.format(x_error, y_error))
 				# Flip the sign of Z-error since image coordinates and physical coordinates are reversed.
-				z_error = -z_error
+				# z_error = -z_error
 
 				# get the object location along the optical axis. 
 				# Is the object position necessary for this? Alternatively we can pass the centroid
 				# and handle this downstream
-
 				if(self.track_focus):
 				
 					# Update the focus phase
@@ -291,34 +268,26 @@ class TrackingController(QObject):
 				else:
 					y_error = 0
 
-				
-
 				# Emit the detected centroid position so other widgets can access it.
 				self.centroid_image.emit(self.centroid)
-				
 				self.Rect_pt1_pt2.emit(self.rect_pts)
 
-				self.update_stage_position(X_stage, Y_stage, Theta_stage)
-
+				X_stage, Y_stage, Theta_stage = self.internal_state.data['X_stage'], self.internal_state.data['Y_stage'], self.internal_state.data['Theta_stage']
+				
 				self.update_image_position()
-
-				self.update_obj_position()  
-
+				self.update_stage_position(X_stage, Y_stage, Theta_stage)
+				self.update_obj_position()
 				# get motion commands
 				# Error is in mm.
 				# print('Image error: {}, {}, {} mm'.format(x_error, y_error, z_error))
 				X_order, Y_order, Theta_order = self.get_motion_commands(x_error,y_error,z_error)
 
 				# New serial interface (send data directly to micro-controller object)
-				print('Command sent to micro-controller: {}, {}, {}'.format(X_order, Y_order, Theta_order))
-				self.microcontroller.send_motion_command_xytheta(X_order, Y_order, Theta_order)
 
-			# else: # with the new serial comm interface there is no need to send data to uController if new object is detected
-			# 	# X_order, Y_order, Z_order is in stepper motor steps
-			# 	X_order, Y_order, Theta_order = 0,0,0            
-			
-
-			# self.multiplex_send_signal.emit(X_order, Y_order, Theta_order)
+				self.microcontroller.move_x_nonblocking(X_order)
+				self.microcontroller.move_y_nonblocking(Y_order)
+				self.microcontroller.move_theta_nonblocking(Theta_order)  
+		
 
 			# Update the Internal State Model
 			self.update_internal_state()
@@ -341,30 +310,33 @@ class TrackingController(QObject):
 
 		self.tracking_triggered_prev = False
 
+		self.tracker_image.reset()
+
 		#Time
 		self.begining_Time = time.time()           #Time begin the first time we click on the start_tracking button
 		self.Time = deque(maxlen=self.dequeLen)
 
-		# Stage position
+		self.X_image = deque(maxlen=self.dequeLen)
+		self.Z_image = deque(maxlen=self.dequeLen)
+
 		self.X_stage = deque(maxlen=self.dequeLen)
 		self.Y_stage = deque(maxlen=self.dequeLen)
 		self.Theta_stage = deque(maxlen=self.dequeLen)
 
-		self.X_image = deque(maxlen=self.dequeLen)
-		self.Z_image = deque(maxlen=self.dequeLen)
+		for ii in range(self.dequeLen):
+			self.X_stage.append(0)
+			self.Y_stage.append(0)
+			self.Theta_stage.append(0)
 
-		# Object position relative to the stage. 
-		# This is what is recorded as the measured object position
 		self.X_objStage = deque(maxlen=self.dequeLen)
 		self.Y_objStage = deque(maxlen=self.dequeLen)
 		self.Z_objStage = deque(maxlen=self.dequeLen)
 
-		
 	def update_elapsed_time(self):
 
 		self.Time.append(time.time() - self.begining_Time)
 
-	def update_stage_position(self, X,Y,Theta):
+	def update_stage_position(self,X,Y,Theta):
 
 		self.X_stage.append(X)
 		self.Y_stage.append(Y)
@@ -386,15 +358,45 @@ class TrackingController(QObject):
 			self.Z_objStage.append(self.Z_objStage[-1]+(self.Z_image[-1]-self.Z_image[-2])- self.units_converter.rad_to_mm(self.Theta_stage[-1]-self.Theta_stage[-2],self.X_objStage[-1]))
 		else:
 			self.Z_objStage.append(0)
+	# def get_motion_commands_xyz(self, x_error, y_error, z_error):
+	# 	# Convert from mm to steps (these are rounded to the nearest integer).
+	# 	x_error_steps = int(Motion.STEPS_PER_MM_XY*x_error)
+	# 	y_error_steps = int(Motion.STEPS_PER_MM_XY*y_error)
+	# 	z_error_steps = int(Motion.STEPS_PER_MM_Z*z_error)
+
+	# 	if self.resetPID:
+	# 		self.pid_controller_x.initiate(x_error_steps,self.Time[-1]) #reset the PID
+	# 		self.pid_controller_y.initiate(y_error_steps,self.Time[-1]) #reset the PID
+	# 		self.pid_controller_z.initiate(z_error_steps,self.Time[-1]) #reset the PID
+			
+	# 		X_order = 0
+	# 		Y_order = 0
+	# 		Z_order = 0
+
+	# 	else:
+	# 		X_order = self.pid_controller_x.update(x_error_steps,self.Time[-1])
+	# 		X_order = round(X_order,2)
+
+	# 		Y_order = self.pid_controller_y.update(y_error_steps,self.Time[-1])
+	# 		Y_order = round(Y_order,2)
+
+	# 		Z_order = self.pid_controller_z.update(z_error_steps,self.Time[-1])
+	# 		Z_order = round(Z_order,2)
 
 
+	# 	return X_order, Y_order, Z_order
+
+
+	# For Gravity Machine (X, Y, Theta tracking)
 	def get_motion_commands(self, x_error, y_error, z_error):
 		# Take an error signal and pass it through a PID algorithm
 
 		# Convert from mm to steps (these are rounded to the nearest integer).
-		x_error_steps = int(Motors.MAX_MICROSTEPS*self.units_converter.X_mm_to_step(x_error))
-		y_error_steps = int(Motors.MAX_MICROSTEPS*self.units_converter.Y_mm_to_step(y_error))
-		theta_error_steps = int(Motors.MAX_MICROSTEPS*self.units_converter.Z_mm_to_step(z_error, self.X_objStage[-1]))
+		x_error_steps = int(Motion.STEPS_PER_MM_X*x_error)
+		y_error_steps = int(Motion.STEPS_PER_MM_Y*y_error)
+
+		print(self.X_stage[-1])
+		theta_error_steps = int(self.units_converter.Z_mm_to_step(z_error, self.X_stage[-1]))
 
 		if self.resetPID:
 			self.pid_controller_x.initiate(x_error_steps,self.Time[-1]) #reset the PID
@@ -459,6 +461,10 @@ class TrackingController(QObject):
 		#@@@Testing
 		# print('Updated image offset to :{}'.format(self.image_offset))
 
+	def update_roi_bbox(self):
+
+		self.get_roi_bbox.emit()
+
 	def set_searchArea(self):
 
 		self.tracker_image.searchArea = int(self.image_width/Tracking.SEARCH_AREA_RATIO)
@@ -509,6 +515,8 @@ class InternalState():
 
 			self.data[key] = INITIAL_VALUES[key]
 
+		print(self.data)
+
 		
 class microcontroller_Receiver(QObject):
 
@@ -517,7 +525,8 @@ class microcontroller_Receiver(QObject):
 	Connection Map:
 	StreamHandler (rec new image) -> getData_microcontroller
 	'''
-	update_display = Signal()
+	update_stage_position = Signal(float, float, float)
+	update_homing_state = Signal()
 
 	def __init__(self, microcontroller, internal_state):
 		QObject.__init__(self)
@@ -529,7 +538,7 @@ class microcontroller_Receiver(QObject):
 
 		# Define a timer to read the Arduino at regular intervals
 		self.timer_read_uController = QTimer()
-		self.timer_read_uController.setInterval(ucontroller.UCONTROLLER_READ_INTERVAL)
+		self.timer_read_uController.setInterval(MicrocontrollerDef.UCONTROLLER_READ_INTERVAL)
 		self.timer_read_uController.timeout.connect(self.getData_microcontroller)
 		self.timer_read_uController.start()
 
@@ -538,47 +547,69 @@ class microcontroller_Receiver(QObject):
 		self.time_now = 0
 		self.time_prev = 0
 
-		# self.read_Thread = Thread(target = self.getData_microcontroller)
-		# self.read_Thread.start()
+		self.x_pos = 0
+		self.y_pos = 0
+		self.theta_pos = 0
 
-	# This function is triggered by the "rec new image signal" from StreamHandler
 	def getData_microcontroller(self):
-		# for debugging
-		# while True:
 
-		# 	if self.stop_signal_received:
-		# 		return
-		# 	self.time_now = time.time()
-
-			# if(self.time_now - self.time_prev >= UCONTROLLER_READ_INTERVAL):
-				
-				# print(self.time_now)
-				# print("Receiving data from uController")
-
-		# print("Receiving data from uController")
 		data = self.microcontroller.read_received_packet_nowait()
 
 		if(data is not None):
+			# Parse the data
+			if(data[0] == ord('M')):
 
-			# print('Read packet ... parsing')
-			for key in REC_DATA:
-				self.RecData[key] = data[key]
-				# Update internal state
-				if(key in INTERNAL_STATE_VARIABLES):
-					self.internal_state.data[key] = data[key]
+				phase = byte_operations.data2byte_to_int(data[1], data[2])*2*np.pi/65535.
 
-			# Find the actual stage position based prev position and the change.
-			self.internal_state.data['X_stage'] = self.units_converter.X_count_to_mm(self.RecData['X_stage'])
-			self.internal_state.data['Y_stage'] = self.units_converter.Y_count_to_mm(self.RecData['Y_stage'])
-			self.internal_state.data['Theta_stage'] = self.units_converter.Theta_count_to_rad(self.RecData['Theta_stage'])
+				# X stage position (mm)
+				self.x_pos = byte_operations.unsigned_to_signed(data[3:6],MicrocontrollerDef.N_BYTES_POS)/(Motion.STEPS_PER_MM_X*Motion.MAX_MICROSTEPS) 
+				# Y stage position (mm)
+				self.y_pos = byte_operations.unsigned_to_signed(data[6:9],MicrocontrollerDef.N_BYTES_POS)/(Motion.STEPS_PER_MM_Y*Motion.MAX_MICROSTEPS)
+				# Theta stage position (encoder counts to radians)
+				self.theta_pos = 2*np.pi*byte_operations.unsigned_to_signed(data[9:12],MicrocontrollerDef.N_BYTES_POS)/(Motion.STEPS_PER_REV_THETA_SHAFT*Motion.MAX_MICROSTEPS) 
 
-			# Emit the stage position so it can be displayed (only need to display the position when it changes)
+				self.RecData['X_stage'] = self.x_pos
+				self.RecData['Y_stage'] = self.y_pos
+				self.RecData['Theta_stage'] = self.theta_pos
 
-			# print('Updating display')
-			self.update_display.emit()
+				print(self.x_pos, self.y_pos, self.theta_pos)
+
+				self.update_stage_position.emit(self.x_pos, self.y_pos, self.theta_pos)
+
+				for key in REC_DATA:
+					if(key in INTERNAL_STATE_VARIABLES):
+						self.internal_state.data[key] = self.RecData[key]
+
+			elif(data[0] == ord('F')):
+				# print('Flag recvd')
+
+				if(data[1] == ord('S')):
+					# print('Automated stage tracking flag recvd: {}'.format(data[2]))
+					self.internal_state.data['track_obj_stage'] = data[2]
+					
+				elif(data[1] == ord('H')):
+					print('Homing flag state recvd: {}'.format(data[2]))
+					if(data[2] == 0):
+						self.internal_state.data['homing-state'] = 'not-complete'
+
+					elif(data[2] == 1):
+						self.internal_state.data['homing-state'] = 'in-progress'
+					elif(data[2] == 2):
+						self.internal_state.data['homing-state'] = 'complete'
+					
+					print('Homing state: {}'.format(self.internal_state.data['homing-state']))
+
+				elif(data[1] == ord('T')):
+					print('Start image tracking signa recvd: {}'.format(data[2]))
+					self.internal_state.data['track_obj_image_hrdware'] = data[2]
+
+				elif(data[1] == ord('F')):
+					print('Focus tracking flag changed in uController: {}'.format(data[2]))
+
 
 		else:
 			pass
+
 
 	def stop(self):
 

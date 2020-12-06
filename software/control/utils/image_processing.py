@@ -58,8 +58,7 @@ def crop(image,center,imSize): #center is the vector [x,y]
     return np.array([[xmin,ymin],[xmax,ymax]]),np.array(image[ymin:ymax,xmin:xmax])
 
 
-
-def crop_image_wh(image,crop_width,crop_height):
+def crop_image(image,crop_width,crop_height):
     image_height = image.shape[0]
     image_width = image.shape[1]
     roi_left = int(max(image_width/2 - crop_width/2,0))
@@ -68,6 +67,7 @@ def crop_image_wh(image,crop_width,crop_height):
     roi_bottom = int(min(image_height/2 + crop_height/2,image_height))
     image_cropped = image[roi_top:roi_bottom,roi_left:roi_right]
     return image_cropped
+
 
 def get_bbox(cnt):
     return cv2.boundingRect(cnt)
@@ -186,10 +186,31 @@ def find_centroid_basic_Rect(image):
 
     return isCentroidFound,centroid, bbox
 
+def scale_square_bbox(bbox, scale_factor, square = True):
+
+    xmin, ymin, width, height = bbox
+
+    if(square==True):
+        min_dim = min(width, height)
+        width, height = min_dim, min_dim
+
+    new_width, new_height = scale_factor*width, scale_factor*height
+
+    new_xmin = xmin - (new_width - width)/2
+    new_ymin = ymin - (new_height - height)/2
+
+    new_bbox = (new_xmin, new_ymin, new_width, new_height)
+    return new_bbox
+
 def get_image_center_width(image):
     ImShape=image.shape
     ImH,ImW=ImShape[0],ImShape[1]
     return np.array([ImW*0.5,ImH*0.5]), ImW
+
+def get_image_height_width(image):
+    ImShape=image.shape
+    ImH,ImW=ImShape[0],ImShape[1]
+    return ImH, ImW
 
 def get_image_top_center_width(image):
     ImShape=image.shape

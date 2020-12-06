@@ -273,18 +273,21 @@ class Microcontroller_Simulation():
 
         self.X_stage = 0
         self.Y_stage = 0
-        self.Theta_stage = 0
+        self.Z_stage = 0
         
         self.track_obj_image = 1
         self.track_focus = 0
 
         self.track_obj_stage = 1
+        self.track_obj_image_hrdware = 0
 
         self.liquid_lens_freq = 0
         self.liquid_lens_amp = 0
         self.liquid_lens_offset = 0
 
-        self.RecData = {'FocusPhase':self.FocusPhase, 'X_stage': self.X_stage, 'Y_stage':self.Y_stage, 'Theta_stage':self.Theta_stage, 'track_obj_image':self.track_obj_image, 'track_obj_stage' : self.track_obj_stage}
+        self.homing_complete = 0
+
+        self.RecData = {'FocusPhase':self.FocusPhase, 'X_stage': self.X_stage, 'Y_stage':self.Y_stage, 'Z_stage':self.Z_stage, 'track_obj_image':self.track_obj_image, 'track_obj_stage' : self.track_obj_stage, 'track_obj_image_hrdware':self.track_obj_image_hrdware, 'homing_complete':self.homing_complete}
 
         self.SendData = {key:[] for key in SEND_DATA}
 
@@ -337,7 +340,7 @@ class Microcontroller_Simulation():
 
         # self.serial.write(cmd)
 
-    def send_motion_command_xy(self, microsteps_x, microsteps_y):
+    def send_motion_command_xyz(self, microsteps_x, microsteps_y, microsteps_z):
         # For squid tracking
 
         if(microsteps_x>=0):
@@ -350,8 +353,14 @@ class Microcontroller_Simulation():
         else:
             direction_y = 0;
 
+        if(microsteps_z>=0):
+            direction_z = 1;
+        else:
+            direction_z = 0;
+
         microsteps_x = abs(microsteps_x)
         microsteps_y = abs(microsteps_y)
+        microsteps_z = abs(microsteps_z)
 
         cmd = bytearray(self.tx_buffer_length)
 
@@ -364,6 +373,14 @@ class Microcontroller_Simulation():
         cmd[4] = direction_y
         cmd[5] = int(microsteps_y) >> 8
         cmd[6] = int(microsteps_y) & 0xff
+
+        cmd[7] = direction_z
+        cmd[8] = int(microsteps_z) >> 8
+        cmd[9] = int(microsteps_z) & 0xff
+
+        self.X_stage += microsteps_x
+        self.Y_stage += microsteps_y
+        self.Z_stage += microsteps_z
 
         # self.serial.write(cmd)
 
@@ -471,10 +488,7 @@ class Microcontroller_Simulation():
 
         self.simulate_focus_phase()
 
-        self.RecData = {'FocusPhase':self.FocusPhase, 'X_stage': self.X_stage, 'Y_stage':self.Y_stage, 'Theta_stage':self.Theta_stage, 'track_obj_image':self.track_obj_image, 'track_obj_stage' : self.track_obj_stage}
-        self.deltaX_stage = 0
-        self.deltaY_stage = 0
-        self.deltaTheta_stage = 0
+        self.RecData = {'FocusPhase':self.FocusPhase, 'X_stage': self.X_stage, 'Y_stage':self.Y_stage, 'Z_stage':self.Z_stage, 'track_obj_image':self.track_obj_image, 'track_obj_stage' : self.track_obj_stage, 'track_obj_image_hrdware':self.track_obj_image_hrdware, 'homing_complete':self.homing_complete}
         return self.RecData
 
 

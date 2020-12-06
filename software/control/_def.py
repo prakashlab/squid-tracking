@@ -1,6 +1,7 @@
 import os
 
-SIMULATION = True
+# TRACKING_CONFIG = 'XYZ'
+TRACKING_CONFIG = 'XYT'
 
 class TriggerMode:
     SOFTWARE = 'Software Trigger'
@@ -31,20 +32,44 @@ class AF:
     def __init__(self):
         pass
 
-class Motors:
+class Chamber:
+    # Chamber dimensions in mm
+    WIDTH = 5
+    R_I = 85
+    R_O = 110
+    LENGTH = (R_O - R_I)
+    R_CENTER = (R_I + R_O)/2.0
+
+    def __init__(self):
+        pass
+
+class Motion:
+    # squid
+    STEPS_PER_MM_XY = 1600 # microsteps
+    STEPS_PER_MM_Z = 5333  # microsteps
+   
+    # Gravity Machine
     STEPS_PER_REV_X = 200
     MM_PER_REV_X = 1
+    STEPS_PER_MM_X = round(STEPS_PER_REV_X/MM_PER_REV_X)
+
+
 
     STEPS_PER_REV_Y = 200
     MM_PER_REV_Y = 1
+    STEPS_PER_MM_Y = round(STEPS_PER_REV_Y/MM_PER_REV_Y)
+
+    STEPS_PER_REV_Z = 200
+    MM_PER_REV_Z = 1
+    STEPS_PER_MM_Z = round(STEPS_PER_REV_Z/MM_PER_REV_Z)
 
     STEPS_PER_REV_THETA_MOTOR = 200
 
     GEAR_RATIO_THETA = 99+1044/float(2057) 
     
-    STEPS_PER_REV_THETA_SHAFT = GEAR_RATIO_THETA*STEPS_PER_REV_THETA_MOTOR
+    STEPS_PER_REV_THETA_SHAFT = round(GEAR_RATIO_THETA*STEPS_PER_REV_THETA_MOTOR)
 
-    MAX_MICROSTEPS = 64
+    MAX_MICROSTEPS = 16
 
     def __init__(self):
         pass
@@ -56,23 +81,14 @@ class Encoders:
 
     COUNTS_PER_REV_THETA_MOTOR = 600
 
-    COUNTS_PER_REV_THETA = COUNTS_PER_REV_THETA_MOTOR*Motors.GEAR_RATIO_THETA
+    COUNTS_PER_REV_THETA = COUNTS_PER_REV_THETA_MOTOR*Motion.GEAR_RATIO_THETA
 
 
     def __init__(self):
         pass
 
 
-class Chamber:
-    # Chamber dimensions in mm
-    WIDTH = 5
-    R_I = 85
-    R_O = 110
-    LENGTH = (R_O - R_I)
-    R_CENTER = (R_I + R_O)/2
 
-    def __init__(self):
-        pass
 
 
 class Acquisition:
@@ -93,18 +109,26 @@ class Tracking:
     
     CROPPED_IMG_RATIO = 10
 
+    BBOX_SCALE_FACTOR = 3
+
     DEFAULT_TRACKER = "csrt"
+
+    INIT_METHODS = ["threshold", "roi"]
+    
+    DEFAULT_INIT_METHOD = "threshold"
 
     
     def __init__(self):
         pass
 
-class ucontroller:
 
-    # Time interval for reading micro Controller (ms)
+class MicrocontrollerDef:
+     # Time interval for reading micro Controller (ms)
     UCONTROLLER_READ_INTERVAL = 25 
-    MSG_LENGTH = 20
-    CMD_LENGTH = 10
+    MSG_LENGTH = 12
+    CMD_LENGTH = 4
+    N_BYTES_POS = 3
+    RUN_OPENLOOP = False # Determines whether stepper/encoders are used to calculate stage positions.
 
     def __init__(self):
         pass
@@ -115,7 +139,7 @@ class PID_parameters:
 
     STEP_PER_MM_TYPICAL = 200
 
-    PID_OUTPUT_MAX = MAX_DISTANCE*STEP_PER_MM_TYPICAL*Motors.MAX_MICROSTEPS
+    PID_OUTPUT_MAX = MAX_DISTANCE*STEP_PER_MM_TYPICAL*Motion.MAX_MICROSTEPS
 
 
 
@@ -150,8 +174,8 @@ CALIB_IMG_WIDTH = 1920
 
 WORKING_RES_DEFAULT = 0.5
 
-TRACKERS = ['nearest-nbr', 'csrt', 'daSIAMRPN']
-DEFAULT_TRACKER = 'csrt'
+TRACKERS = ['nearest-nbr', 'csrt', 'kcf', 'mil', 'tld', 'medianflow','mosse','daSIAMRPN']
+DEFAULT_TRACKER = 'nearest-nbr'
 
 
 
@@ -159,20 +183,17 @@ CROPPED_IMG_RATIO = 10
 
 FocusTracking = {'Cropped image ratio':{'default':10}}
 
-OBJECTIVES = {'10x':{'magnification':10, 'NA':0.17, 'PixelPermm':1122}, 
-'20x':{'magnification':20, 'NA':0.17, 'PixelPermm':2244}}
+OBJECTIVES = {'4x':{'magnification':4, 'NA':0.13, 'PixelPermm':802}, '10x':{'magnification':10, 'NA':0.25, 'PixelPermm':2004}, '20x':{'magnification':20, 'NA':0.4, 'PixelPermm':4008}, '40x':{'magnification':40, 'NA':0.6,'PixelPermm':8016}}
 
-DEFAULT_OBJECTIVE = '10x'
+DEFAULT_OBJECTIVE = '4x'
   
 
-
-CAMERAS = {'DF1':{'serial':"08910102", 'px_format':(1920,1080), 'color_format': 'GRAY8', 'fps': 120}, 
-    'FL1':{'serial':"08910100", 'px_format':(1920,1080), 'color_format': 'RGBx', 'fps': 120}}
+CAMERAS = {'DF1':{'serial':"08910102", 'px_format':(1920,1080), 'color_format': 'GRAY8', 'fps': 120}}
 
 OPTICAL_PATHS = {'DF only':['DF1'], 'DF+FL':['DF1', 'FL1'], 
             '2-camera':['DF1', 'DF2'], '2-camera-FL':['DF1', 'DF2', 'FL1']}
 
-DEFAULT_OPTICAL_PATH = 'DF+FL'
+DEFAULT_OPTICAL_PATH = 'DF only'
 
 TRACKING = 'DF1'
 
@@ -187,37 +208,64 @@ liquidLens = {'type': 'optotune', 'Freq':{'default':2, 'min':0.1, 'max':20, 'ste
     'Amp':{'default':0.05, 'min':0, 'max':0.5, 'step':0.01, 'units':'mm'}, 'currentScaleFactor':1/(0.0003) }
 
 
-INTERNAL_STATE_VARIABLES = ['Time', 'X_objStage', 'Y_objStage', 'Z_objStage', 'X_stage', 'Y_stage',
-    'Theta_stage', 'X_image', 'Z_image', 'track_obj_image','track_obj_image_hrdware', 'track_focus', 'track_obj_stage', 
-    'Acquisition', 'homing_command', 'homing_complete',  'Zero_stage', 'liquidLens_Freq', 'liquidLens_Amp', 'FocusPhase', 'optical_path', 
-    'imaging channels', 'Objective', 'basePath', 'experimentID']
+if TRACKING_CONFIG == 'XYT':
+    INTERNAL_STATE_VARIABLES = ['Time', 'X_objStage', 'Y_objStage', 'Z_objStage', 'X_stage', 'Y_stage',
+        'Theta_stage', 'X_image', 'Z_image', 'track_obj_image','track_obj_image_hrdware', 'track_focus', 'track_obj_stage', 
+        'Acquisition', 'homing_status',  'Zero_stage', 'liquidLens_Freq', 'liquidLens_Amp', 'FocusPhase', 'optical_path', 
+        'imaging channels', 'Objective', 'basePath', 'experimentID']
 
-# Based on the number of imaging channels, there will also be 1 or more image names saved.
-SAVE_DATA = ['Time', 'X_objStage', 'Y_objStage', 'Z_objStage', 'Theta_stage', 'X_image', 
-    'Z_image', 'track_focus', 'track_obj_stage','liquidLens_Freq', 'liquidLens_Amp', 'FocusPhase']
+    # Based on the number of imaging channels, there will also be 1 or more image names saved.
+    SAVE_DATA = ['Time', 'X_objStage', 'Y_objStage', 'Z_objStage', 'Theta_stage', 'X_image', 
+        'Z_image', 'track_focus', 'track_obj_stage','liquidLens_Freq', 'liquidLens_Amp', 'FocusPhase']
 
-MOTION_COMMANDS = ['X_order', 'Y_order', 'Theta_order']
+    MOTION_COMMANDS = ['X_order', 'Y_order', 'Theta_order']
 
-SEND_DATA = ['liquidLens_Freq', 'track_focus' , 'homing_command', 'track_obj_image' , 'X_order', 'Y_order', 'Theta_order', 'Zero_stage']
-
-
-REC_DATA = ['FocusPhase', 'X_stage', 'Y_stage', 'Theta_stage', 'track_obj_image_hrdware', 'track_obj_stage', 'homing_complete']
+    SEND_DATA = ['liquidLens_Freq', 'track_focus', 'track_obj_image' , 'X_order', 'Y_order', 'Theta_order', 'Zero_stage']
 
 
-INITIAL_VALUES = {'Time':0, 'X_objStage':0, 'Y_objStage':0, 'Z_objStage':0, 'X_stage':0, 'Y_stage':0,
-    'Theta_stage':0, 'X_image':0, 'Z_image':0, 'track_obj_image':False, 'track_obj_image_hrdware':False, 'track_focus':False, 
-    'track_obj_stage':False, 'Acquisition':False, 'homing_command':False, 'homing_complete':False, 'Zero_stage':0, 'liquidLens_Freq': liquidLens['Freq']['default'], 
-    'liquidLens_Amp': liquidLens['Amp']['default'] , 'FocusPhase':0, 'optical_path': DEFAULT_OPTICAL_PATH, 
-    'imaging channels': OPTICAL_PATHS[DEFAULT_OPTICAL_PATH],  'Objective':DEFAULT_OBJECTIVE, 'basePath':'/', 'experimentID':'track'}
+    REC_DATA = ['FocusPhase', 'X_stage', 'Y_stage', 'Theta_stage', 'track_obj_image_hrdware', 'track_obj_stage', 'homing_status']
 
-PLOT_VARIABLES = {'X':'X_objStage','Y':'Y_objStage', 'Z':'Z_objStage', 'Theta':'Theta_stage', 'Phase':'FocusPhase'}
 
-PLOT_UNITS = {'X':'mm','Y':'mm', 'Z':'mm', 'Theta':'radians','Phase':'radians'}
+    INITIAL_VALUES = {'Time':0, 'X_objStage':0, 'Y_objStage':0, 'Z_objStage':0, 'X_stage':0.0, 'Y_stage':0.0,
+        'Theta_stage':0.0, 'X_image':0, 'Z_image':0, 'track_obj_image':False, 'track_obj_image_hrdware':False, 'track_focus':False, 
+        'track_obj_stage':False, 'Acquisition':False, 'homing_status': 'not-complete', 'Zero_stage':0, 'liquidLens_Freq': liquidLens['Freq']['default'], 
+        'liquidLens_Amp': liquidLens['Amp']['default'] , 'FocusPhase':0, 'optical_path': DEFAULT_OPTICAL_PATH, 
+        'imaging channels': OPTICAL_PATHS[DEFAULT_OPTICAL_PATH],  'Objective':DEFAULT_OBJECTIVE, 'basePath':'/', 'experimentID':'track'}
 
-DEFAULT_PLOTS = ['X', 'Z']
+    PLOT_VARIABLES = {'X':'X_objStage','Y':'Y_objStage', 'Z':'Z_objStage', 'Theta':'Theta_stage', 'Phase':'FocusPhase'}
 
-# 
-print(INTERNAL_STATE_VARIABLES)
-print(INITIAL_VALUES.keys())
+    PLOT_UNITS = {'X':'mm','Y':'mm', 'Z':'mm', 'Theta':'radians','Phase':'radians'}
+
+    DEFAULT_PLOTS = ['X', 'Z']
+
+elif TRACKING_CONFIG == 'XYZ':
+    INTERNAL_STATE_VARIABLES = ['Time', 'X_objStage', 'Y_objStage', 'Z_objStage', 'X_stage', 'Y_stage',
+        'Z_stage', 'X_image', 'Y_image', 'track_obj_image','track_obj_image_hrdware', 'track_focus', 'track_obj_stage', 
+        'Acquisition', 'homing_status',  'Zero_stage', 'liquidLens_Freq', 'liquidLens_Amp', 'FocusPhase', 'optical_path', 
+        'imaging channels', 'Objective', 'basePath', 'experimentID']
+
+    # Based on the number of imaging channels, there will also be 1 or more image names saved.
+    SAVE_DATA = ['Time', 'X_stage', 'Y_stage', 'Z_stage', 'X_image', 
+        'Y_image', 'track_focus', 'track_obj_stage','liquidLens_Freq', 'liquidLens_Amp', 'FocusPhase']
+
+    MOTION_COMMANDS = ['X_order', 'Y_order', 'Z_order']
+
+    SEND_DATA = ['liquidLens_Freq', 'track_focus' , 'track_obj_image' , 'X_order', 'Y_order', 'Z_order', 'Zero_stage']
+
+    REC_DATA = ['X_stage', 'Y_stage', 'Z_stage']
+
+
+    INITIAL_VALUES = {'Time':0, 'X_objStage':0, 'Y_objStage':0, 'Z_objStage':0, 'X_stage':0, 'Y_stage':0,
+        'Z_stage':0, 'X_image':0, 'Y_image':0, 'track_obj_image':False, 'track_obj_image_hrdware':False, 'track_focus':False, 
+        'track_obj_stage':False, 'Acquisition':False, 'homing_status': 'not-complete', 'Zero_stage':0, 'liquidLens_Freq': liquidLens['Freq']['default'], 
+        'liquidLens_Amp': liquidLens['Amp']['default'] , 'FocusPhase':0, 'optical_path': DEFAULT_OPTICAL_PATH, 
+        'imaging channels': OPTICAL_PATHS[DEFAULT_OPTICAL_PATH],  'Objective':DEFAULT_OBJECTIVE, 'basePath':'/', 'experimentID':'track'}
+
+    PLOT_VARIABLES = {'X':'X_objStage','Y':'Y_objStage', 'Z':'Z_objStage', 'Phase':'FocusPhase'}
+
+    PLOT_UNITS = {'X':'mm','Y':'mm', 'Z':'mm','Phase':'radians'}
+
+    DEFAULT_PLOTS = ['X', 'Y']
+
 assert INTERNAL_STATE_VARIABLES == list(INITIAL_VALUES.keys()), "Variable mismatch: One or more state variables may not be initialized"
 

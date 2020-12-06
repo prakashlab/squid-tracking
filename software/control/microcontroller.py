@@ -12,8 +12,8 @@ class Microcontroller():
     def __init__(self,parent=None):
         self.serial = None
         self.platform_name = platform.system()
-        self.tx_buffer_length = 4
-        self.rx_buffer_length = 4
+        self.tx_buffer_length = MicrocontrollerDef.CMD_LENGTH
+        self.rx_buffer_length = MicrocontrollerDef.MSG_LENGTH
 
         # AUTO-DETECT the Arduino! By Deepak
         arduino_ports = [
@@ -23,7 +23,7 @@ class Microcontroller():
         if not arduino_ports:
             raise IOError("No Arduino found")
         if len(arduino_ports) > 1:
-            warnings.warn('Multiple Arduinos found - using the first')
+            print('Multiple Arduinos found - using the first')
         else:
             print('Using Arduino found at : {}'.format(arduino_ports[0]))
 
@@ -49,7 +49,65 @@ class Microcontroller():
 
     def move_x(self,delta):
         direction = int((np.sign(delta)+1)/2)
-        n_microsteps = abs(delta*Motion.STEPS_PER_MM_XY)
+        n_microsteps = abs(delta*Motion.STEPS_PER_MM_X*Motion.MAX_MICROSTEPS)
+        if n_microsteps > 65535:
+            n_microsteps = 65535
+        cmd = bytearray(self.tx_buffer_length)
+        cmd[0] = 0
+        cmd[1] = direction
+        cmd[2] = round(n_microsteps) >> 8
+        cmd[3] = round(n_microsteps) & 0xff
+        self.serial.write(cmd)
+        time.sleep(WaitTime.BASE + WaitTime.X*abs(delta))
+        print('Moving  x stage')
+        print('X command sent to uController: {} {}'.format(np.sign(delta),n_microsteps))
+
+    def move_y(self,delta):
+        direction = int((np.sign(delta)+1)/2)
+        n_microsteps = abs(delta*Motion.STEPS_PER_MM_Y*Motion.MAX_MICROSTEPS)
+        if n_microsteps > 65535:
+            n_microsteps = 65535
+        cmd = bytearray(self.tx_buffer_length)
+        cmd[0] = 1
+        cmd[1] = direction
+        cmd[2] = round(n_microsteps) >> 8
+        cmd[3] = round(n_microsteps) & 0xff
+        self.serial.write(cmd)
+        time.sleep(WaitTime.BASE + WaitTime.Y*abs(delta))
+        print('Moving  y stage')
+        print('Y command sent to uController: {} {}'.format(np.sign(delta),n_microsteps))
+
+    def move_z(self,delta):
+        direction = int((np.sign(delta)+1)/2)
+        n_microsteps = abs(delta*Motion.STEPS_PER_MM_Z*Motion.MAX_MICROSTEPS)
+        if n_microsteps > 65535:
+            n_microsteps = 65535
+        cmd = bytearray(self.tx_buffer_length)
+        cmd[0] = 2
+        cmd[1] = 1-direction
+        cmd[2] = round(n_microsteps) >> 8
+        cmd[3] = round(n_microsteps) & 0xff
+        self.serial.write(cmd)
+        time.sleep(WaitTime.BASE + WaitTime.Z*abs(delta))
+        print('Z command sent to uController: {} {}'.format(np.sign(delta),n_microsteps))
+
+    def move_theta(self,delta):
+        direction = int((np.sign(delta)+1)/2)
+        n_microsteps = abs(delta*Motion.MAX_MICROSTEPS*Motion.STEPS_PER_REV_THETA_SHAFT/(2*np.pi))
+        if n_microsteps > 65535:
+            n_microsteps = 65535
+        cmd = bytearray(self.tx_buffer_length)
+        cmd[0] = 3
+        cmd[1] = 1-direction
+        cmd[2] = round(n_microsteps) >> 8
+        cmd[3] = round(n_microsteps) & 0xff
+        self.serial.write(cmd)
+        time.sleep(WaitTime.BASE + WaitTime.Z*abs(delta))
+        print('Theta command sent to uController: {} {}'.format(np.sign(delta),n_microsteps))
+
+    def move_x_nonblocking(self,delta):
+        direction = int((np.sign(delta)+1)/2)
+        n_microsteps = abs(delta*Motion.MAX_MICROSTEPS*Motion.STEPS_PER_MM_X)
         if n_microsteps > 65535:
             n_microsteps = 65535
         cmd = bytearray(self.tx_buffer_length)
@@ -58,11 +116,11 @@ class Microcontroller():
         cmd[2] = int(n_microsteps) >> 8
         cmd[3] = int(n_microsteps) & 0xff
         self.serial.write(cmd)
-        time.sleep(WaitTime.BASE + WaitTime.X*abs(delta))
+        # print('Command sent to uController: {}'.format(n_microsteps))
 
-    def move_y(self,delta):
+    def move_y_nonblocking(self,delta):
         direction = int((np.sign(delta)+1)/2)
-        n_microsteps = abs(delta*Motion.STEPS_PER_MM_XY)
+        n_microsteps = abs(delta*Motion.MAX_MICROSTEPS*Motion.STEPS_PER_MM_Y)
         if n_microsteps > 65535:
             n_microsteps = 65535
         cmd = bytearray(self.tx_buffer_length)
@@ -71,11 +129,11 @@ class Microcontroller():
         cmd[2] = int(n_microsteps) >> 8
         cmd[3] = int(n_microsteps) & 0xff
         self.serial.write(cmd)
-        time.sleep(WaitTime.BASE + WaitTime.Y*abs(delta))
+        # print('Command sent to uController: {}'.format(n_microsteps))
 
-    def move_z(self,delta):
+    def move_z_nonblocking(self,delta):
         direction = int((np.sign(delta)+1)/2)
-        n_microsteps = abs(delta*Motion.STEPS_PER_MM_Z)
+        n_microsteps = abs(delta)
         if n_microsteps > 65535:
             n_microsteps = 65535
         cmd = bytearray(self.tx_buffer_length)
@@ -84,7 +142,71 @@ class Microcontroller():
         cmd[2] = int(n_microsteps) >> 8
         cmd[3] = int(n_microsteps) & 0xff
         self.serial.write(cmd)
-        time.sleep(WaitTime.BASE + WaitTime.Z*abs(delta))
+
+    def move_theta_nonblocking(self,delta):
+        direction = int((np.sign(delta)+1)/2)
+        n_microsteps = abs(delta*Motion.MAX_MICROSTEPS*Motion.STEPS_PER_REV_THETA_SHAFT/(2*np.pi))
+        if n_microsteps > 65535:
+            n_microsteps = 65535
+        cmd = bytearray(self.tx_buffer_length)
+        cmd[0] = 3
+        cmd[1] = 1-direction
+        cmd[2] = int(n_microsteps) >> 8
+        cmd[3] = int(n_microsteps) & 0xff
+        self.serial.write(cmd)
+
+    # Convert below functions to be compatible with squid/octopi serial interface.
+    def send_tracking_command(self, tracking_flag):
+        cmd = bytearray(self.tx_buffer_length)
+        cmd[0] = 4
+        cmd[1] = tracking_flag
+
+        self.serial.write(cmd)
+
+    def send_homing_command(self):
+        cmd = bytearray(self.tx_buffer_length)
+        cmd[0] = 5
+
+        self.serial.write(cmd)
+
+    def send_stage_zero_command(self, stage):
+        cmd = bytearray(self.tx_buffer_length)
+        cmd[0] = 6
+        cmd[1] = stage
+
+        self.serial.write(cmd)
+
+    def send_focus_tracking_command(self, focus_tracking_flag):
+        cmd = bytearray(self.tx_buffer_length)
+        cmd[0] = 7
+        cmd[1] = focus_tracking_flag
+
+        self.serial.write(cmd)
+
+    def send_liquid_lens_freq(self, freq):
+        cmd = bytearray(self.tx_buffer_length)
+        cmd[0] = 8
+        cmd[1] = 0
+        cmd[2], cmd[3] = split_int_2byte(round(freq*100)) 
+
+        self.serial.write(cmd)
+
+    def send_liquid_lens_amp(self, amp):
+        cmd = bytearray(self.tx_buffer_length)
+        cmd[0] = 8
+        cmd[1] = 1
+        cmd[2], cmd[3] = split_int_2byte(round(amp*100)) 
+
+        self.serial.write(cmd)
+
+    def send_liquid_lens_offset(self, offset):
+        cmd = bytearray(self.tx_buffer_length)
+        cmd[0] = 8
+        cmd[1] = 2
+        cmd[2], cmd[3] = split_int_2byte(round(offset*100)) 
+
+        self.serial.write(cmd)
+
 
     def send_command(self,command):
         cmd = bytearray(self.tx_buffer_length)
@@ -113,23 +235,23 @@ class Microcontroller():
 
     def read_received_packet(self):
         # wait to receive data
-        while self.serialconn.in_waiting==0:
+        while self.serial.in_waiting==0:
             pass
-        while self.serialconn.in_waiting % self.rx_buffer_length != 0:
+        while self.serial.in_waiting % self.rx_buffer_length != 0:
             pass
 
         num_bytes_in_rx_buffer = self.serial.in_waiting
 
         # get rid of old data
         if num_bytes_in_rx_buffer > self.rx_buffer_length:
-            print('getting rid of old data')
+            # print('getting rid of old data')
             for i in range(num_bytes_in_rx_buffer-self.rx_buffer_length):
                 self.serial.read()
         
         # read the buffer
         data=[]
         for i in range(self.rx_buffer_length):
-            data.append(ord(self.serialconn.read()))
+            data.append(ord(self.serial.read()))
 
         '''
         YfocusPhase = self.data2byte_to_int(data[0],data[1])*2*np.pi/65535.
@@ -151,6 +273,26 @@ class Microcontroller():
         '''
         return data
 
+    def read_received_packet_nowait(self):
+        # wait to receive data
+        if self.serial.in_waiting==0:
+            return None
+        if self.serial.in_waiting % self.rx_buffer_length != 0:
+            return None
+        
+        # get rid of old data
+        num_bytes_in_rx_buffer = self.serial.in_waiting
+        if num_bytes_in_rx_buffer > self.rx_buffer_length:
+            # print('getting rid of old data')
+            for i in range(num_bytes_in_rx_buffer-self.rx_buffer_length):
+                self.serial.read()
+        
+        # read the buffer
+        data=[]
+        for i in range(self.rx_buffer_length):
+            data.append(ord(self.serial.read()))
+        return data
+
 class Microcontroller_Simulation():
     def __init__(self,parent=None):
         pass
@@ -170,6 +312,15 @@ class Microcontroller_Simulation():
     def move_y(self,delta):
         pass
 
+    def move_x_nonblocking(self,delta):
+        pass
+
+    def move_y_nonblocking(self,delta):
+        pass
+
+    def move_z_nonblocking(self,delta):
+        pass
+        
     def move_z(self,delta):
         pass
 
@@ -178,6 +329,9 @@ class Microcontroller_Simulation():
 
     def read_received_packet(self):
         pass
+
+    def read_received_packet_nowait(self):
+        return None
 
 
 # from Gravity machine
@@ -206,3 +360,5 @@ def data2byte_to_signed_int(a,b):
 
 def data4byte_to_int(a,b,c,d):
     return a + (256)*b + (65536)*c + (16777216)*d
+
+

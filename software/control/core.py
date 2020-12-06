@@ -52,11 +52,9 @@ class StreamHandler(QObject):
     signal_new_frame_received -> microcontroller_Receiver.get_Data
 
     Slots
-
-
     '''
 
-    def __init__(self, camera = None , crop_width=3000,crop_height=3000, working_resolution_scaling = WORKING_RES_DEFAULT, imaging_channel = TRACKING):
+    def __init__(self, camera = None , crop_width=2000,crop_height=2000, working_resolution_scaling = WORKING_RES_DEFAULT, imaging_channel = TRACKING):
         QObject.__init__(self)
         self.fps_display = 1
         self.fps_save = 1
@@ -71,19 +69,14 @@ class StreamHandler(QObject):
 
         self.camera = camera
 
-        # Raw image width
-        if(camera is not None):
-            self.working_image_width = round(self.working_resolution_scaling*self.camera.width)
-        else:
-            self.working_image_width = 720
-
-
         self.save_image_flag = False
 
         # If current image stream is used for tracking.
         self.imaging_channel = imaging_channel
 
         self.track_flag = False
+
+        self.invert_image_flag = False
 
         self.handler_busy = False
 
@@ -134,11 +127,7 @@ class StreamHandler(QObject):
 
     def set_working_resolution_scaling(self, working_resolution_scaling):
         self.working_resolution_scaling = working_resolution_scaling/100
-        self.update_working_image_width()
         # print(self.working_resolution_scaling)
-    def update_working_image_width(self):
-        self.working_image_width = round(self.working_resolution_scaling*self.camera.width)
-
 
     def set_image_thresholds(self, lower_HSV, upper_HSV):
         self.lower_HSV = lower_HSV
@@ -147,7 +136,9 @@ class StreamHandler(QObject):
         #@@@Testing
         print('Updated color thresholds to {} and {}'.format(self.lower_HSV, self.upper_HSV))
 
-
+    def update_invert_image_flag(self, flag):
+        self.invert_image_flag = flag
+        
     def threshold_image(self, image_resized, color):
         if(color):
             thresh_image = image_processing.threshold_image(image_resized,self.lower_HSV,self.upper_HSV)  #The threshold image as one channel
@@ -156,7 +147,12 @@ class StreamHandler(QObject):
             # print(self.lower_HSV[2])
             # print(self.upper_HSV[2])
             # img_bgr = cv2.cvtColor(img, cv2.COLOR_GRAY2BGR)
+            # print(max(image_resized))
+            # print(min(image_resized))
+            image_resized = np.array(image_resized, dtype='uint8')
             thresh_image = image_processing.threshold_image_gray(image_resized, self.lower_HSV[2], self.upper_HSV[2])
+            if(self.invert_image_flag==True):
+                thresh_image = 1 - thresh_image
 
         return thresh_image
 
@@ -199,16 +195,16 @@ class StreamHandler(QObject):
         self.get_real_stream_fps()
 
         # crop image
-        # image = image_processing.crop_image(camera.current_frame,self.crop_width,self.crop_height)
-        image = camera.current_frame
+        image = image_processing.crop_image(camera.current_frame,self.crop_width,self.crop_height)
+        # image = camera.current_frame
 
         # save a copy of full-res image for saving (make sure to do a deep copy)
         # @@@@@@@@@
 
         
         if(self.imaging_channel == TRACKING):
-            # image_resized = cv2.resize(image,(round(self.crop_width*self.working_resolution_scaling), round(self.crop_height*self.working_resolution_scaling)),cv2.INTER_LINEAR)
-            image_resized = imutils.resize(image, self.working_image_width)
+            image_resized = cv2.resize(image,(round(self.crop_width*self.working_resolution_scaling), round(self.crop_height*self.working_resolution_scaling)),cv2.INTER_LINEAR)
+            # image_resized = imutils.resize(image, self.working_image_width)
 
             # Threshold the image based on the color-thresholds
             image_thresh = 255*np.array(self.threshold_image(image_resized, color = camera.is_color), dtype = 'uint8')
@@ -240,7 +236,7 @@ class StreamHandler(QObject):
             if(self.imaging_channel == TRACKING):
                 # Send thresholded image to display (only for tracking stream)
                 self.thresh_image_to_display.emit(image_thresh)
-                self.signal_working_resolution.emit(self.working_image_width)
+                self.signal_working_resolution.emit(round(self.crop_width*self.working_resolution_scaling))
             
             self.timestamp_last_display = time_now
 
@@ -354,11 +350,12 @@ class LiveController(QObject):
         self.microcontroller = microcontroller
         self.microscope_mode = None
         self.trigger_mode = TriggerMode.SOFTWARE # @@@ change to None
+        self.mode = None
         self.is_live = False
         self.was_live_before_autofocus = False
         self.was_live_before_multipoint = False
 
-        self.fps_software_trigger = FPS['trigger_software']['default'];
+        self.fps_software_trigger = 1;
         self.timer_software_trigger_interval = (1/self.fps_software_trigger)*1000
 
         self.timer_software_trigger = QTimer()
@@ -371,7 +368,6 @@ class LiveController(QObject):
         self.counter = 0
         self.timestamp_last = 0
 
-
         self.exposure_time_bfdf_preset = None
         self.exposure_time_fl_preset = None
         self.exposure_time_fl_preview_preset = None
@@ -381,29 +377,29 @@ class LiveController(QObject):
 
     # illumination control
     def turn_on_illumination(self):
-        pass
-        # if self.mode == MicroscopeMode.BFDF:
-        #     self.microcontroller.toggle_LED(1)
-        # else:
-        #     self.microcontroller.toggle_laser(1)
+        if self.mode == MicroscopeMode.BFDF:
+            self.microcontroller.toggle_LED(1)
+        else:
+            self.microcontroller.toggle_laser(1)
 
     def turn_off_illumination(self):
-        pass
-        # if self.mode == MicroscopeMode.BFDF:
-        #     self.microcontroller.toggle_LED(0)
-        # else:
-        #     self.microcontroller.toggle_laser(0)
+        if self.mode == MicroscopeMode.BFDF:
+            self.microcontroller.toggle_LED(0)
+        else:
+            self.microcontroller.toggle_laser(0)
 
     def start_live(self):
         self.is_live = True
+        self.camera.start_streaming()
         if self.trigger_mode == TriggerMode.SOFTWARE:
             self._start_software_triggerred_acquisition()
 
     def stop_live(self):
-    	if self.is_live:
+        if self.is_live:
             self.is_live = False
             if self.trigger_mode == TriggerMode.SOFTWARE:
                 self._stop_software_triggerred_acquisition()
+            self.camera.stop_streaming()
             self.turn_off_illumination()
 
     # software trigger related
@@ -433,8 +429,21 @@ class LiveController(QObject):
         self.timer_software_trigger.stop()
 
     # trigger mode and settings
-    def set_trigger_mode(self,mode):
-        pass # @@@
+    def set_trigger_mode(self, mode):
+        if mode == TriggerMode.SOFTWARE:
+            self.camera.set_software_triggered_acquisition()
+            if self.is_live:
+                self._start_software_triggerred_acquisition()
+        if mode == TriggerMode.HARDWARE:
+            print('hardware trigger to be added')
+            #self.camera.set_hardware_triggered_acquisition()
+        if mode == TriggerMode.CONTINUOUS: 
+            if self.trigger_mode == TriggerMode.SOFTWARE:
+                self._stop_software_triggerred_acquisition()
+            if mode == TriggerMode.HARDWARE:
+                pass #@@@ to be implemented
+            self.camera.set_continuous_acquisition()
+        self.trigger_mode = mode
 
     def set_trigger_fps(self,fps):
         if self.trigger_mode == TriggerMode.SOFTWARE:
@@ -492,30 +501,43 @@ class NavigationController(QObject):
     xPos = Signal(float)
     yPos = Signal(float)
     zPos = Signal(float)
+    thetaPos = Signal(float)
 
     def __init__(self,microcontroller):
         QObject.__init__(self)
         self.microcontroller = microcontroller
-        self.x_pos = 0
-        self.y_pos = 0
-        self.z_pos = 0
+        self.x_pos = 0 # in mm
+        self.y_pos = 0 # in mm
+        self.theta_pos = 0 # in radians
+        self.z_pos = 0 # in mm
 
     def move_x(self,delta):
         self.microcontroller.move_x(delta)
         self.x_pos = self.x_pos + delta
-        self.xPos.emit(self.x_pos)
 
     def move_y(self,delta):
         self.microcontroller.move_y(delta)
         self.y_pos = self.y_pos + delta
-        self.yPos.emit(self.y_pos)
 
     def move_z(self,delta):
         self.microcontroller.move_z(delta)
         self.z_pos = self.z_pos + delta
-        self.zPos.emit(self.z_pos*1000)
 
-        
+    def move_theta(self,delta):
+        self.microcontroller.move_theta(delta)
+        self.theta_pos = self.theta_pos + delta
+
+    # For closed loop operation get stage positions from uController.
+    def update_stage_positions(self, x_pos, y_pos, theta_pos):
+        self.x_pos = x_pos
+        self.y_pos = y_pos
+        self.theta_pos = theta_pos
+
+    # @@@ Implement later. Make the NavigationController the central node for stage positions.
+    def emit_stage_positions(self):
+        pass
+
+
 
 class ImageDisplay(QObject):
 
@@ -571,6 +593,8 @@ class ImageDisplay(QObject):
 # from gravity machine
 class ImageDisplayWindow(QMainWindow):
 
+    roi_bbox = Signal(np.ndarray)
+
     def __init__(self, window_title='', DrawCrossHairs = False, rotate_image_angle = 0, flip_image = None):
         super().__init__()
         self.setWindowTitle(window_title)
@@ -587,6 +611,22 @@ class ImageDisplayWindow(QMainWindow):
         ## Create image item
         self.graphics_widget.img = pg.ImageItem(border='w')
         self.graphics_widget.view.addItem(self.graphics_widget.img)
+
+        self.image_width = None
+        self.image_height = None
+
+        ## Create ROI
+        self.roi_pos = (0.5,0.5)
+        self.roi_size = (500,500)
+        self.ROI = pg.ROI(self.roi_pos, self.roi_size, scaleSnap=True, translateSnap=True)
+        self.ROI.setZValue(10)
+        self.ROI.addScaleHandle((0,0), (1,1))
+        self.ROI.addScaleHandle((1,1), (0,0))
+        self.graphics_widget.view.addItem(self.ROI)
+        self.ROI.hide()
+        self.ROI.sigRegionChanged.connect(self.updateROI)
+        self.roi_pos = self.ROI.pos()
+        self.roi_size = self.ROI.size()
 
         ## Variables for annotating images
         self.DrawRect = False
@@ -611,7 +651,11 @@ class ImageDisplayWindow(QMainWindow):
 
     def display_image(self,image, imaging_channel = TRACKING):
         
+        image = np.copy(image) # Avoid overwriting the source image
+        
         if(imaging_channel == TRACKING):
+
+            self.image_height, self.image_width = image_processing.get_image_height_width(image)
 
 
             if(self.DrawRect):
@@ -687,23 +731,30 @@ class ImageDisplayWindow(QMainWindow):
 
     def update_image_center_width(self,image):
         self.image_center, self.image_width = image_processing.get_image_center_width(image)
-        
         self.tracking_center = self.image_center + self.image_offset
 
     def update_image_offset(self, new_image_offset):
-
         self.image_offset = new_image_offset
+        print('ROI pos: {}'.format(self.roi_pos))
+        print('ROI size: {}'.format(self.roi_size))
 
+    def updateROI(self):
+        self.roi_pos = self.ROI.pos()
+        self.roi_size = self.ROI.size()
 
+    def toggle_ROI_selector(self, flag):
+        if(flag == True):
+            self.ROI.show()
+        else:
+            self.ROI.hide()
 
+    def send_bbox(self):
+        self.updateROI()
+        width = self.roi_size[0]
+        height = self.roi_size[1]
+        xmin = max(0, self.roi_pos[0])
+        ymin = max(0, self.image_height - height - self.roi_pos[1])
+        # print('Bbox from ImageDisplay: {}'.format([xmin, ymin, width, height]))
 
-
-
-
-
-
-
-
-
-
-        
+        self.roi_bbox.emit(np.array([xmin, ymin, width, height]))
+        # print('Sent bbox from ImageDisplay: {}'.format([xmin, ymin, width, height]))
