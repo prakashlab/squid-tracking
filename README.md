@@ -4,23 +4,23 @@ Gravity Machine is a new paradigm in tracking microscopy that uses a "hydrodynam
 
 Below we briefly discuss the scientific challenges and puzzles that motivated this tool!
 
-### The challenge
+## The challenge
 
 > "How to track a single cell at microscale resolution while allowing free vertical movement over ecological-scales?" 
 
 For the last 300 years of history of microscopy, majority of subjects of the microscopic world have been stuck under a cover slip in the X-Y plane (horizontal plane). But many phenomena occur far from such confinements, for instance, plankton swimming and sinking particles suspended in the ocean where gravity is the one constant. So how can we observe microscopic life and physical processes that canntraverse ecological length scales?
 
-### The Idea
+## The Idea
 	
 To address this challenge we invented the nearest thing we could imagine to an "endless" water-column using a simple insight "A circle has no beginning (or end)": The result is a microscope stage which functions as a "hydrodynamic treadmill" for single-cells. We describe the tool in the following paper [Nature Methods](https://www.nature.com/articles/s41592-020-0924-7), [Biorxiv](https://www.biorxiv.org/content/10.1101/610246v1).
 
-### What can you do with Gravity Machine?
+## What can you do with Gravity Machine?
 
 It allows you to capture never-before seen dynamics of processes that span multiple scales, for instance, marine microscale plankton swimming many meters along the vertical axis, allowing measurement of their free-swimming behavior.
 
 To explore more visit the [Gravity Machine website](https://gravitymachine.org/) and our associated [data-gallery](https://gravitymachine.org/gallery) of the first-ever multi-scale plankton tracks.
 
-### Getting Started
+## Getting Started
 
 The tracking microscope is run using software (written in Python) that runs on standard PC, and handles the real-time image-processing and GUI interaction with the user, along with firmware that runs on a microcontroller (Arduin Due). The code for each of those can be found within the *software* and *firmware* folders, respectively. 
 
