@@ -1,6 +1,6 @@
 # Scale-free Vertical Tracking Microscopy (aka Gravity Machine)
 
-Gravity Machine is a new paradigm in tracking microscopy that uses a "hydrodynamic treadmill for single cells" invented by [Krishnamurthy at al.](https://www.nature.com/articles/s41592-020-0924-7) to track microscale organisms like marine plankton over theoretically infinite scales in the vertical direction. This repo contains the software (Python) and firmware (C++) for running Gravity Machine. The repo documents both legacy and current versions of the code, as we move towards an initial software release. Watch this space for updates! This work is jointly developed with other open-microscopy platforms specificallty [Octopi](https://github.com/hongquanli/octopi-research) and [SQUID](https://github.com/prakashlab/squid-tracking) from the [Prakash lab, Stanford](https://github.com/prakashlab). 
+Gravity Machine is a new paradigm in tracking microscopy that uses a "hydrodynamic treadmill for single cells" invented by [Krishnamurthy at al.](https://www.nature.com/articles/s41592-020-0924-7) to track microscale organisms like marine plankton over theoretically infinite scales in the vertical direction. This repo contains the software (Python) and firmware (C++) for running Gravity Machine. This work is jointly developed with other open-microscopy platforms specificallty [Octopi](https://github.com/hongquanli/octopi-research) and [SQUID](https://github.com/prakashlab/squid-tracking) from the [Prakash lab, Stanford](https://github.com/prakashlab). The repo documents both legacy and current versions of the code, as we move towards an initial software release. Watch this space for updates! 
 
 Below we briefly discuss the scientific challenges and puzzles that motivated this tool!
 
@@ -23,6 +23,9 @@ To explore more visit the [Gravity Machine website](https://gravitymachine.org/)
 ## Getting Started
 
 The tracking microscope is run using software (written in Python) that runs on standard PC, and handles the real-time image-processing and GUI interaction with the user, along with firmware that runs on a microcontroller (Arduin Due). The code for each of those can be found within the *software* and *firmware* folders, respectively. 
+
+## News
+**5 Dec 2020** We are currently working towards a release of the latest software and firmware versions. Please watch this space for updates!
 
 # Selected Publications
 1. Krishnamurthy, Deepak, Hongquan Li, François Benoit du Rey, Pierre Cambournac, Adam G. Larson, Ethan Li, and Manu Prakash. "Scale-free vertical tracking microscopy." Nature Methods (2020): 1-12. [Weblink](https://www.nature.com/articles/s41592-020-0924-7)
