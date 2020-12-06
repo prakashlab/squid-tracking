@@ -12,11 +12,11 @@ For the last 300 years of history of microscopy, majority of subjects of the mic
 
 ## The Idea
 	
-To address this challenge we invented the nearest thing we could imagine to an "endless" water-column using a simple insight "A circle has no beginning (or end)": The result is a microscope stage which functions as a "hydrodynamic treadmill" for single-cells. We describe the tool in the following paper [Nature Methods](https://www.nature.com/articles/s41592-020-0924-7), [Biorxiv](https://www.biorxiv.org/content/10.1101/610246v1).
+To address this challenge we invented the nearest thing we could imagine to an "endless" water-column using a simple insight "A circle has no beginning (or end)": The result is a microscope stage which functions as a "hydrodynamic treadmill" for single-cells. We describe the tool in the following paper [Nature Methods](https://www.nature.com/articles/s41592-020-0924-7), [Biorxiv](https://www.biorxiv.org/content/10.1101/610246v1). This stage becomes the basis for a 3D tracking microscope which allows theoretically infinite movement along the vertical direction, and also free movement (compared to the organism size) in the two lateral directions. 
 
 ## What can you do with Gravity Machine?
 
-It allows you to capture never-before seen dynamics of processes that span multiple scales, for instance, marine microscale plankton swimming many meters along the vertical axis, allowing measurement of their free-swimming behavior.
+Gravity Machine allows you to capture dynamics of processes that can span multiple length and time-scales, for instance, marine microscale plankton swimming many meters along the vertical axis, allowing direct measurement of their free-swimming behavior. Using Gravity Machine we have, for the first time, observed the multi-scale behavior of marine inventrebrate larve, observed [diel vertical migrations](https://en.wikipedia.org/wiki/Diel_vertical_migration) at the scale of single cells and organisms, measured flow-fields around freely swimming plankton, as well as observed multiscale processes associated with sedimenting particles and ["marine snow"](https://en.wikipedia.org/wiki/Marine_snow). In short it opens up a new measurement paradigm in fields such as ocean biophysics, marine ecology, marine biology and fluid mechanics, among others. 
 
 To explore more visit the [Gravity Machine website](https://gravitymachine.org/) and our associated [data-gallery](https://gravitymachine.org/gallery) of the first-ever multi-scale plankton tracks.
 
