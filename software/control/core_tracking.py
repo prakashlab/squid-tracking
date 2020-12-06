@@ -572,7 +572,7 @@ class microcontroller_Receiver(QObject):
 				self.RecData['Y_stage'] = self.y_pos
 				self.RecData['Theta_stage'] = self.theta_pos
 
-				print(self.x_pos, self.y_pos, self.theta_pos)
+				# print(self.x_pos, self.y_pos, self.theta_pos)
 
 				self.update_stage_position.emit(self.x_pos, self.y_pos, self.theta_pos)
 
