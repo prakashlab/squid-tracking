@@ -1,6 +1,6 @@
 # Scale-free Vertical Tracking Microscopy (aka Gravity Machine)
 
-Gravity Machine is a new paradigm in tracking microscopy that uses a "hydrodynamic treadmill for single cells" invented by [Krishnamurthy at al.](https://www.nature.com/articles/s41592-020-0924-7) to track microscale organisms like marine plankton over theoretically infinite scales in the vertical direction. This repo contains the software (Python) and firmware (C++) for running Gravity Machine. This work is jointly developed with other open-microscopy platforms specificallty [Octopi](https://github.com/hongquanli/octopi-research) and [SQUID](https://github.com/prakashlab/squid-tracking) from the [Prakash lab, Stanford](https://github.com/prakashlab). The repo documents both legacy and current versions of the code, as we move towards an initial software release. Watch this space for updates! 
+Gravity Machine is a new paradigm in tracking microscopy that uses a "hydrodynamic treadmill for single cells" invented by [Krishnamurthy at al.](https://www.nature.com/articles/s41592-020-0924-7) to track microscale organisms like marine plankton over theoretically infinite scales in the vertical direction. This repo contains the software (Python) and firmware (C++) for running Gravity Machine. This work is jointly developed with other open-microscopy platforms, specifically [Octopi](https://github.com/hongquanli/octopi-research) and [SQUID](https://github.com/prakashlab/squid-tracking) being developed at the [Prakash lab, Stanford](https://github.com/prakashlab). The repo documents both legacy and current versions of the code. As we move towards an initial software release, kindly watch this space for updates! 
 
 Below we briefly discuss the scientific challenges and puzzles that motivated this tool!
 
@@ -12,7 +12,7 @@ For the last 300 years of history of microscopy, majority of subjects of the mic
 
 ## The Idea
 	
-To address this challenge we invented the nearest thing we could imagine to an "endless" water-column using a simple insight "A circle has no beginning (or end)": The result is a microscope stage which functions as a "hydrodynamic treadmill" for single-cells. We describe the tool in the following paper [Nature Methods](https://www.nature.com/articles/s41592-020-0924-7), [Biorxiv](https://www.biorxiv.org/content/10.1101/610246v1). This stage becomes the basis for a 3D tracking microscope which allows theoretically infinite movement along the vertical direction, and also free movement (compared to the organism size) in the two lateral directions. 
+To address this challenge we invented the nearest thing we could imagine to an "endless" water-column using a simple insight "A circle has no beginning (or end)": The result is a microscope stage which functions as a "hydrodynamic treadmill" for single-cells. We describe the tool in the following paper [Nature Methods](https://www.nature.com/articles/s41592-020-0924-7), [Biorxiv](https://www.biorxiv.org/content/10.1101/610246v1). This stage becomes the basis for a 3D tracking microscope which allows theoretically infinite movement along the vertical direction, and also free movement (compared to the organism size) in the two horizontal directions. 
 
 ## What can you do with Gravity Machine?
 
@@ -22,7 +22,7 @@ To explore more visit the [Gravity Machine website](https://gravitymachine.org/)
 
 ## Getting Started
 
-The tracking microscope is run using software (written in Python) that runs on standard PC, and handles the real-time image-processing and GUI interaction with the user, along with firmware that runs on a microcontroller (Arduin Due). The code for each of those can be found within the *software* and *firmware* folders, respectively. 
+The tracking microscope is run using software (Python) that runs on standard PC, and handles the real-time image-processing and GUI interaction with the user, along with firmware (C++) that runs on a microcontroller ([Arduino Due](https://store.arduino.cc/usa/due)). The code for each of those can be found within the *software* and *firmware* folders, respectively. 
 
 ## News
 **5 Dec 2020** We are currently working towards a release of the latest software and firmware versions. Please watch this space for updates!
