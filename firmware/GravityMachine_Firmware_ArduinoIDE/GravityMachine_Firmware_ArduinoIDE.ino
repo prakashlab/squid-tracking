@@ -338,7 +338,7 @@ volatile int counter_timer = -1;
 
 volatile unsigned long prevMillisSend = 0, currMillisSend = 0, prevMillisRec = 0, currMillisRec = 0, currMillisStage=0, prevMillisStage = 0, MillisStick = 0, currMillis = 0, currMillisLight = 0;
 volatile unsigned long timestamp_lastTrigger = 0;
-bool startTriggering = false;
+bool flag_trigger_camera = false;
 //=================================================================================
 // Triggering parameters (FL, High speed camera etc.)
 //=================================================================================
@@ -346,7 +346,7 @@ long int sample_interval_FL = 500; // Sample interval in 1/100 seconds
 long int sample_interval_FL_prev = sample_interval_FL ;
 long int numTimerCycles_FL = (1000000/TIMER_PERIOD)*(sample_interval_FL/100);
 volatile long int counter_timer_FL = 0;
-bool startTriggering_FL = false;
+bool flag_trigger_camera_FL = false;
 
 //============================================================================================================
 // Create required number of instances of the AccelStepper Class based on the no:of Stepper motors to control
@@ -1139,7 +1139,7 @@ void timer_interrupt_handler(){
   }
 
   // Tracking camera trigger
-  if(startTriggering)
+  if(flag_trigger_camera)
   {
     counter_timer++;
     if (counter_timer==numTimerCycles) 
@@ -1157,7 +1157,7 @@ void timer_interrupt_handler(){
 
     }
   }
-  if(startTriggering_FL)
+  if(flag_trigger_camera_FL)
   {
     counter_timer_FL++;
     if (counter_timer_FL == numTimerCycles_FL) 
@@ -1553,7 +1553,7 @@ void setup()
   // initialize timer
   Timer3.attachInterrupt(timer_interrupt_handler);
   Timer3.start(TIMER_PERIOD); // Calls every 500 us
-  startTriggering = true;
+ 
 
   
 }
@@ -1711,7 +1711,8 @@ void loop()
   // Update certain status flags periodically
   if(flag_send_flag_update)
   {
-    serial_send_flag('S', StageManualMode);
+//    serial_send_flag('S', StageManualMode);
+    serial_send_flag('C', flag_trigger_camera + flag_trigger_camera_FL);
     flag_send_flag_update = false;
     
   }
@@ -1816,6 +1817,19 @@ void loop()
             liquidLens_offset = float(int(buffer_rx[2]) + int(buffer_rx[3]) *256)/100;
           }
           
+        }
+        else if(buffer_rx[0]==9)
+        {
+          if(buffer_rx[1] == 0)
+          {
+            flag_trigger_camera = false;
+            flag_trigger_camera_FL = false;
+          }
+          else if(buffer_rx[1] == 1)
+          {
+            flag_trigger_camera = true;
+            flag_trigger_camera_FL = true;
+          }
         }
         
         //-------------------------------------------------------------------------------

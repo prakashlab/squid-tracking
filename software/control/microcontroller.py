@@ -207,6 +207,14 @@ class Microcontroller():
 
         self.serial.write(cmd)
 
+    def send_hardware_trigger_command(self, trigger_state):
+        cmd = bytearray(self.tx_buffer_length)
+        cmd[0] = 9
+        cmd[1] = trigger_state
+
+        self.serial.write(cmd)
+
+
 
     def send_command(self,command):
         cmd = bytearray(self.tx_buffer_length)

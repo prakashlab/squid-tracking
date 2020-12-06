@@ -572,8 +572,6 @@ class microcontroller_Receiver(QObject):
 				self.RecData['Y_stage'] = self.y_pos
 				self.RecData['Theta_stage'] = self.theta_pos
 
-				# print(self.x_pos, self.y_pos, self.theta_pos)
-
 				self.update_stage_position.emit(self.x_pos, self.y_pos, self.theta_pos)
 
 				for key in REC_DATA:
@@ -606,6 +604,8 @@ class microcontroller_Receiver(QObject):
 				elif(data[1] == ord('F')):
 					print('Focus tracking flag changed in uController: {}'.format(data[2]))
 
+				elif(data[1] == ord('C')):
+					print('Camera trigger flag changed: {}'.format(data[2]))
 
 		else:
 			pass
