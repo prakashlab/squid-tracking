@@ -10,9 +10,9 @@
 #include <DueTimer.h>
 #include <Wire.h>
 
-#define RUN_OPEN_LOOP // If we want to run in open-loop (no encoders) mode, uncomment this line or set it with a build flag:
-#define TESTING;  // For testing without all hardware connected (dev of firmware + software when only uController is available)
-#define DISABLE_LIMIT_SWITCHES // use when no limit switches are available/ connected:
+//#define RUN_OPEN_LOOP // If we want to run in open-loop (no encoders) mode, uncomment this line or set it with a build flag:
+//#define TESTING;  // For testing without all hardware connected (dev of firmware + software when only uController is available)
+//#define DISABLE_LIMIT_SWITCHES // use when no limit switches are available/ connected:
 //#define USE_SERIAL_MONITOR // Send data to Serial monitor instead of USB port (for debugging). 
 //=================================================================================
 // Mathematical constants
@@ -338,7 +338,7 @@ volatile int counter_timer = -1;
 
 volatile unsigned long prevMillisSend = 0, currMillisSend = 0, prevMillisRec = 0, currMillisRec = 0, currMillisStage=0, prevMillisStage = 0, MillisStick = 0, currMillis = 0, currMillisLight = 0;
 volatile unsigned long timestamp_lastTrigger = 0;
-bool flag_trigger_camera = false;
+bool flag_trigger_camera = true;
 //=================================================================================
 // Triggering parameters (FL, High speed camera etc.)
 //=================================================================================
@@ -346,7 +346,7 @@ long int sample_interval_FL = 500; // Sample interval in 1/100 seconds
 long int sample_interval_FL_prev = sample_interval_FL ;
 long int numTimerCycles_FL = (1000000/TIMER_PERIOD)*(sample_interval_FL/100);
 volatile long int counter_timer_FL = 0;
-bool flag_trigger_camera_FL = false;
+bool flag_trigger_camera_FL = true;
 
 //============================================================================================================
 // Create required number of instances of the AccelStepper Class based on the no:of Stepper motors to control

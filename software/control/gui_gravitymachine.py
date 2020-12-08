@@ -17,12 +17,12 @@ from control._def import *
 # app specific libraries
 import control.widgets as widgets
 import control.widgets_tracking as widgets_tracking
-import control.camera as camera
+import control.camera_TIS as camera
 import control.core as core
 import control.core_tracking as core_tracking
 import control.microcontroller as microcontroller
 
-SIMULATION = True
+SIMULATION = False
 
 class GravityMachine_GUI(QMainWindow):
 
@@ -63,10 +63,10 @@ class GravityMachine_GUI(QMainWindow):
 
 		else:
 			# TIS Camera object
-			# self.camera = {key:camera.Camera(serial=CAMERAS[key]['serial'], width = CAMERAS[key]['px_format'][0], 
-			# 	height = CAMERAS[key]['px_format'][1], framerate = CAMERAS[key]['fps']) for key in self.imaging_channels}
+			self.camera = {key:camera.Camera(serial=CAMERAS[key]['serial'], width = CAMERAS[key]['px_format'][0], 
+				height = CAMERAS[key]['px_format'][1], framerate = CAMERAS[key]['fps']) for key in self.imaging_channels}
 			# DaHheng camera object
-			self.camera = {key:camera.Camera() for key in self.imaging_channels}
+			# self.camera = {key:camera.Camera() for key in self.imaging_channels}
 			self.microcontroller = microcontroller.Microcontroller()
 		
 		self.internal_state = core_tracking.InternalState()
