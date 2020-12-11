@@ -32,7 +32,7 @@ class GravityMachine_GUI(QMainWindow):
 	def __init__(self, *args, **kwargs):
 		super().__init__(*args, **kwargs)
 		
-		self.setWindowTitle('Squid')
+		self.setWindowTitle('Gravity Machine v2.0')
 
 		self.imaging_channels = CAMERAS.keys()
 
@@ -42,11 +42,11 @@ class GravityMachine_GUI(QMainWindow):
 		# load other windows
 		#------------------------------------------------------------------
 		self.imageDisplayWindow = {key:core.ImageDisplayWindow(key + ' Display', 
-			DrawCrossHairs = True, rotate_image_angle=90) 
+			DrawCrossHairs = True, rotate_image_angle=90, flip_image = True) 
 			for key in self.imaging_channels}
 
 		
-		self.imageDisplayWindow_ThresholdedImage = core.ImageDisplayWindow('Thresholded Image', rotate_image_angle=90)
+		self.imageDisplayWindow_ThresholdedImage = core.ImageDisplayWindow('Thresholded Image', rotate_image_angle=90, flip_image = True)
 		
 		for key in self.imaging_channels:
 			self.imageDisplayWindow[key].show()
@@ -107,6 +107,7 @@ class GravityMachine_GUI(QMainWindow):
 		self.FocusTracking_Widget = widgets_tracking.FocusTracking_Widget(self.trackingController, self.internal_state, self.microcontroller)
 		self.recordingControlWidget = widgets.RecordingWidget(self.streamHandler,self.imageSaver, self.internal_state, self.trackingControlWidget, self.trackingDataSaver, self.imaging_channels)
 
+		self.stageCalibrationWidget = widgets_tracking.StageCalibrationWidget(self.internal_state, self.microcontroller) 
 		# self.recordTabWidget = QTabWidget()
 		# self.recordTabWidget.addTab(self.recordingControlWidget, "Acquisition control")
 		
@@ -117,6 +118,11 @@ class GravityMachine_GUI(QMainWindow):
 		self.streamSettings_Tab = QTabWidget()
 		for key in self.imaging_channels:
 			self.streamSettings_Tab.addTab(self.streamControlWidget[key],key)
+
+		self.stageSettingsTab = QTabWidget()
+
+		self.stageSettingsTab.addTab(self.navigationWidget, 'Navigation')
+		self.stageSettingsTab.addTab(self.stageCalibrationWidget, 'Calibration')
 	
 		#------------------------------------------------------------------
 		# Connections
@@ -163,15 +169,17 @@ class GravityMachine_GUI(QMainWindow):
 		# layout.addWidget(self.cameraSettingWidget,0,0)
 		layout.addWidget(self.liveControlWidget,0,0)
 		layout.addWidget(self.streamSettings_Tab,0,1)
-		layout.addWidget(self.navigationWidget,0,2)
+		layout.addWidget(self.stageSettingsTab,0,2)
 		layout.addWidget(self.trackingControlWidget,1,0)
-		# layout.addWidget(self.PID_Group_Widget,2,0)
+		layout.addWidget(self.recordingControlWidget,1,1)
+		layout.addWidget(self.cameraSettings_Tab,1,2)
+
+
+		layout.addWidget(self.PID_Group_Widget,2,0)
 		# layout.addWidget(self.navigationWidget,2,0)
 		#layout.addWidget(self.autofocusWidget,3,0)
-		# layout.addWidget(self.recordingControlWidget,1,1)
 		# layout.addWidget(self.PID_Group_Widget,2,0)
-		layout.addWidget(self.FocusTracking_Widget,1,1)
-		# layout.addWidget(self.cameraSettings_Tab,1,2,1,1)
+		# layout.addWidget(self.FocusTracking_Widget,1,1)
 		# transfer the layout to the central widget
 		self.centralWidget = QWidget()
 		self.centralWidget.setLayout(layout)

@@ -212,7 +212,7 @@ long int X_home = 0, Y_home = 0, Z_home = 0;
 //--------------------------------------------------
 // Maximum speed of stage in Manual mode
 //--------------------------------------------------
-int maxManualSpeedX = 5000, maxManualSpeedY = 2000, maxManualSpeedTheta = 5000, maxManualSpeedZ = 1000; 
+int maxManualSpeedX = 2500, maxManualSpeedY = 2500, maxManualSpeedTheta = 5000, maxManualSpeedZ = 1000; 
 //--------------------------------------------------
 // Speed of stepper based on micro-stepping state
 //--------------------------------------------------
@@ -316,8 +316,8 @@ int x_sign = 1, y_sign = -1;
 bool found_Xlimits = false, found_Ylimits = false;
 bool atXhome = false, atYhome = false;
 bool x_home_inProgress = false, y_home_inProgress = false;
-//int fullStepsToYhome = 3766;      // Number of full-steps to reach the center of the Y-stage from -ve limit swtch
-int fullStepsToYhome = 1500;      // Number of full-steps to reach the center of the Y-stage from -ve limit swtch
+int fullStepsToYhome = 3766;      // Number of full-steps to reach the center of the Y-stage from -ve limit swtch
+//int fullStepsToYhome = 1500;      // Number of full-steps to reach the center of the Y-stage from -ve limit swtch
 //=================================================================================
 // Light modulation variables
 //=================================================================================
@@ -1732,9 +1732,9 @@ void loop()
         isReceived=true;
 
         //Motion commands
-        Step_X =0;
-        Step_Y = 0;
-        Step_Theta = 0;
+//        Step_X =0;
+//        Step_Y = 0;
+//        Step_Theta = 0;
         
         if(buffer_rx[0]==0)
         {

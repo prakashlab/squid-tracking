@@ -282,11 +282,12 @@ class TrackingController(QObject):
 				# print('Image error: {}, {}, {} mm'.format(x_error, y_error, z_error))
 				X_order, Y_order, Theta_order = self.get_motion_commands(x_error,y_error,z_error)
 
+				print(X_order, Y_order, Theta_order)
 				# New serial interface (send data directly to micro-controller object)
 
 				self.microcontroller.move_x_nonblocking(X_order)
 				self.microcontroller.move_y_nonblocking(Y_order)
-				self.microcontroller.move_theta_nonblocking(Theta_order)  
+				self.microcontroller.move_theta_nonblocking(-Theta_order)  
 		
 
 			# Update the Internal State Model
@@ -391,11 +392,11 @@ class TrackingController(QObject):
 	def get_motion_commands(self, x_error, y_error, z_error):
 		# Take an error signal and pass it through a PID algorithm
 
+		print(self.image_center)
 		# Convert from mm to steps (these are rounded to the nearest integer).
 		x_error_steps = int(Motion.STEPS_PER_MM_X*x_error)
 		y_error_steps = int(Motion.STEPS_PER_MM_Y*y_error)
 
-		print(self.X_stage[-1])
 		theta_error_steps = int(self.units_converter.Z_mm_to_step(z_error, self.X_stage[-1]))
 
 		if self.resetPID:
@@ -445,7 +446,7 @@ class TrackingController(QObject):
 			# The tracking set point is modified since it depends on the image center.
 			self.update_tracking_setpoint()
 			
-			# print('New image width: {}'.format(self.image_width))
+			print('New image width: {}'.format(self.image_width))
 
 
 	def update_tracking_setpoint(self):
@@ -614,7 +615,8 @@ class microcontroller_Receiver(QObject):
 					print('Focus tracking flag changed in uController: {}'.format(data[2]))
 
 				elif(data[1] == ord('C')):
-					print('Camera trigger flag changed: {}'.format(data[2]))
+					pass
+					# print('Camera trigger flag changed: {}'.format(data[2]))
 
 		else:
 			pass

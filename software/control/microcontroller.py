@@ -145,7 +145,7 @@ class Microcontroller():
 
     def move_theta_nonblocking(self,delta):
         direction = int((np.sign(delta)+1)/2)
-        n_microsteps = abs(delta*Motion.MAX_MICROSTEPS*Motion.STEPS_PER_REV_THETA_SHAFT/(2*np.pi))
+        n_microsteps = abs(delta*Motion.MAX_MICROSTEPS)
         if n_microsteps > 65535:
             n_microsteps = 65535
         cmd = bytearray(self.tx_buffer_length)
@@ -166,6 +166,7 @@ class Microcontroller():
     def send_homing_command(self):
         cmd = bytearray(self.tx_buffer_length)
         cmd[0] = 5
+        cmd[1] = 1
 
         self.serial.write(cmd)
 

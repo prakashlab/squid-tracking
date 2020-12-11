@@ -279,7 +279,7 @@ class TrackingControllerWidget(QFrame):
 		self.streamHandler.set_image_thresholds(np.uint8(LOWER), np.uint8(UPPER))	
 
 
-class StageControlWidget(QFrame):
+class StageCalibrationWidget(QFrame):
 	
 	def __init__(self, internal_state, microcontroller,  main=None, *args, **kwargs):
 		super().__init__(*args, **kwargs)
