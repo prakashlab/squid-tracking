@@ -561,12 +561,21 @@ class microcontroller_Receiver(QObject):
 
 				phase = byte_operations.data2byte_to_int(data[1], data[2])*2*np.pi/65535.
 
-				# X stage position (mm)
-				self.x_pos = byte_operations.unsigned_to_signed(data[3:6],MicrocontrollerDef.N_BYTES_POS)/(Motion.STEPS_PER_MM_X*Motion.MAX_MICROSTEPS) 
-				# Y stage position (mm)
-				self.y_pos = byte_operations.unsigned_to_signed(data[6:9],MicrocontrollerDef.N_BYTES_POS)/(Motion.STEPS_PER_MM_Y*Motion.MAX_MICROSTEPS)
-				# Theta stage position (encoder counts to radians)
-				self.theta_pos = 2*np.pi*byte_operations.unsigned_to_signed(data[9:12],MicrocontrollerDef.N_BYTES_POS)/(Motion.STEPS_PER_REV_THETA_SHAFT*Motion.MAX_MICROSTEPS) 
+				if(MicrocontrollerDef.RUN_OPENLOOP == True):
+					# X stage position (mm)
+					self.x_pos = byte_operations.unsigned_to_signed(data[3:6],MicrocontrollerDef.N_BYTES_POS)/(Motion.STEPS_PER_MM_X*Motion.MAX_MICROSTEPS) 
+					# Y stage position (mm)
+					self.y_pos = byte_operations.unsigned_to_signed(data[6:9],MicrocontrollerDef.N_BYTES_POS)/(Motion.STEPS_PER_MM_Y*Motion.MAX_MICROSTEPS)
+					# Theta stage position (encoder counts to radians)
+					self.theta_pos = 2*np.pi*byte_operations.unsigned_to_signed(data[9:12],MicrocontrollerDef.N_BYTES_POS)/(Motion.STEPS_PER_REV_THETA_SHAFT*Motion.MAX_MICROSTEPS) 
+
+				elif(MicrocontrollerDef.RUN_OPENLOOP == False):
+					# X stage position (mm)
+					self.x_pos = byte_operations.unsigned_to_signed(data[3:6],MicrocontrollerDef.N_BYTES_POS)/(Encoders.COUNTS_PER_MM_X) 
+					# Y stage position (mm)
+					self.y_pos = byte_operations.unsigned_to_signed(data[6:9],MicrocontrollerDef.N_BYTES_POS)/(Encoders.COUNTS_PER_MM_Y)
+					# Theta stage position (encoder counts to radians)
+					self.theta_pos = 2*np.pi*byte_operations.unsigned_to_signed(data[9:12],MicrocontrollerDef.N_BYTES_POS)/(Encoders.COUNTS_PER_REV_THETA) 
 
 				self.RecData['X_stage'] = self.x_pos
 				self.RecData['Y_stage'] = self.y_pos
