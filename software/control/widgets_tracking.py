@@ -293,12 +293,12 @@ class StageCalibrationWidget(QFrame):
 		# Homing Button
 		self.homing_button = QPushButton('Run Homing')
 
-		stage_control = QVBoxLayout()
+		stage_control = QGridLayout()
 
-		stage_control.addWidget(self.homing_button)
-		stage_control.addWidget(self.zero_X)
-		stage_control.addWidget(self.zero_Y)
-		stage_control.addWidget(self.zero_Theta)
+		stage_control.addWidget(self.homing_button,0,0)
+		stage_control.addWidget(self.zero_X,0,1)
+		stage_control.addWidget(self.zero_Y,1,1)
+		stage_control.addWidget(self.zero_Theta,2,1)
 
 		self.setLayout(stage_control)
 
@@ -430,11 +430,12 @@ class NavigationWidget(QFrame):
     	self.label_Thetapos.setText('{:.02f}'.format(round(Theta_stage,2)))
 
 
-class PID_Group_Widget(QFrame):
+class PID_Group_Widget(QGroupBox):
 
 	def __init__(self, trackingController):
 		super().__init__()
-		self.setFrameStyle(QFrame.Panel | QFrame.Raised)
+		self.setTitle('PID settings')
+		# self.setFrameStyle(QFrame.Panel | QFrame.Raised)
 
 		# self.setTitle('PID settings')
 
@@ -504,7 +505,7 @@ class PID_Widget(QGroupBox):
 		stepP = Pmax/100
 
 		self.labelP = QLabel('P')
-		self.hsliderP = QSlider(Qt.Horizontal)
+		self.hsliderP = QSlider(Qt.Vertical)
 		self.hsliderP.setRange(0,int(Pmax*100))
 		self.hsliderP.setValue(int(defaultP*100))
 		self.spinboxP = QDoubleSpinBox()
@@ -513,10 +514,10 @@ class PID_Widget(QGroupBox):
 		self.spinboxP.setValue(round(defaultP,2))
 		self.hsliderP.valueChanged.connect(self.spinBoxP_setValue)
 		self.spinboxP.valueChanged.connect(self.hsliderP_setValue)
-		sliderP_layout=QHBoxLayout()
-		sliderP_layout.addWidget(self.labelP)
-		sliderP_layout.addWidget(self.hsliderP)
-		sliderP_layout.addWidget(self.spinboxP)
+		sliderP_layout=QGridLayout()
+		sliderP_layout.addWidget(self.labelP,0,0)
+		sliderP_layout.addWidget(self.hsliderP,0,1,2,1)
+		sliderP_layout.addWidget(self.spinboxP,1,0)
 		group_sliderP=QWidget()
 		group_sliderP.setLayout(sliderP_layout)
 		
@@ -525,7 +526,7 @@ class PID_Widget(QGroupBox):
 		stepI = Imax/100
 		# Slider Groupe I
 		self.labelI = QLabel('I')
-		self.hsliderI = QSlider(Qt.Horizontal)
+		self.hsliderI = QSlider(Qt.Vertical)
 		self.hsliderI.setRange(0,int(Imax*100))
 		self.hsliderI.setValue(int(defaultI*100))
 		self.spinboxI=QDoubleSpinBox()
@@ -534,10 +535,10 @@ class PID_Widget(QGroupBox):
 		self.spinboxI.setValue(round(defaultI,2))
 		self.hsliderI.valueChanged.connect(self.spinBoxI_setValue)
 		self.spinboxI.valueChanged.connect(self.hsliderI_setValue)
-		sliderI_layout=QHBoxLayout()
-		sliderI_layout.addWidget(self.labelI)
-		sliderI_layout.addWidget(self.hsliderI)
-		sliderI_layout.addWidget(self.spinboxI)
+		sliderI_layout=QGridLayout()
+		sliderI_layout.addWidget(self.labelI,0,0)
+		sliderI_layout.addWidget(self.hsliderI,0,1,2,1)
+		sliderI_layout.addWidget(self.spinboxI,1,0)
 		group_sliderI=QWidget()
 		group_sliderI.setLayout(sliderI_layout)
 		
@@ -546,7 +547,7 @@ class PID_Widget(QGroupBox):
 		stepD = Dmax/100
 
 		self.labelD = QLabel('D')
-		self.hsliderD = QSlider(Qt.Horizontal)
+		self.hsliderD = QSlider(Qt.Vertical)
 		self.hsliderD.setRange(0,int(Dmax*100))
 		self.hsliderD.setValue(int(defaultD*100))
 		self.spinboxD=QDoubleSpinBox()
@@ -555,10 +556,10 @@ class PID_Widget(QGroupBox):
 		self.spinboxD.setValue(round(defaultD,2))
 		self.hsliderD.valueChanged.connect(self.spinBoxD_setValue)
 		self.spinboxD.valueChanged.connect(self.hsliderD_setValue)
-		sliderD_layout=QHBoxLayout()
-		sliderD_layout.addWidget(self.labelD)
-		sliderD_layout.addWidget(self.hsliderD)
-		sliderD_layout.addWidget(self.spinboxD)
+		sliderD_layout=QGridLayout()
+		sliderD_layout.addWidget(self.labelD,0,0)
+		sliderD_layout.addWidget(self.hsliderD,0,1,2,1)
+		sliderD_layout.addWidget(self.spinboxD,1,0)
 		group_sliderD=QWidget()
 		group_sliderD.setLayout(sliderD_layout)
 		

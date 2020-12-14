@@ -346,7 +346,7 @@ class LiveControlWidget(QGroupBox):
 
 # 		pass  
 
-class RecordingWidget(QFrame):
+class RecordingWidget(QGroupBox):
 	def __init__(self, streamHandler, imageSaver, internal_state, trackingControllerWidget, trackingDataSaver = None, imaging_channels = TRACKING, main=None, *args, **kwargs):
 		super().__init__(*args, **kwargs)
 		
@@ -364,7 +364,9 @@ class RecordingWidget(QFrame):
 		self.save_dir_base = DEFAULT_SAVE_FOLDER
 		self.base_path_is_set = False
 		self.add_components()
-		self.setFrameStyle(QFrame.Panel | QFrame.Raised)
+
+		self.setTitle('Acquisition')
+		# self.setFrameStyle(QFrame.Panel | QFrame.Raised)
 
 	def add_components(self):
 		self.btn_setSavingDir = QPushButton('Browse')

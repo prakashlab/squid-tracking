@@ -56,7 +56,7 @@ class StreamHandler(QObject):
 
     def __init__(self, camera = None , crop_width=2000,crop_height=2000, working_resolution_scaling = WORKING_RES_DEFAULT, imaging_channel = TRACKING):
         QObject.__init__(self)
-        self.fps_display = 1
+        self.fps_display = FPS['display']['default']
         self.fps_save = 1
         self.fps_track = 1
         self.timestamp_last_display = 0
@@ -355,7 +355,7 @@ class LiveController(QObject):
         self.was_live_before_autofocus = False
         self.was_live_before_multipoint = False
 
-        self.fps_software_trigger = 1;
+        self.fps_software_trigger = FPS['trigger_software']['default']
         self.timer_software_trigger_interval = (1/self.fps_software_trigger)*1000
 
         self.timer_software_trigger = QTimer()

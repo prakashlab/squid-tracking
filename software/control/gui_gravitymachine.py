@@ -168,11 +168,12 @@ class GravityMachine_GUI(QMainWindow):
 		# layout.addWidget(self.cameraSettingsWidget,0,0)
 		layout.addWidget(self.liveControlWidget,0,0)
 		layout.addWidget(self.trackingControlWidget,1,0)
-		layout.addWidget(self.PID_Group_Widget,2,0)
+		layout.addWidget(self.recordingControlWidget,2,0)
 
 		layout.addWidget(self.cameraSettings_Tab,0,1)
-		layout.addWidget(self.stageSettingsTab,1,1)
-		layout.addWidget(self.recordingControlWidget,2,1)
+		layout.addWidget(self.PID_Group_Widget,1,1)
+
+		layout.addWidget(self.stageSettingsTab,2,1)
 
 		# layout.addWidget(self.navigationWidget,2,0)
 		#layout.addWidget(self.autofocusWidget,3,0)
