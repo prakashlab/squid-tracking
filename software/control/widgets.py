@@ -26,6 +26,8 @@ class CameraSettingsWidget(QFrame):
 		super().__init__(*args, **kwargs)
 		self.camera = camera
 		self.liveController = liveController
+		self.fps_trigger = FPS['trigger_software']['default']
+
 		# add components to self.grid
 		self.add_components()        
 		# set frame style
@@ -65,6 +67,24 @@ class CameraSettingsWidget(QFrame):
 
 		self.btn_Preset = QPushButton("Preset")
 		self.btn_Preset.setDefault(False)
+
+		# Trigger Mode
+		self.triggerMode = None
+		self.dropdown_triggerMode = QComboBox()
+		self.dropdown_triggerMode.addItems([TriggerMode.SOFTWARE,TriggerMode.HARDWARE,TriggerMode.CONTINUOUS])
+		self.dropdown_triggerMode.setCurrentText(TriggerMode.SOFTWARE)
+
+		# Trigger FPS
+		self.entry_triggerFPS = QDoubleSpinBox()
+		self.entry_triggerFPS.setMinimum(FPS['trigger_software']['min']) 
+		self.entry_triggerFPS.setMaximum(FPS['trigger_software']['max']) 
+		self.entry_triggerFPS.setSingleStep(1)
+		self.entry_triggerFPS.setValue(self.fps_trigger)
+
+		# Trigger FPS actual
+		self.actual_streamFPS = QLCDNumber()
+		self.actual_streamFPS.setNumDigits(4)
+		self.actual_streamFPS.display(0.0)
    
 
 		# connection
@@ -74,8 +94,11 @@ class CameraSettingsWidget(QFrame):
 		self.entry_analogGain.valueChanged.connect(self.camera.set_analog_gain)
 		self.entry_exposureTime_Preset.valueChanged.connect(self.liveController.set_exposure_time_bfdf_preset)
 		self.entry_analogGain_Preset.valueChanged.connect(self.liveController.set_analog_gain_bfdf_preset)
-		
-		# layout
+		self.entry_triggerFPS.valueChanged.connect(self.liveController.set_trigger_fps)
+		self.dropdown_triggerMode.currentIndexChanged.connect(self.update_trigger_mode)
+
+
+		# Sub-blocks layout
 		grid_ctrl = QGridLayout()
 		grid_ctrl.addWidget(QLabel('Exposure Time (ms)'), 0,0)
 		grid_ctrl.addWidget(self.entry_exposureTime, 0,1)
@@ -84,13 +107,28 @@ class CameraSettingsWidget(QFrame):
 
 		grid_ctrl_preset = QGridLayout()
 		grid_ctrl_preset.addWidget(self.entry_exposureTime_Preset, 0,0)
-		grid_ctrl_preset.addWidget(self.entry_analogGain_Preset, 0,1)
-		grid_ctrl_preset.addWidget(self.btn_Preset, 0,2)
+		grid_ctrl_preset.addWidget(self.entry_analogGain_Preset, 1,0)
+		grid_ctrl_preset.addWidget(self.btn_Preset, 0,1)
 	  
+		trigger_fps_group = QGroupBox('Trigger FPS')
+		trigger_fps_layout = QGridLayout()
+		
+		trigger_fps_layout.addWidget(QLabel('Set'),0,0)
+		trigger_fps_layout.addWidget(self.entry_triggerFPS, 0,1)
+		trigger_fps_layout.addWidget(QLabel('Actual'),0,2)
+		trigger_fps_layout.addWidget(self.actual_streamFPS, 0,3)
+		trigger_fps_group.setLayout(trigger_fps_layout)
 
+		triggerMode_layout = QHBoxLayout()
+		triggerMode_layout.addWidget(QLabel('Trigger mode'))
+		triggerMode_layout.addWidget(self.dropdown_triggerMode)
+
+		# Overall layout
 		self.grid = QGridLayout()
 		self.grid.addLayout(grid_ctrl,0,0)
-		self.grid.addLayout(grid_ctrl_preset,1,0)
+		self.grid.addLayout(grid_ctrl_preset,0,1)
+		self.grid.addLayout(triggerMode_layout, 1, 0)
+		self.grid.addWidget(trigger_fps_group)
 
 		self.setLayout(self.grid)
 
@@ -99,6 +137,13 @@ class CameraSettingsWidget(QFrame):
 		self.entry_exposureTime.repaint() # update doesn't work
 		self.entry_analogGain.setValue(self.entry_analogGain_Preset.value())
 		self.entry_analogGain.repaint()
+
+	def update_trigger_mode(self):
+		self.liveController.set_trigger_mode(self.dropdown_triggerMode.currentText())
+
+	# Slot connected to signal from streamHandler.
+	def update_stream_fps(self, value):
+		self.actual_streamFPS.display(value)
 
 
 class LiveControlWidget(QGroupBox):
@@ -123,6 +168,10 @@ class LiveControlWidget(QGroupBox):
 
 
 		self.objective = DEFAULT_OBJECTIVE
+
+		self.fps_display = FPS['display']['default']
+
+		self.streamHandler.set_display_fps(self.fps_display)
 		
 		self.add_components()
 		self.update_pixel_size()
@@ -131,21 +180,35 @@ class LiveControlWidget(QGroupBox):
 
 	def add_components(self):
 
+		# Live button (0,0)
 		self.btn_live = QPushButton("Live")
 		self.btn_live.setCheckable(True)
 		self.btn_live.setChecked(False)
 		self.btn_live.setDefault(False)
 
-		self.checkbox = {}
-		for channel in self.imaging_channels:
-			self.checkbox[channel] = QCheckBox(channel)
-
-		# 0,1 : choose tracking objective
+		# Microscope objective (0, 1)
 		self.dropdown_objectiveSelection = QComboBox()
 		self.dropdown_objectiveSelection.addItems(list(OBJECTIVES.keys()))
 		self.dropdown_objectiveSelection.setCurrentText(DEFAULT_OBJECTIVE)
 
-		# Display resolution slider
+		# Checkboxes for enabling image streams (0,2)
+		self.checkbox = {}
+		for channel in self.imaging_channels:
+			self.checkbox[channel] = QCheckBox(channel)
+
+		# Display FPS (1,0)
+		# Entry display fps 
+		self.entry_displayFPS = QDoubleSpinBox()
+		self.entry_displayFPS.setMinimum(FPS['display']['min']) 
+		self.entry_displayFPS.setMaximum(FPS['display']['max']) 
+		self.entry_displayFPS.setSingleStep(1)
+		self.entry_displayFPS.setValue(FPS['display']['default'])
+		 # Display fps actual
+		self.actual_displayFPS = QLCDNumber()
+		self.actual_displayFPS.setNumDigits(4)
+		self.actual_displayFPS.display(0.0)
+
+		# Display resolution slider (2,0)
 		self.slider_resolutionScaling = QSlider(Qt.Horizontal)
 		self.slider_resolutionScaling.setTickPosition(QSlider.TicksBelow)
 		self.slider_resolutionScaling.setMinimum(10)
@@ -157,48 +220,51 @@ class LiveControlWidget(QGroupBox):
 		self.display_workingResolution.setNumDigits(6)
 		self.display_workingResolution.display(0.0)
 
-		# @@@ To implement: Multi-image channel support.
-		# Each image channel can be checked ON or OFF so that we can switch between multiple imaging modalities
-		# This will be a checkbox, where the tracking stream is checked by default.
-
-
-
 		# connections
-
 		self.slider_resolutionScaling.valueChanged.connect(self.streamHandler.set_working_resolution_scaling)
 		self.slider_resolutionScaling.valueChanged.connect(self.update_image_properties_tracking)
-		# self.dropdown_modeSelection.currentIndexChanged.connect(self.update_microscope_mode)
 		self.dropdown_objectiveSelection.currentIndexChanged.connect(self.update_pixel_size)
 		self.btn_live.clicked.connect(self.toggle_live)
 
 		for channel in self.imaging_channels:
 			self.checkbox[channel].clicked.connect(self.update_active_channels)
 
+		self.entry_displayFPS.valueChanged.connect(self.streamHandler.set_display_fps)
 
 		# Layout
 
 		# checkbox layout
-		checkbox_group = QGroupBox('Imaging channels')
 		checkbox_layout = QGridLayout()
 		for column, channel in enumerate(self.imaging_channels):
 			checkbox_layout.addWidget(self.checkbox[channel],0,column)
-		# checkbox_group.setLayout(checkbox_layout)
 
 		objective_layout = QHBoxLayout()
 		objective_layout.addWidget(QLabel('Objective'))
 		objective_layout.addWidget(self.dropdown_objectiveSelection)
 	  
-		working_resolution_group = QGroupBox('Working resolution')
-		working_resolution_layout = QHBoxLayout()
-		working_resolution_layout.addWidget(self.slider_resolutionScaling)
-		working_resolution_layout.addWidget(self.display_workingResolution)
+		working_resolution_group = QGroupBox('Display resolution')
+		working_resolution_layout = QGridLayout()
+		working_resolution_layout.addWidget(self.slider_resolutionScaling, 0,0)
+		working_resolution_layout.addWidget(self.display_workingResolution, 0,1)
 		working_resolution_group.setLayout(working_resolution_layout)
+
+		# Layout
+
+		display_fps_group = QGroupBox('Display FPS')
+		display_fps_layout = QGridLayout()
+		
+		display_fps_layout.addWidget(QLabel('Set'),0,0)
+		display_fps_layout.addWidget(self.entry_displayFPS, 0,1)
+		display_fps_layout.addWidget(QLabel('Actual'),0,2)
+		display_fps_layout.addWidget(self.actual_displayFPS, 0,3)
+		display_fps_group.setLayout(display_fps_layout)
 
 		self.grid = QGridLayout()
 		self.grid.addWidget(self.btn_live,0,0)
 		self.grid.addLayout(objective_layout,0,1)
-		self.grid.addLayout(checkbox_layout,1,0)
-		self.grid.addWidget(working_resolution_group,1,1)
+		self.grid.addLayout(checkbox_layout,0,2)
+		self.grid.addWidget(display_fps_group, 1, 0)
+		self.grid.addWidget(working_resolution_group,1,1,1,2)
 
 		self.setLayout(self.grid)
 
@@ -251,115 +317,34 @@ class LiveControlWidget(QGroupBox):
 
 
 
-class StreamControlWidget(QFrame):
-	'''
-	Widget controls image/video-stream parameters:
-		- Trigger mode (Hardware, Software, Continuous acquisition)
-		- Trigger FPS (Set and Actual). Set value only matters during Software trigger. 
-		- Display fps (Set and Actual).
-	'''
-
-	def __init__(self, streamHandler, liveController, camera, main=None, *args, **kwargs):
-		super().__init__(*args, **kwargs)
-		self.liveController = liveController
-		self.streamHandler = streamHandler
-		self.camera = camera
-
-		self.fps_display = FPS['display']['default']
-		self.fps_trigger = FPS['trigger_software']['default']
-
-		self.streamHandler.set_display_fps(self.fps_display)
-		self.liveController.set_trigger_fps(self.fps_trigger)
-		
-		self.add_components()
-
-	def add_components(self):
-
-		# Widgets
-
-		# Trigger Mode
-		self.triggerMode = None
-		self.dropdown_triggerMode = QComboBox()
-		self.dropdown_triggerMode.addItems([TriggerMode.SOFTWARE,TriggerMode.HARDWARE,TriggerMode.CONTINUOUS])
-		self.dropdown_triggerMode.setCurrentText(TriggerMode.SOFTWARE)
-
-		# Trigger FPS
-		self.entry_triggerFPS = QDoubleSpinBox()
-		self.entry_triggerFPS.setMinimum(FPS['trigger_software']['min']) 
-		self.entry_triggerFPS.setMaximum(FPS['trigger_software']['max']) 
-		self.entry_triggerFPS.setSingleStep(1)
-		self.entry_triggerFPS.setValue(self.fps_trigger)
-
-		# Trigger FPS actual
-		self.actual_streamFPS = QLCDNumber()
-		self.actual_streamFPS.setNumDigits(4)
-		self.actual_streamFPS.display(0.0)
-
-		# Entry display fps
-		self.entry_displayFPS = QDoubleSpinBox()
-		self.entry_displayFPS.setMinimum(FPS['display']['min']) 
-		self.entry_displayFPS.setMaximum(FPS['display']['max']) 
-		self.entry_displayFPS.setSingleStep(1)
-		self.entry_displayFPS.setValue(FPS['display']['default'])
-
-		 # Display fps actual
-		self.actual_displayFPS = QLCDNumber()
-		self.actual_displayFPS.setNumDigits(4)
-		self.actual_displayFPS.display(0.0)
-
-
-		# Layout
-		triggerMode_layout = QHBoxLayout()
-		triggerMode_layout.addWidget(QLabel('Trigger mode'))
-		triggerMode_layout.addWidget(self.dropdown_triggerMode)
-
-
-		trigger_fps_group = QGroupBox('Trigger FPS')
-		trigger_fps_layout = QGridLayout()
-		
-		trigger_fps_layout.addWidget(QLabel('Set'),0,0)
-		trigger_fps_layout.addWidget(self.entry_triggerFPS, 0,1)
-		trigger_fps_layout.addWidget(QLabel('Actual'),0,2)
-		trigger_fps_layout.addWidget(self.actual_streamFPS, 0,3)
-		trigger_fps_group.setLayout(trigger_fps_layout)
-
-		display_fps_group = QGroupBox('Display FPS')
-		display_fps_layout = QGridLayout()
-		
-		display_fps_layout.addWidget(QLabel('Set'),0,0)
-		display_fps_layout.addWidget(self.entry_displayFPS, 0,1)
-		display_fps_layout.addWidget(QLabel('Actual'),0,2)
-		display_fps_layout.addWidget(self.actual_displayFPS, 0,3)
-		display_fps_group.setLayout(display_fps_layout)
-
-		# Overall layout
-		self.grid = QGridLayout()
-		# self.grid.addLayout(microscope_mode_layout,0,0)
-		self.grid.addLayout(triggerMode_layout,0,0)
-		self.grid.addWidget(trigger_fps_group,1,0)
-		self.grid.addWidget(display_fps_group,2,0)
-		self.setLayout(self.grid)
-
-		# Connections
-		self.dropdown_triggerMode.currentIndexChanged.connect(self.update_trigger_mode)
-		self.entry_displayFPS.valueChanged.connect(self.streamHandler.set_display_fps)
-		self.entry_triggerFPS.valueChanged.connect(self.liveController.set_trigger_fps)
-
-	 
-
-	 # Slot connected to signal from streamHandler.
+	# Slot connected to signal from streamHandler.
 	def update_display_fps(self, value):
 		self.actual_displayFPS.display(value)
 
 
-	# Slot connected to signal from streamHandler.
-	def update_stream_fps(self, value):
-		self.actual_streamFPS.display(value)
+# @@@ This widget has been merged with live control and camera settings widget
+# class StreamControlWidget(QFrame):
+# 	'''
+# 	Widget controls image/video-stream parameters:
+# 		- Trigger mode (Hardware, Software, Continuous acquisition)
+# 		- Trigger FPS (Set and Actual). Set value only matters during Software trigger. 
+# 		- Display fps (Set and Actual).
+# 	'''
 
-	def update_trigger_mode(self):
-		self.liveController.set_trigger_mode(self.dropdown_triggerMode.currentText())
+# 	def __init__(self, streamHandler, liveController, camera, main=None, *args, **kwargs):
+# 		super().__init__(*args, **kwargs)
+# 		self.liveController = liveController
+# 		self.streamHandler = streamHandler
+# 		self.camera = camera
 
-	  
+# 		self.liveController.set_trigger_fps(self.fps_trigger)
+
+		
+# 		self.add_components()
+
+# 	def add_components(self):
+
+# 		pass  
 
 class RecordingWidget(QFrame):
 	def __init__(self, streamHandler, imageSaver, internal_state, trackingControllerWidget, trackingDataSaver = None, imaging_channels = TRACKING, main=None, *args, **kwargs):

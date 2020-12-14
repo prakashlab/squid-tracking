@@ -19,7 +19,7 @@ from control._def import *
 
 from control.utils import rangeslider as rangeslider
 
-class TrackingControllerWidget(QFrame):
+class TrackingControllerWidget(QGroupBox):
 	'''
 	Buttons to start image tracking
 	Display window to show thresholded images
@@ -32,6 +32,8 @@ class TrackingControllerWidget(QFrame):
 
 	def __init__(self, streamHandler, trackingController, trackingDataSaver, internal_state, ImageDisplayWindow, microcontroller, main=None, *args, **kwargs):
 		super().__init__(*args, **kwargs)
+
+		self.setTitle('Tracking Controller')
 
 		self.base_path_is_set = False
 
@@ -47,7 +49,7 @@ class TrackingControllerWidget(QFrame):
 		self.microcontroller = microcontroller
 
 		# self.add_components()
-		self.setFrameStyle(QFrame.Panel | QFrame.Raised)
+		# self.setFrameStyle(QFrame.Panel | QFrame.Raised)
 
 		self.add_components()
 
@@ -59,10 +61,6 @@ class TrackingControllerWidget(QFrame):
 
 
 	def add_components(self):
-
-		self.tracking_group = QGroupBox('Tracker', alignment = Qt.AlignCenter)
-
-		tracking_group_layout = QHBoxLayout()
 
 		# Image Tracking Button
 		self.btn_track = QPushButton("Track")
@@ -77,9 +75,6 @@ class TrackingControllerWidget(QFrame):
 		self.dropdown_TrackerSelection.setCurrentText(DEFAULT_TRACKER)
 		self.trackingController.tracker_image.update_tracker_type(self.dropdown_TrackerSelection.currentText())
 
-		tracking_group_layout.addWidget(self.dropdown_TrackerSelection)
-		self.tracking_group.setLayout(tracking_group_layout)
-
 		# Invert thresholded image checkbox (useful when switching between BF and DF)
 		self.invert_image_checkbox = QCheckBox('Invert image')
 		self.invert_image_checkbox.setChecked(False)
@@ -90,16 +85,13 @@ class TrackingControllerWidget(QFrame):
 
 		# Layout
 		self.tracking_init_group = QGroupBox('Tracking init method')
-		self.tracking_init_layout = QVBoxLayout()
-		self.tracking_init_layout.addWidget(self.tracking_init_threshold)
-		self.tracking_init_layout.addWidget(self.tracking_init_roi)
+		self.tracking_init_layout = QGridLayout()
+		self.tracking_init_layout.addWidget(self.tracking_init_threshold,0,0)
+		self.tracking_init_layout.addWidget(self.tracking_init_roi,1,0)
+		self.tracking_init_layout.addWidget(self.invert_image_checkbox,0,1)
 		self.tracking_init_group.setLayout(self.tracking_init_layout)
 
-
 		# Image offset settings
-		self.tracking_setPoint_group = QGroupBox('Tracking set-point offset', alignment = Qt.AlignCenter)
-		tracking_setPoint_layout = QGridLayout()
-
 		self.label_x = QLabel('x (px)')
 		# Image tracking offset - X axis
 		self.tracking_setPoint_offset_x = QSpinBox()
@@ -115,20 +107,8 @@ class TrackingControllerWidget(QFrame):
 		self.tracking_setPoint_offset_y.setMaximum(round(self.trackingController.image_width/4)) 
 		self.tracking_setPoint_offset_y.setSingleStep(1)
 		self.tracking_setPoint_offset_y.setValue(0)
-		
-		# layout
-		tracking_setPoint_layout.addWidget(self.label_x,0,0,1,1)
-		tracking_setPoint_layout.addWidget(self.tracking_setPoint_offset_x,0,1,1,1)
-		tracking_setPoint_layout.addWidget(self.label_y, 1,0,1,1)
-		tracking_setPoint_layout.addWidget(self.tracking_setPoint_offset_y, 1,1,1,1)
 
-		self.tracking_setPoint_group.setLayout(tracking_setPoint_layout)
-
-
-		# Range sliders for image color thresholding
-		self.group_sliders = QGroupBox('Color thresholds', alignment = Qt.AlignCenter)
-		layout_sliders = QGridLayout()
-		
+		# Sliders for image segmentation
 		self.label_Hue = QLabel('Hue')
 		self.range_slider1 = rangeslider.QRangeSlider()
 		self.range_slider1.setMax(255)
@@ -138,6 +118,23 @@ class TrackingControllerWidget(QFrame):
 		self.label_Vibrance=QLabel('Value')
 		self.range_slider3=rangeslider.QRangeSlider()
 		self.range_slider3.setMax(255)
+
+		# Sub-blocks layout
+		tracking_group_layout = QHBoxLayout()
+		tracking_group_layout.addWidget(QLabel('Tracker selection'))
+		tracking_group_layout.addWidget(self.dropdown_TrackerSelection)
+		
+		self.tracking_setPoint_group = QGroupBox('Tracking set-point offset', alignment = Qt.AlignCenter)
+		tracking_setPoint_layout = QGridLayout()
+		tracking_setPoint_layout.addWidget(self.label_x,0,0)
+		tracking_setPoint_layout.addWidget(self.tracking_setPoint_offset_x,0,1)
+		tracking_setPoint_layout.addWidget(self.label_y, 1,0)
+		tracking_setPoint_layout.addWidget(self.tracking_setPoint_offset_y, 1,1)
+		self.tracking_setPoint_group.setLayout(tracking_setPoint_layout)
+
+		# Range sliders for image color thresholding
+		self.group_sliders = QGroupBox('Color thresholds', alignment = Qt.AlignCenter)
+		layout_sliders = QGridLayout()
 		
 		layout_sliders.addWidget(self.label_Hue,0,0,1,1)
 		layout_sliders.addWidget(self.range_slider1,0,1,1,1)
@@ -148,20 +145,15 @@ class TrackingControllerWidget(QFrame):
 		self.group_sliders.setLayout(layout_sliders)
 		self.group_sliders.setEnabled(True)
 
-
-		# groupbox_track_settings = QGroupBox('Tracking Controller')
-
+		# Overall layout
 		groupbox_track_layout = QGridLayout()
 		groupbox_track_layout.addWidget(self.btn_track, 0,0,1,1)
 		# groupbox_track_layout.addWidget(self.dropdown_TrackerSelection, 0,1,1,1)
-		groupbox_track_layout.addWidget(self.tracking_group,0,1,1,1)
-		groupbox_track_layout.addWidget(self.tracking_init_group,0,2,1,1)
-		groupbox_track_layout.addWidget(self.tracking_setPoint_group,1,0,1,2)
-		groupbox_track_layout.addWidget(self.invert_image_checkbox,1,2,1,1)
-		groupbox_track_layout.addWidget(self.group_sliders,2,0,1,3)
+		groupbox_track_layout.addLayout(tracking_group_layout,0,1,1,1)
+		groupbox_track_layout.addWidget(self.tracking_setPoint_group,1,0,1,1)
+		groupbox_track_layout.addWidget(self.tracking_init_group,1,1,1,1)
+		groupbox_track_layout.addWidget(self.group_sliders,2,0,1,2)
 		
-
-
 		# Track button connection
 		self.btn_track.clicked.connect(self.do_track_button_tasks)
 
@@ -185,7 +177,6 @@ class TrackingControllerWidget(QFrame):
 		self.range_slider3.endValueChanged.connect(self.sliders_move)
 
 		self.setLayout(groupbox_track_layout)
-
 
 
 	def do_track_button_tasks(self):
@@ -457,24 +448,25 @@ class PID_Group_Widget(QFrame):
 		self.PID_widget_z = PID_Widget('Z')
 		self.PID_widget_y = PID_Widget('Y')
 
-		PID_imagePlane = QGroupBox('PID (Image Plane)')
-		PID_imagePlane_layout = QHBoxLayout()
+		# PID_imagePlane = QGroupBox('PID (Image Plane)')
+		# PID_imagePlane_layout = QHBoxLayout()
 
-		PID_imagePlane_layout.addWidget(self.PID_widget_x)
-		PID_imagePlane_layout.addWidget(self.PID_widget_y)
+		# PID_imagePlane_layout.addWidget(self.PID_widget_x)
+		# PID_imagePlane_layout.addWidget(self.PID_widget_y)
 
-		PID_imagePlane.setLayout(PID_imagePlane_layout)
+		# PID_imagePlane.setLayout(PID_imagePlane_layout)
 
-		PID_focus = QGroupBox('PID (Focus)')
-		PID_focus_Layout = QHBoxLayout()
-		PID_focus_Layout.addWidget(self.PID_widget_z)
+		# PID_focus = QGroupBox('PID (Focus)')
+		# PID_focus_Layout = QHBoxLayout()
+		# PID_focus_Layout.addWidget(self.PID_widget_z)
 
-		PID_focus.setLayout(PID_focus_Layout)
+		# PID_focus.setLayout(PID_focus_Layout)
 
 		hor_layout = QGridLayout()
 
-		hor_layout.addWidget(PID_imagePlane,0,0,1,1)
-		hor_layout.addWidget(PID_focus,0,1,1,1)
+		hor_layout.addWidget(self.PID_widget_x,0,0,1,1)
+		hor_layout.addWidget(self.PID_widget_y,0,1,1,1)
+		hor_layout.addWidget(self.PID_widget_z,0,2,1,1)
 
 
 		self.setLayout(hor_layout)

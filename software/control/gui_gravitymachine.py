@@ -22,7 +22,7 @@ import control.core as core
 import control.core_tracking as core_tracking
 import control.microcontroller as microcontroller
 
-SIMULATION = False
+SIMULATION = True
 
 class GravityMachine_GUI(QMainWindow):
 
@@ -98,9 +98,8 @@ class GravityMachine_GUI(QMainWindow):
 		#------------------------------------------------------------------
 		# load widgets
 		#------------------------------------------------------------------
-		self.cameraSettingWidget = {key: widgets.CameraSettingsWidget(self.camera[key],self.liveController[key]) for key in self.imaging_channels}
+		self.cameraSettingsWidget = {key: widgets.CameraSettingsWidget(self.camera[key],self.liveController[key]) for key in self.imaging_channels}
 		self.liveControlWidget = widgets.LiveControlWidget(self.streamHandler[TRACKING],self.liveController, self.internal_state)
-		self.streamControlWidget = {key: widgets.StreamControlWidget(self.streamHandler[key], self.liveController[key], self.camera[key]) for key in self.imaging_channels}
 		self.navigationWidget = widgets_tracking.NavigationWidget(self.navigationController, self.internal_state)
 		self.trackingControlWidget = widgets_tracking.TrackingControllerWidget(self.streamHandler[TRACKING], self.trackingController, self.trackingDataSaver, self.internal_state, self.imageDisplayWindow[TRACKING], self.microcontroller)
 		self.PID_Group_Widget = widgets_tracking.PID_Group_Widget(self.trackingController)
@@ -113,11 +112,9 @@ class GravityMachine_GUI(QMainWindow):
 		
 		self.cameraSettings_Tab = QTabWidget()
 		for key in self.imaging_channels:
-			self.cameraSettings_Tab.addTab(self.cameraSettingWidget[key],key)
+			self.cameraSettings_Tab.addTab(self.cameraSettingsWidget[key],key)
 
-		self.streamSettings_Tab = QTabWidget()
-		for key in self.imaging_channels:
-			self.streamSettings_Tab.addTab(self.streamControlWidget[key],key)
+		
 
 		self.stageSettingsTab = QTabWidget()
 
@@ -145,14 +142,16 @@ class GravityMachine_GUI(QMainWindow):
 		self.streamHandler[TRACKING].packet_image_for_tracking.connect(self.trackingController.on_new_frame)
 		# @@@ Currently the resolution-scaling only controls the TRACKING stream
 		self.streamHandler[TRACKING].signal_working_resolution.connect(self.liveControlWidget.update_working_resolution)
+		# Only display the image-display rate of the main/tracking image stream
+		self.streamHandler[TRACKING].signal_fps_display.connect(self.liveControlWidget.update_display_fps)
+
 		# self.trackingController.centroid_image.connect(self.imageDisplayWindow[TRACKING].draw_circle)
 		self.trackingController.Rect_pt1_pt2.connect(self.imageDisplayWindow[TRACKING].draw_rectangle)
 		
 		self.trackingController.save_data_signal.connect(self.trackingDataSaver.enqueue)
 		# Connections for all image-streams
 		for channel in self.imaging_channels:
-			self.streamHandler[channel].signal_fps.connect(self.streamControlWidget[channel].update_stream_fps)
-			self.streamHandler[channel].signal_fps_display.connect(self.streamControlWidget[channel].update_display_fps)
+			self.streamHandler[channel].signal_fps.connect(self.cameraSettingsWidget[channel].update_stream_fps)
 
 		# Connect roi from ImageDisplayWindow to TrackingController.
 		self.trackingController.get_roi_bbox.connect(self.imageDisplayWindow[TRACKING].send_bbox)
@@ -166,16 +165,15 @@ class GravityMachine_GUI(QMainWindow):
 		# Layout widgets
 		#-----------------------------------------------------
 		layout = QGridLayout() #layout = QStackedLayout()
-		# layout.addWidget(self.cameraSettingWidget,0,0)
+		# layout.addWidget(self.cameraSettingsWidget,0,0)
 		layout.addWidget(self.liveControlWidget,0,0)
-		layout.addWidget(self.streamSettings_Tab,0,1)
-		layout.addWidget(self.stageSettingsTab,0,2)
 		layout.addWidget(self.trackingControlWidget,1,0)
-		layout.addWidget(self.recordingControlWidget,1,1)
-		layout.addWidget(self.cameraSettings_Tab,1,2)
-
-
 		layout.addWidget(self.PID_Group_Widget,2,0)
+
+		layout.addWidget(self.cameraSettings_Tab,0,1)
+		layout.addWidget(self.stageSettingsTab,1,1)
+		layout.addWidget(self.recordingControlWidget,2,1)
+
 		# layout.addWidget(self.navigationWidget,2,0)
 		#layout.addWidget(self.autofocusWidget,3,0)
 		# layout.addWidget(self.PID_Group_Widget,2,0)
