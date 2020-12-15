@@ -562,7 +562,7 @@ class PID_Widget(QGroupBox):
 		self.hsliderD.setValue(int(defaultD*100))
 		self.spinboxD=QDoubleSpinBox()
 		self.spinboxD.setRange(0,int(Dmax))
-		self.spinboxI.setSingleStep(round(stepD,2))
+		self.spinboxD.setSingleStep(round(stepD,2))
 		self.spinboxD.setValue(round(defaultD,2))
 		self.hsliderD.valueChanged.connect(self.spinBoxD_setValue)
 		self.spinboxD.valueChanged.connect(self.hsliderD_setValue)
