@@ -142,10 +142,12 @@ Install pyqtgraph
 
 
 Install gi
+
 	sudo apt-get install python3-gi
 
 
 Install Tk (for python3)
+
 	sudo apt-get install python3-tk
 
 
@@ -184,10 +186,11 @@ Install opengl for 3D graphics
 
 
 # install pytorch
-(https://medium.cohttps://medium.com/@balaprasannav2009/install-tensorflow-pytorch-in-ubuntu-18-04-lts-with-cuda-9-0-for-nvidia-1080-ti-9e45eca99573m/@balaprasannav2009/install-tensorflow-pytorch-in-ubuntu-18-04-lts-with-cuda-9-0-for-nvidia-1080-ti-9e45eca99573)
+[Instructions](https://medium.com/@balaprasannav2009/install-tensorflow-pytorch-in-ubuntu-18-04-lts-with-cuda-9-0-for-nvidia-1080-ti-9e45eca99573)
 
-sudo pip3 install http://download.py)torch.org/whl/cu91/torch-0.4.0-cp36-cp36m-linux_x86_64.whl 
-sudo pip3 install torchvision
+	sudo pip3 install http://download.py)torch.org/whl/cu91/torch-0.4.0-cp36-cp36m-linux_x86_64.whl 
+
+	sudo pip3 install torchvision
 
 
 # Install v4l for help with debugging camera issues
@@ -195,4 +198,5 @@ $ sudo apt-get update
 $ sudo apt-get install v4l-utils
 
 Install pyserial
+
 	sudo pip3 install pyserial
