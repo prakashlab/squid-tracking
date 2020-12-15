@@ -476,8 +476,8 @@ class PID_Group_Widget(QFrame):
 		hor_layout = QGridLayout()
 
 		hor_layout.addWidget(self.PID_widget_x,0,0,1,1)
-		hor_layout.addWidget(self.PID_widget_y,0,1,1,1)
-		hor_layout.addWidget(self.PID_widget_z,0,2,1,1)
+		hor_layout.addWidget(self.PID_widget_y,1,0,1,1)
+		hor_layout.addWidget(self.PID_widget_z,2,0,1,1)
 
 
 		self.setLayout(hor_layout)
@@ -573,8 +573,8 @@ class PID_Widget(QGroupBox):
 		group_sliderD=QWidget()
 		group_sliderD.setLayout(sliderD_layout)
 		
-				# Big PID group
-		groupbox_layout_PID = QVBoxLayout()
+		# Big PID group
+		groupbox_layout_PID = QHBoxLayout()
 		groupbox_layout_PID.addWidget(group_sliderP)   
 		groupbox_layout_PID.addWidget(group_sliderI)
 		groupbox_layout_PID.addWidget(group_sliderD)
