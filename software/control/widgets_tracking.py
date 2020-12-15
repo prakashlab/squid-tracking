@@ -19,7 +19,7 @@ from control._def import *
 
 from control.utils import rangeslider as rangeslider
 
-class TrackingControllerWidget(QGroupBox):
+class TrackingControllerWidget(QFrame):
 	'''
 	Buttons to start image tracking
 	Display window to show thresholded images
@@ -33,7 +33,7 @@ class TrackingControllerWidget(QGroupBox):
 	def __init__(self, streamHandler, trackingController, trackingDataSaver, internal_state, ImageDisplayWindow, microcontroller, main=None, *args, **kwargs):
 		super().__init__(*args, **kwargs)
 
-		self.setTitle('Tracking Controller')
+		# self.setTitle('Tracking Controller')
 
 		self.base_path_is_set = False
 
@@ -49,7 +49,7 @@ class TrackingControllerWidget(QGroupBox):
 		self.microcontroller = microcontroller
 
 		# self.add_components()
-		# self.setFrameStyle(QFrame.Panel | QFrame.Raised)
+		self.setFrameStyle(QFrame.Panel | QFrame.Raised)
 
 		self.add_components()
 
@@ -63,11 +63,13 @@ class TrackingControllerWidget(QGroupBox):
 	def add_components(self):
 
 		# Image Tracking Button
-		self.btn_track = QPushButton("Track")
+		self.btn_track = QPushButton("Start Tracking")
 		# self.btn_track.setStyleSheet('QPushButton {color: red;}')
 		self.btn_track.setCheckable(True)
 		self.btn_track.setChecked(False)
 		self.btn_track.setDefault(False)
+		self.btn_track.setIcon(QIcon('icon/track_white.png'))
+
 
 		# Image Tracker Dropdown
 		self.dropdown_TrackerSelection = QComboBox()
@@ -109,15 +111,37 @@ class TrackingControllerWidget(QGroupBox):
 		self.tracking_setPoint_offset_y.setValue(0)
 
 		# Sliders for image segmentation
-		self.label_Hue = QLabel('Hue')
+		self.label_Hue = QLabel('H')
 		self.range_slider1 = rangeslider.QRangeSlider()
 		self.range_slider1.setMax(255)
-		self.label_Saturation=QLabel('Saturation')
+		self.label_Saturation=QLabel('S')
 		self.range_slider2=rangeslider.QRangeSlider()
 		self.range_slider2.setMax(255)
-		self.label_Vibrance=QLabel('Value')
+		self.label_Vibrance=QLabel('V')
 		self.range_slider3=rangeslider.QRangeSlider()
 		self.range_slider3.setMax(255)
+		
+		# Track button connection
+		self.btn_track.clicked.connect(self.do_track_button_tasks)
+
+		# Choose tracker
+		self.dropdown_TrackerSelection.currentIndexChanged.connect(self.update_tracker)
+
+		# Image tracking setpoint
+		self.tracking_setPoint_offset_x.valueChanged.connect(self.update_tracking_setPoints)
+		self.tracking_setPoint_offset_y.valueChanged.connect(self.update_tracking_setPoints)
+
+		self.invert_image_checkbox.clicked.connect(self.update_invert_image_flag)
+
+		self.tracking_init_threshold.clicked.connect(self.update_tracker_init_method)
+		self.tracking_init_roi.clicked.connect(self.update_tracker_init_method)
+
+		self.range_slider1.startValueChanged.connect(self.sliders_move)
+		self.range_slider2.startValueChanged.connect(self.sliders_move)
+		self.range_slider3.startValueChanged.connect(self.sliders_move)
+		self.range_slider1.endValueChanged.connect(self.sliders_move)
+		self.range_slider2.endValueChanged.connect(self.sliders_move)
+		self.range_slider3.endValueChanged.connect(self.sliders_move)
 
 		# Sub-blocks layout
 		tracking_group_layout = QHBoxLayout()
@@ -153,30 +177,14 @@ class TrackingControllerWidget(QGroupBox):
 		groupbox_track_layout.addWidget(self.tracking_setPoint_group,1,0,1,1)
 		groupbox_track_layout.addWidget(self.tracking_init_group,1,1,1,1)
 		groupbox_track_layout.addWidget(self.group_sliders,2,0,1,2)
-		
-		# Track button connection
-		self.btn_track.clicked.connect(self.do_track_button_tasks)
-
-		# Choose tracker
-		self.dropdown_TrackerSelection.currentIndexChanged.connect(self.update_tracker)
-
-		# Image tracking setpoint
-		self.tracking_setPoint_offset_x.valueChanged.connect(self.update_tracking_setPoints)
-		self.tracking_setPoint_offset_y.valueChanged.connect(self.update_tracking_setPoints)
-
-		self.invert_image_checkbox.clicked.connect(self.update_invert_image_flag)
-
-		self.tracking_init_threshold.clicked.connect(self.update_tracker_init_method)
-		self.tracking_init_roi.clicked.connect(self.update_tracker_init_method)
-
-		self.range_slider1.startValueChanged.connect(self.sliders_move)
-		self.range_slider2.startValueChanged.connect(self.sliders_move)
-		self.range_slider3.startValueChanged.connect(self.sliders_move)
-		self.range_slider1.endValueChanged.connect(self.sliders_move)
-		self.range_slider2.endValueChanged.connect(self.sliders_move)
-		self.range_slider3.endValueChanged.connect(self.sliders_move)
-
 		self.setLayout(groupbox_track_layout)
+
+	def trigger_track_button(self):
+
+		if self.btn_track.isChecked():
+			pass
+		else:
+			self.btn_track.setChecked(True)
 
 
 	def do_track_button_tasks(self):
@@ -195,8 +203,10 @@ class TrackingControllerWidget(QGroupBox):
 
 			self.trackingDataSaver.start_new_track()
 			self.streamHandler.start_tracking()
+			self.btn_track.setText('Stop Tracking')
 
 		else:
+			self.btn_track.setText('Start Tracking')
 			self.streamHandler.stop_tracking()
 			self.internal_state.data['track_obj_image'] = False
 			# Resets the track deques and counters
@@ -430,12 +440,12 @@ class NavigationWidget(QFrame):
     	self.label_Thetapos.setText('{:.02f}'.format(round(Theta_stage,2)))
 
 
-class PID_Group_Widget(QGroupBox):
+class PID_Group_Widget(QFrame):
 
 	def __init__(self, trackingController):
 		super().__init__()
-		self.setTitle('PID settings')
-		# self.setFrameStyle(QFrame.Panel | QFrame.Raised)
+		# self.setTitle('PID settings')
+		self.setFrameStyle(QFrame.Panel | QFrame.Raised)
 
 		# self.setTitle('PID settings')
 

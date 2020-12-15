@@ -102,13 +102,13 @@ class CameraSettingsWidget(QFrame):
 		grid_ctrl = QGridLayout()
 		grid_ctrl.addWidget(QLabel('Exposure Time (ms)'), 0,0)
 		grid_ctrl.addWidget(self.entry_exposureTime, 0,1)
-		grid_ctrl.addWidget(QLabel('Analog Gain'), 1,0)
-		grid_ctrl.addWidget(self.entry_analogGain, 1,1)
+		grid_ctrl.addWidget(QLabel('Analog Gain'), 0,2)
+		grid_ctrl.addWidget(self.entry_analogGain, 0,3)
 
 		grid_ctrl_preset = QGridLayout()
-		grid_ctrl_preset.addWidget(self.entry_exposureTime_Preset, 0,0)
-		grid_ctrl_preset.addWidget(self.entry_analogGain_Preset, 1,0)
-		grid_ctrl_preset.addWidget(self.btn_Preset, 0,1)
+		grid_ctrl_preset.addWidget(self.entry_exposureTime_Preset, 0,1)
+		grid_ctrl_preset.addWidget(self.entry_analogGain_Preset, 0,2)
+		grid_ctrl_preset.addWidget(self.btn_Preset, 0,0)
 	  
 		trigger_fps_group = QGroupBox('Trigger FPS')
 		trigger_fps_layout = QGridLayout()
@@ -126,9 +126,9 @@ class CameraSettingsWidget(QFrame):
 		# Overall layout
 		self.grid = QGridLayout()
 		self.grid.addLayout(grid_ctrl,0,0)
-		self.grid.addLayout(grid_ctrl_preset,0,1)
-		self.grid.addLayout(triggerMode_layout, 1, 0)
-		self.grid.addWidget(trigger_fps_group)
+		self.grid.addLayout(grid_ctrl_preset,1,0)
+		self.grid.addLayout(triggerMode_layout, 2, 0)
+		self.grid.addWidget(trigger_fps_group,3,0)
 
 		self.setLayout(self.grid)
 
@@ -146,7 +146,7 @@ class CameraSettingsWidget(QFrame):
 		self.actual_streamFPS.display(value)
 
 
-class LiveControlWidget(QGroupBox):
+class LiveControlWidget(QFrame):
 	'''
 	Widget controls salient microscopy parameters such as:
 		- Live Button
@@ -160,7 +160,6 @@ class LiveControlWidget(QGroupBox):
 
 	def __init__(self, streamHandler, liveController, internalState, main=None, *args, **kwargs):
 		super().__init__(*args, **kwargs)
-		self.setTitle('Live Controller')
 		self.liveController = liveController
 		self.streamHandler = streamHandler
 		self.internal_state = internalState
@@ -175,8 +174,9 @@ class LiveControlWidget(QGroupBox):
 		
 		self.add_components()
 		self.update_pixel_size()
+		# self.setTitle('Live Controller')
 
-		# self.setFrameStyle(QFrame.Panel | QFrame.Raised)
+		self.setFrameStyle(QFrame.Panel | QFrame.Raised)
 
 	def add_components(self):
 
@@ -231,7 +231,7 @@ class LiveControlWidget(QGroupBox):
 
 		self.entry_displayFPS.valueChanged.connect(self.streamHandler.set_display_fps)
 
-		# Layout
+		# sub blocks Layout
 
 		# checkbox layout
 		checkbox_layout = QGridLayout()
@@ -248,8 +248,6 @@ class LiveControlWidget(QGroupBox):
 		working_resolution_layout.addWidget(self.display_workingResolution, 0,1)
 		working_resolution_group.setLayout(working_resolution_layout)
 
-		# Layout
-
 		display_fps_group = QGroupBox('Display FPS')
 		display_fps_layout = QGridLayout()
 		
@@ -259,12 +257,26 @@ class LiveControlWidget(QGroupBox):
 		display_fps_layout.addWidget(self.actual_displayFPS, 0,3)
 		display_fps_group.setLayout(display_fps_layout)
 
+		# Overall Layout
+
+		top_box_layout = QHBoxLayout()
+		top_box_layout.addWidget(self.btn_live)
+		top_box_layout.addLayout(objective_layout)
+		top_box_layout.addLayout(checkbox_layout)
+
+		bottom_box_layout = QVBoxLayout()
+		bottom_box_layout.addWidget(display_fps_group)
+		bottom_box_layout.addWidget(working_resolution_group)
+		# self.grid = QGridLayout()
+		# self.grid.addWidget(self.btn_live,0,0)
+		# self.grid.addLayout(objective_layout,0,1)
+		# self.grid.addWidget(display_fps_group, 1, 0)
+		# self.grid.addWidget(working_resolution_group,2,0,1,1)
+		# self.grid.addLayout(checkbox_layout,3,0,1,1)
+		
 		self.grid = QGridLayout()
-		self.grid.addWidget(self.btn_live,0,0)
-		self.grid.addLayout(objective_layout,0,1)
-		self.grid.addLayout(checkbox_layout,0,2)
-		self.grid.addWidget(display_fps_group, 1, 0)
-		self.grid.addWidget(working_resolution_group,1,1,1,2)
+		self.grid.addLayout(top_box_layout,0,0)
+		self.grid.addLayout(bottom_box_layout,1,0)
 
 		self.setLayout(self.grid)
 
@@ -347,7 +359,10 @@ class LiveControlWidget(QGroupBox):
 # 		pass  
 
 class RecordingWidget(QGroupBox):
-	def __init__(self, streamHandler, imageSaver, internal_state, trackingControllerWidget, trackingDataSaver = None, imaging_channels = TRACKING, main=None, *args, **kwargs):
+
+	start_tracking_signal = Signal()
+
+	def __init__(self, streamHandler, imageSaver, internal_state, trackingDataSaver = None, imaging_channels = TRACKING, main=None, *args, **kwargs):
 		super().__init__(*args, **kwargs)
 		
 		# In general imageSaver, streamHandler are dicts corresponding to each image_channel
@@ -355,7 +370,6 @@ class RecordingWidget(QGroupBox):
 		self.streamHandler = streamHandler
 		self.internal_state = internal_state 
 		self.trackingDataSaver = trackingDataSaver
-		self.trackingControllerWidget = trackingControllerWidget
 		self.imaging_channels = imaging_channels
 
 		self.tracking_flag = False
@@ -417,10 +431,12 @@ class RecordingWidget(QGroupBox):
 		self.radioButton_tracking.setChecked(True)
 		self.radioButton_recording = QRadioButton("Record")
 
-		self.btn_record = QPushButton("Record")
+		self.btn_record = QPushButton("Start Acquisition")
 		self.btn_record.setCheckable(True)
 		self.btn_record.setChecked(False)
 		self.btn_record.setDefault(False)
+		self.btn_record.setIcon(QIcon('icon/record.png'))
+
 
 		grid_line1 = QGridLayout()
 		grid_line1.addWidget(QLabel('Saving Path'))
@@ -432,14 +448,11 @@ class RecordingWidget(QGroupBox):
 		grid_line2.addWidget(self.lineEdit_experimentID,0,1)
 
 
-		self.tracking_recording_group = QGroupBox()
 
 		tracking_recording_layout = QHBoxLayout()
-		tracking_recording_layout.addWidget(self.btn_record)
 		tracking_recording_layout.addWidget(self.radioButton_tracking)
 		tracking_recording_layout.addWidget(self.radioButton_recording)
-
-		self.tracking_recording_group.setLayout(tracking_recording_layout)
+		tracking_recording_layout.addWidget(self.btn_record)
 
 
 		
@@ -465,9 +478,8 @@ class RecordingWidget(QGroupBox):
 	   
 		self.grid.addLayout(grid_line1,1,0,1,1)
 		self.grid.addLayout(grid_line2,2,0,1,1)
-
 		# self.grid.addWidget(self.btn_record,3,0,1,1)
-		self.grid.addWidget(self.tracking_recording_group,3,0,1,1)
+		self.grid.addLayout(tracking_recording_layout,3,0,1,1)
 		
 
 		self.setLayout(self.grid)
@@ -527,7 +539,9 @@ class RecordingWidget(QGroupBox):
 
 			
 			if(self.trackingDataSaver is not None and self.recordingOnly_flag==False):
-				self.trackingControllerWidget.btn_track.setChecked(True)
+				
+				self.start_tracking_signal.emit()
+				
 				self.trackingDataSaver.start_new_experiment(self.lineEdit_experimentID.text())
 			else:
 				pass

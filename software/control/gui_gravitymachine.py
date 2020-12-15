@@ -104,17 +104,22 @@ class GravityMachine_GUI(QMainWindow):
 		self.trackingControlWidget = widgets_tracking.TrackingControllerWidget(self.streamHandler[TRACKING], self.trackingController, self.trackingDataSaver, self.internal_state, self.imageDisplayWindow[TRACKING], self.microcontroller)
 		self.PID_Group_Widget = widgets_tracking.PID_Group_Widget(self.trackingController)
 		self.FocusTracking_Widget = widgets_tracking.FocusTracking_Widget(self.trackingController, self.internal_state, self.microcontroller)
-		self.recordingControlWidget = widgets.RecordingWidget(self.streamHandler,self.imageSaver, self.internal_state, self.trackingControlWidget, self.trackingDataSaver, self.imaging_channels)
+		self.recordingControlWidget = widgets.RecordingWidget(self.streamHandler,self.imageSaver, self.internal_state, self.trackingDataSaver, self.imaging_channels)
 
 		self.stageCalibrationWidget = widgets_tracking.StageCalibrationWidget(self.internal_state, self.microcontroller) 
 		# self.recordTabWidget = QTabWidget()
 		# self.recordTabWidget.addTab(self.recordingControlWidget, "Acquisition control")
 		
-		self.cameraSettings_Tab = QTabWidget()
+		self.liveSettings_Tab = QTabWidget()
+		self.liveSettings_Tab.addTab(self.liveControlWidget, 'Live controller')
 		for key in self.imaging_channels:
-			self.cameraSettings_Tab.addTab(self.cameraSettingsWidget[key],key)
+			self.liveSettings_Tab.addTab(self.cameraSettingsWidget[key],key)
 
 		
+		self.trackingControl_Tab = QTabWidget()
+		self.trackingControl_Tab.addTab(self.trackingControlWidget, 'Tracking')
+		self.trackingControl_Tab.addTab(self.PID_Group_Widget, 'PID')
+		self.trackingControl_Tab.setTabPosition(QTabWidget.North)
 
 		self.stageSettingsTab = QTabWidget()
 
@@ -160,25 +165,23 @@ class GravityMachine_GUI(QMainWindow):
 		self.trackingControlWidget.show_roi.connect(self.imageDisplayWindow[TRACKING].toggle_ROI_selector)
 
 		self.microcontroller_Rec.update_stage_position.connect(self.navigationWidget.update_display)
+		
+		self.recordingControlWidget.start_tracking_signal.connect(self.trackingControlWidget.trigger_track_button)
 		# self.microcontroller_Rec.update_stage_position.connect(self.trackingController.update_stage_position)
 		#-----------------------------------------------------
 		# Layout widgets
 		#-----------------------------------------------------
 		layout = QGridLayout() #layout = QStackedLayout()
 		# layout.addWidget(self.cameraSettingsWidget,0,0)
-		layout.addWidget(self.liveControlWidget,0,0)
-		layout.addWidget(self.trackingControlWidget,1,0)
-		layout.addWidget(self.recordingControlWidget,2,0)
+		layout.addWidget(self.liveSettings_Tab,0,0)
+		layout.addWidget(self.trackingControl_Tab,1,0)
+		layout.addWidget(self.stageSettingsTab,1,1)
+		layout.addWidget(self.recordingControlWidget,0,1)
 
-		layout.addWidget(self.cameraSettings_Tab,0,1)
-		layout.addWidget(self.PID_Group_Widget,1,1)
+		# layout.addWidget(self.cameraSettings_Tab,0,1)
+		# layout.addWidget(self.PID_Group_Widget,1,1)
 
-		layout.addWidget(self.stageSettingsTab,2,1)
 
-		# layout.addWidget(self.navigationWidget,2,0)
-		#layout.addWidget(self.autofocusWidget,3,0)
-		# layout.addWidget(self.PID_Group_Widget,2,0)
-		# layout.addWidget(self.FocusTracking_Widget,1,1)
 		# transfer the layout to the central widget
 		self.centralWidget = QWidget()
 		self.centralWidget.setLayout(layout)

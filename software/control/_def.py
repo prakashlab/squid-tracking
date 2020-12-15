@@ -188,12 +188,12 @@ OBJECTIVES = {'2x':{'magnification':2, 'NA':0.10, 'PixelPermm':217}, '4x':{'magn
 DEFAULT_OBJECTIVE = '2x'
   
 
-CAMERAS = {'DF1':{'serial':"17910090", 'px_format':(1920,1080), 'color_format': 'GRAY8', 'fps': 120}}
+CAMERAS = {'DF1':{'serial':"17910090", 'px_format':(1920,1080), 'color_format': 'GRAY8', 'fps': 120}, 'FL1':{'serial':"17910091", 'px_format':(1920,1080), 'color_format': 'GRAY8', 'fps': 120}}
 
 OPTICAL_PATHS = {'DF only':['DF1'], 'DF+FL':['DF1', 'FL1'], 
             '2-camera':['DF1', 'DF2'], '2-camera-FL':['DF1', 'DF2', 'FL1']}
 
-DEFAULT_OPTICAL_PATH = 'DF only'
+DEFAULT_OPTICAL_PATH = 'DF+FL'
 
 TRACKING = 'DF1'
 
