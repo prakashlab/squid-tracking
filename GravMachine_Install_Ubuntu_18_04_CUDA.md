@@ -185,6 +185,7 @@ Install opengl for 3D graphics
 
 # install pytorch
 (https://medium.cohttps://medium.com/@balaprasannav2009/install-tensorflow-pytorch-in-ubuntu-18-04-lts-with-cuda-9-0-for-nvidia-1080-ti-9e45eca99573m/@balaprasannav2009/install-tensorflow-pytorch-in-ubuntu-18-04-lts-with-cuda-9-0-for-nvidia-1080-ti-9e45eca99573)
+
 sudo pip3 install http://download.py)torch.org/whl/cu91/torch-0.4.0-cp36-cp36m-linux_x86_64.whl 
 sudo pip3 install torchvision
 
