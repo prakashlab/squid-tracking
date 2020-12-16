@@ -203,10 +203,16 @@ class LiveControlWidget(QFrame):
 		self.entry_displayFPS.setMaximum(FPS['display']['max']) 
 		self.entry_displayFPS.setSingleStep(1)
 		self.entry_displayFPS.setValue(FPS['display']['default'])
+
 		 # Display fps actual
 		self.actual_displayFPS = QLCDNumber()
 		self.actual_displayFPS.setNumDigits(4)
 		self.actual_displayFPS.display(0.0)
+
+		# Trigger FPS actual
+		self.actual_streamFPS = QLCDNumber()
+		self.actual_streamFPS.setNumDigits(4)
+		self.actual_streamFPS.display(0.0)
 
 		# Display resolution slider (2,0)
 		self.slider_resolutionScaling = QSlider(Qt.Horizontal)
@@ -248,6 +254,12 @@ class LiveControlWidget(QFrame):
 		working_resolution_layout.addWidget(self.display_workingResolution, 0,1)
 		working_resolution_group.setLayout(working_resolution_layout)
 
+
+		stream_fps_group = QGroupBox('Stream FPS')
+		stream_fps_layout = QHBoxLayout()
+		stream_fps_layout.addWidget(self.actual_streamFPS)
+		stream_fps_group.setLayout(stream_fps_layout)
+
 		display_fps_group = QGroupBox('Display FPS')
 		display_fps_layout = QGridLayout()
 		
@@ -255,8 +267,12 @@ class LiveControlWidget(QFrame):
 		display_fps_layout.addWidget(self.entry_displayFPS, 0,1)
 		display_fps_layout.addWidget(QLabel('Actual'),0,2)
 		display_fps_layout.addWidget(self.actual_displayFPS, 0,3)
+
 		display_fps_group.setLayout(display_fps_layout)
 
+
+	
+		
 		# Overall Layout
 
 		top_box_layout = QHBoxLayout()
@@ -264,9 +280,10 @@ class LiveControlWidget(QFrame):
 		top_box_layout.addLayout(objective_layout)
 		top_box_layout.addLayout(checkbox_layout)
 
-		bottom_box_layout = QVBoxLayout()
-		bottom_box_layout.addWidget(display_fps_group)
-		bottom_box_layout.addWidget(working_resolution_group)
+		middle_box_layout = QHBoxLayout()
+		middle_box_layout.addWidget(stream_fps_group)
+		middle_box_layout.addWidget(display_fps_group)
+
 		# self.grid = QGridLayout()
 		# self.grid.addWidget(self.btn_live,0,0)
 		# self.grid.addLayout(objective_layout,0,1)
@@ -276,7 +293,8 @@ class LiveControlWidget(QFrame):
 		
 		self.grid = QGridLayout()
 		self.grid.addLayout(top_box_layout,0,0)
-		self.grid.addLayout(bottom_box_layout,1,0)
+		self.grid.addLayout(middle_box_layout,1,0)
+		self.grid.addWidget(working_resolution_group)
 
 		self.setLayout(self.grid)
 
@@ -332,6 +350,10 @@ class LiveControlWidget(QFrame):
 	# Slot connected to signal from streamHandler.
 	def update_display_fps(self, value):
 		self.actual_displayFPS.display(value)
+
+	# Slot connected to signal from streamHandler.
+	def update_stream_fps(self, value):
+		self.actual_streamFPS.display(value)
 
 
 # @@@ This widget has been merged with live control and camera settings widget

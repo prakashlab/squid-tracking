@@ -669,7 +669,7 @@ class ImageDisplayWindow(QMainWindow):
 
 
             if(self.DrawRect):
-                cv2.rectangle(image, self.ptRect1, self.ptRect2,(0,0,0) , 2) #cv2.rectangle(img, (20,20), (300,300),(0,0,255) , 2)#
+                cv2.rectangle(image, self.ptRect1, self.ptRect2,(255,255,255) , 4) #cv2.rectangle(img, (20,20), (300,300),(0,0,255) , 2)#
                 self.DrawRect=False
 
             if(self.DrawCirc):
@@ -683,8 +683,8 @@ class ImageDisplayWindow(QMainWindow):
                 self.draw_crosshairs()
 
 
-                cv2.line(image, self.horLine_pt1, self.horLine_pt2, (255,255,255), thickness=1, lineType=8, shift=0) 
-                cv2.line(image, self.verLine_pt1, self.verLine_pt2, (255,255,255), thickness=1, lineType=8, shift=0) 
+                cv2.line(image, self.horLine_pt1, self.horLine_pt2, (255,255,255), thickness=3, lineType=8, shift=0) 
+                cv2.line(image, self.verLine_pt1, self.verLine_pt2, (255,255,255), thickness=3, lineType=8, shift=0) 
         
         if(self.rotate_image_angle != 0):
             '''

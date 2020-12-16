@@ -185,6 +185,7 @@ class TrackingControllerWidget(QFrame):
 			pass
 		else:
 			self.btn_track.setChecked(True)
+			self.do_track_button_tasks()
 
 
 	def do_track_button_tasks(self):
@@ -215,12 +216,8 @@ class TrackingControllerWidget(QFrame):
 	# This function is connected to the signal from tracking Controller triggered by 
 	# hardware start-tracking input.
 	def handle_hardware_track_signal(self):
-
 		self.btn_track.toggle()
 		self.do_track_button_tasks()
-
-	def handle_aquisition_widget_track_signal(self):
-		self.btn_track.setChecked(True)
 
 	def update_invert_image_flag(self):
 

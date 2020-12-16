@@ -43,7 +43,6 @@ class TrackingController(QObject):
 	set_trackBusy = Signal(int)
 	clear_trackBusy = Signal(int)
 
-	start_tracking_signal = Signal()
 
 	save_data_signal = Signal()
 
@@ -57,7 +56,6 @@ class TrackingController(QObject):
 	plot_data -> PlotWidget
 	multiplex_send_signal -> multiplex_Send
 	save_data_signal -> DataSaver
-	start_tracking_signal -> Tracking Widget
 
 	'''
 	def __init__(self, microcontroller, internal_state , focus_tracker = 'liq-lens'):
@@ -528,6 +526,7 @@ class microcontroller_Receiver(QObject):
 	'''
 	update_stage_position = Signal(float, float, float)
 	update_homing_state = Signal()
+	start_tracking_signal = Signal()
 
 	def __init__(self, microcontroller, internal_state):
 		QObject.__init__(self)
@@ -608,8 +607,12 @@ class microcontroller_Receiver(QObject):
 					print('Homing state: {}'.format(self.internal_state.data['homing-state']))
 
 				elif(data[1] == ord('T')):
-					print('Start image tracking signa recvd: {}'.format(data[2]))
-					self.internal_state.data['track_obj_image_hrdware'] = data[2]
+					print('Toggle image tracking signal recvd: {}'.format(data[2]))
+
+					self.internal_state.data['track_obj_image_hrdware'] = not(self.internal_state.data['track_obj_image_hrdware'])
+				
+					self.start_tracking_signal.emit()
+
 
 				elif(data[1] == ord('F')):
 					print('Focus tracking flag changed in uController: {}'.format(data[2]))
