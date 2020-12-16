@@ -22,7 +22,7 @@ import control.core as core
 import control.core_tracking as core_tracking
 import control.microcontroller as microcontroller
 
-SIMULATION = True
+SIMULATION = False
 
 class GravityMachine_GUI(QMainWindow):
 
@@ -42,11 +42,11 @@ class GravityMachine_GUI(QMainWindow):
 		# load other windows
 		#------------------------------------------------------------------
 		self.imageDisplayWindow = {key:core.ImageDisplayWindow(key + ' Display', 
-			DrawCrossHairs = True, rotate_image_angle=90, flip_image = True) 
+			DrawCrossHairs = True, rotate_image_angle=90, flip_image = 'Horizontal') 
 			for key in self.imaging_channels}
 
 		
-		self.imageDisplayWindow_ThresholdedImage = core.ImageDisplayWindow('Thresholded Image', rotate_image_angle=90, flip_image = True)
+		self.imageDisplayWindow_ThresholdedImage = core.ImageDisplayWindow('Thresholded Image', rotate_image_angle=90, flip_image = 'Horizontal')
 		
 		for key in self.imaging_channels:
 			self.imageDisplayWindow[key].show()

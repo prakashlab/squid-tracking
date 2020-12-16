@@ -107,7 +107,7 @@ class Microcontroller():
 
     def move_x_nonblocking(self,delta):
         direction = int((np.sign(delta)+1)/2)
-        n_microsteps = abs(delta*Motion.MAX_MICROSTEPS*Motion.STEPS_PER_MM_X)
+        n_microsteps = abs(delta*Motion.MAX_MICROSTEPS*Motion.STEPS_PER_MM_X/10)
         if n_microsteps > 65535:
             n_microsteps = 65535
         cmd = bytearray(self.tx_buffer_length)
@@ -145,7 +145,7 @@ class Microcontroller():
 
     def move_theta_nonblocking(self,delta):
         direction = int((np.sign(delta)+1)/2)
-        n_microsteps = abs(delta*Motion.MAX_MICROSTEPS)
+        n_microsteps = abs(delta*Motion.MAX_MICROSTEPS/10)
         if n_microsteps > 65535:
             n_microsteps = 65535
         cmd = bytearray(self.tx_buffer_length)

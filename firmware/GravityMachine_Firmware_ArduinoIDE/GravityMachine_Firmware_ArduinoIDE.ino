@@ -212,7 +212,7 @@ long int X_home = 0, Y_home = 0, Z_home = 0;
 //--------------------------------------------------
 // Maximum speed of stage in Manual mode
 //--------------------------------------------------
-int maxManualSpeedX = 2500, maxManualSpeedY = 2500, maxManualSpeedTheta = 5000, maxManualSpeedZ = 1000; 
+int maxManualSpeedX = 5000, maxManualSpeedY = 5000, maxManualSpeedTheta = 5000, maxManualSpeedZ = 1000; 
 //--------------------------------------------------
 // Speed of stepper based on micro-stepping state
 //--------------------------------------------------
