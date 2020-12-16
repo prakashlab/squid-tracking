@@ -22,7 +22,7 @@ import control.core as core
 import control.core_tracking as core_tracking
 import control.microcontroller as microcontroller
 
-SIMULATION = False
+SIMULATION = True
 
 class GravityMachine_GUI(QMainWindow):
 
@@ -42,11 +42,11 @@ class GravityMachine_GUI(QMainWindow):
 		# load other windows
 		#------------------------------------------------------------------
 		self.imageDisplayWindow = {key:core.ImageDisplayWindow(key + ' Display', 
-			DrawCrossHairs = True, rotate_image_angle=90, flip_image = 'Horizontal') 
+			DrawCrossHairs = True, rotate_image_angle=90, flip_image = True) 
 			for key in self.imaging_channels}
 
 		
-		self.imageDisplayWindow_ThresholdedImage = core.ImageDisplayWindow('Thresholded Image', rotate_image_angle=90, flip_image = 'Horizontal')
+		self.imageDisplayWindow_ThresholdedImage = core.ImageDisplayWindow('Thresholded Image', rotate_image_angle=90, flip_image = True)
 		
 		for key in self.imaging_channels:
 			self.imageDisplayWindow[key].show()
@@ -116,16 +116,18 @@ class GravityMachine_GUI(QMainWindow):
 			self.liveSettings_Tab.addTab(self.cameraSettingsWidget[key],key)
 
 		
-		self.trackingControl_Tab = QTabWidget()
-		self.trackingControl_Tab.addTab(self.trackingControlWidget, 'Tracking')
-		self.trackingControl_Tab.addTab(self.PID_Group_Widget, 'PID')
-		self.trackingControl_Tab.setTabPosition(QTabWidget.North)
+		# self.trackingControl_Tab = QTabWidget()
+		# self.trackingControl_Tab.addTab(self.trackingControlWidget, 'Tracking')
+		# self.trackingControl_Tab.addTab(self.PID_Group_Widget, 'PID')
+		# self.trackingControl_Tab.setTabPosition(QTabWidget.North)
 
-		self.stageSettingsTab = QTabWidget()
+		self.SettingsTab = QTabWidget()
+		self.SettingsTab.addTab(self.PID_Group_Widget, 'PID')
+		self.SettingsTab.addTab(self.navigationWidget, 'Navigation')
+		self.SettingsTab.addTab(self.stageCalibrationWidget, 'Calibration')
+		
 
-		self.stageSettingsTab.addTab(self.navigationWidget, 'Navigation')
-		self.stageSettingsTab.addTab(self.stageCalibrationWidget, 'Calibration')
-	
+
 		#------------------------------------------------------------------
 		# Connections
 		#------------------------------------------------------------------
@@ -149,11 +151,13 @@ class GravityMachine_GUI(QMainWindow):
 		self.streamHandler[TRACKING].signal_working_resolution.connect(self.liveControlWidget.update_working_resolution)
 		# Only display the image-display rate of the main/tracking image stream
 		self.streamHandler[TRACKING].signal_fps_display.connect(self.liveControlWidget.update_display_fps)
+		self.streamHandler[TRACKING].signal_fps.connect(self.liveControlWidget.update_stream_fps)
 
 		# self.trackingController.centroid_image.connect(self.imageDisplayWindow[TRACKING].draw_circle)
 		self.trackingController.Rect_pt1_pt2.connect(self.imageDisplayWindow[TRACKING].draw_rectangle)
 		
 		self.trackingController.save_data_signal.connect(self.trackingDataSaver.enqueue)
+
 		# Connections for all image-streams
 		for channel in self.imaging_channels:
 			self.streamHandler[channel].signal_fps.connect(self.cameraSettingsWidget[channel].update_stream_fps)
@@ -166,6 +170,7 @@ class GravityMachine_GUI(QMainWindow):
 
 		self.microcontroller_Rec.update_stage_position.connect(self.navigationWidget.update_display)
 		
+		self.microcontroller_Rec.start_tracking_signal.connect(self.trackingControlWidget.handle_hardware_track_signal)
 		self.recordingControlWidget.start_tracking_signal.connect(self.trackingControlWidget.trigger_track_button)
 		# self.microcontroller_Rec.update_stage_position.connect(self.trackingController.update_stage_position)
 		#-----------------------------------------------------
@@ -174,8 +179,8 @@ class GravityMachine_GUI(QMainWindow):
 		layout = QGridLayout() #layout = QStackedLayout()
 		# layout.addWidget(self.cameraSettingsWidget,0,0)
 		layout.addWidget(self.liveSettings_Tab,0,0)
-		layout.addWidget(self.trackingControl_Tab,1,0)
-		layout.addWidget(self.stageSettingsTab,1,1)
+		layout.addWidget(self.trackingControlWidget,1,0)
+		layout.addWidget(self.SettingsTab,1,1)
 		layout.addWidget(self.recordingControlWidget,0,1)
 
 		# layout.addWidget(self.cameraSettings_Tab,0,1)
@@ -207,6 +212,20 @@ class GravityMachine_GUI(QMainWindow):
 	def start_imageStreams(self):
 		for key in self.imaging_channels:
 			self.camera[key].start_streaming()
+
+	# @@@ TO DO
+	def add_status_bar(self):
+		# Status bar at the bottom
+		self.statusBar = QStatusBar()
+		self.homing_status = QLabel('Homing status:')
+		self.stage_control = QLabel('Stage control:')
+
+		self.statusBar.addPermanentWidget(self.homing_status)
+		self.statusBar.addPermanentWidget(self.stage_control)
+
+	# @@@ TO DO
+	def update_status_bar(self):
+		pass
 
 	def closeEvent(self, event):
 
