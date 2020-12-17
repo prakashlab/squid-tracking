@@ -44,8 +44,6 @@ def threshold_image_gray(image_gray, LOWER, UPPER):
     
     return imgMask
 
-
-
 def bgr2gray(image_BGR):
     return cv2.cvtColor(image_BGR,cv2.COLOR_BGR2GRAY)
 
@@ -194,7 +192,7 @@ def scale_square_bbox(bbox, scale_factor, square = True):
         min_dim = min(width, height)
         width, height = min_dim, min_dim
 
-    new_width, new_height = scale_factor*width, scale_factor*height
+    new_width, new_height = int(scale_factor*width), int(scale_factor*height)
 
     new_xmin = xmin - (new_width - width)/2
     new_ymin = ymin - (new_height - height)/2

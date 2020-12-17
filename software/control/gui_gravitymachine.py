@@ -17,12 +17,13 @@ from control._def import *
 # app specific libraries
 import control.widgets as widgets
 import control.widgets_tracking as widgets_tracking
-import control.camera_TIS as camera
+import control.camera_TIS as camera_TIS
+import control.camera as camera_Daheng
 import control.core as core
 import control.core_tracking as core_tracking
 import control.microcontroller as microcontroller
 
-SIMULATION = True
+SIMULATION = False
 
 class GravityMachine_GUI(QMainWindow):
 
@@ -55,6 +56,9 @@ class GravityMachine_GUI(QMainWindow):
 		#------------------------------------------------------------------
 		# Load objects
 		#------------------------------------------------------------------
+
+		# cameras/image streams
+		self.camera = {}
 		if SIMULATION is True:
 			# Define a camera object for each unique image-stream.
 			self.camera = {key:camera.Camera_Simulation() for key in self.imaging_channels}
@@ -63,8 +67,14 @@ class GravityMachine_GUI(QMainWindow):
 
 		else:
 			# TIS Camera object
-			self.camera = {key:camera.Camera(serial=CAMERAS[key]['serial'], width = CAMERAS[key]['px_format'][0], 
-				height = CAMERAS[key]['px_format'][1], framerate = CAMERAS[key]['fps']) for key in self.imaging_channels}
+			for key in self.imaging_channels:
+
+				if(CAMERAS[key]['make']=='TIS'):
+					self.camera[key] = camera_TIS.Camera(serial=CAMERAS[key]['serial'], width = CAMERAS[key]['px_format'][0], 
+						height = CAMERAS[key]['px_format'][1], framerate = CAMERAS[key]['fps'])
+				elif (CAMERAS[key]['make']=='Daheng'):
+					self.camera[key] = camera_Daheng.Camera()
+
 			# DaHheng camera object
 			# self.camera = {key:camera.Camera() for key in self.imaging_channels}
 			self.microcontroller = microcontroller.Microcontroller()
@@ -169,7 +179,7 @@ class GravityMachine_GUI(QMainWindow):
 		self.trackingControlWidget.show_roi.connect(self.imageDisplayWindow[TRACKING].toggle_ROI_selector)
 
 		self.microcontroller_Rec.update_stage_position.connect(self.navigationWidget.update_display)
-		
+
 		self.microcontroller_Rec.start_tracking_signal.connect(self.trackingControlWidget.handle_hardware_track_signal)
 		self.recordingControlWidget.start_tracking_signal.connect(self.trackingControlWidget.trigger_track_button)
 		# self.microcontroller_Rec.update_stage_position.connect(self.trackingController.update_stage_position)

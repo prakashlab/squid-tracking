@@ -280,7 +280,6 @@ class TrackingController(QObject):
 				# print('Image error: {}, {}, {} mm'.format(x_error, y_error, z_error))
 				X_order, Y_order, Theta_order = self.get_motion_commands(x_error,y_error,z_error)
 
-				print(X_order, Y_order, Theta_order)
 				# New serial interface (send data directly to micro-controller object)
 
 				self.microcontroller.move_x_nonblocking(X_order)
@@ -389,8 +388,6 @@ class TrackingController(QObject):
 	# For Gravity Machine (X, Y, Theta tracking)
 	def get_motion_commands(self, x_error, y_error, z_error):
 		# Take an error signal and pass it through a PID algorithm
-
-		print(self.image_center)
 		# Convert from mm to steps (these are rounded to the nearest integer).
 		x_error_steps = int(Motion.STEPS_PER_MM_X*x_error)
 		y_error_steps = int(Motion.STEPS_PER_MM_Y*y_error)

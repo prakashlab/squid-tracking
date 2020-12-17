@@ -109,7 +109,7 @@ class Tracking:
     
     CROPPED_IMG_RATIO = 10
 
-    BBOX_SCALE_FACTOR = 3
+    BBOX_SCALE_FACTOR = 2
 
     DEFAULT_TRACKER = "csrt"
 
@@ -188,7 +188,7 @@ OBJECTIVES = {'2x':{'magnification':2, 'NA':0.10, 'PixelPermm':217}, '4x':{'magn
 DEFAULT_OBJECTIVE = '2x'
   
 
-CAMERAS = {'DF1':{'serial':"17910090", 'px_format':(1920,1080), 'color_format': 'GRAY8', 'fps': 120}}
+CAMERAS = {'DF1':{'make':'TIS','serial':"17910090", 'px_format':(1920,1080), 'color_format': 'GRAY8', 'fps': 120}, 'Low-mag':{'make':'Daheng','serial': None, 'px_format':None, 'color_format': 'GRAY8', 'fps': 30}}
 
 OPTICAL_PATHS = {'DF only':['DF1'], 'DF+FL':['DF1', 'FL1'], 
             '2-camera':['DF1', 'DF2'], '2-camera-FL':['DF1', 'DF2', 'FL1']}

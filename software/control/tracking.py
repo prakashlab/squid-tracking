@@ -110,7 +110,7 @@ class Tracker_Image(object):
 
 			if(self.bbox is not None):
 				self.bbox = image_processing.scale_square_bbox(self.bbox, Tracking.BBOX_SCALE_FACTOR, square = True)
-			# print('Starting tracker with initial bbox: {}'.format(self.bbox))
+				print('Starting tracker with initial bbox: {}'.format(self.bbox))
 				self.init_tracker(image, self.centroid_image, self.bbox)
 
 				self.trackerActive = True
@@ -146,6 +146,7 @@ class Tracker_Image(object):
 		return self.isCentroidFound, self.centroid_image, self.rect_pts
 
 	def reset(self):
+		print('Reset image tracker state')
 		self.start_flag = True
 		self.trackerActive = False
 		self.isCentroidFound = False
