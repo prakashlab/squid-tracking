@@ -42,12 +42,20 @@ class GravityMachine_GUI(QMainWindow):
 		#------------------------------------------------------------------
 		# load other windows
 		#------------------------------------------------------------------
-		self.imageDisplayWindow = {key:core.ImageDisplayWindow(key + ' Display', 
-			DrawCrossHairs = True, rotate_image_angle=90, flip_image = True) 
-			for key in self.imaging_channels}
+		self.imageDisplayWindow = {}
+		for key in self.imaging_channels:
+
+			if(CAMERAS[key]['make']=='TIS'):
+				self.imageDisplayWindow[key] = core.ImageDisplayWindow(key + ' Display', 
+					DrawCrossHairs = True, rotate_image_angle=90, flip_image = 'Horizontal') 
+			elif (CAMERAS[key]['make']=='Daheng'):
+				self.imageDisplayWindow[key] = core.ImageDisplayWindow(key + ' Display', 
+					DrawCrossHairs = True, rotate_image_angle=90) 
 
 		
-		self.imageDisplayWindow_ThresholdedImage = core.ImageDisplayWindow('Thresholded Image', rotate_image_angle=90, flip_image = True)
+
+		
+		self.imageDisplayWindow_ThresholdedImage = core.ImageDisplayWindow('Thresholded Image', rotate_image_angle=90, flip_image = 'Horizontal')
 		
 		for key in self.imaging_channels:
 			self.imageDisplayWindow[key].show()
