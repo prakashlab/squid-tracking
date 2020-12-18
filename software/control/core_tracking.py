@@ -559,7 +559,7 @@ class microcontroller_Receiver(QObject):
 				phase = byte_operations.data2byte_to_int(data[1], data[2])*2*np.pi/65535.
 
 				if(MicrocontrollerDef.RUN_OPENLOOP == True):
-					# X stage position (mm)
+					# X stage position (mm)					
 					self.x_pos = byte_operations.unsigned_to_signed(data[3:6],MicrocontrollerDef.N_BYTES_POS)/(Motion.STEPS_PER_MM_X*Motion.MAX_MICROSTEPS) 
 					# Y stage position (mm)
 					self.y_pos = byte_operations.unsigned_to_signed(data[6:9],MicrocontrollerDef.N_BYTES_POS)/(Motion.STEPS_PER_MM_Y*Motion.MAX_MICROSTEPS)

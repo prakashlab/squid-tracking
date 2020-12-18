@@ -116,7 +116,7 @@ class Microcontroller():
         cmd[2] = int(n_microsteps) >> 8
         cmd[3] = int(n_microsteps) & 0xff
         self.serial.write(cmd)
-        # print('Command sent to uController: {}'.format(n_microsteps))
+        # print('x non-blocking command sent to uController: {}'.format(n_microsteps))
 
     def move_y_nonblocking(self,delta):
         direction = int((np.sign(delta)+1)/2)
@@ -129,7 +129,7 @@ class Microcontroller():
         cmd[2] = int(n_microsteps) >> 8
         cmd[3] = int(n_microsteps) & 0xff
         self.serial.write(cmd)
-        # print('Command sent to uController: {}'.format(n_microsteps))
+        # print('y non-blocking command sent to uController: {}'.format(n_microsteps))
 
     def move_z_nonblocking(self,delta):
         direction = int((np.sign(delta)+1)/2)
@@ -154,6 +154,8 @@ class Microcontroller():
         cmd[2] = int(n_microsteps) >> 8
         cmd[3] = int(n_microsteps) & 0xff
         self.serial.write(cmd)
+        # print('Theta non-blocking command sent to uController: {}'.format(n_microsteps))
+
 
     # Convert below functions to be compatible with squid/octopi serial interface.
     def send_tracking_command(self, tracking_flag):

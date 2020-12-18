@@ -10,8 +10,8 @@
 #include <DueTimer.h>
 #include <Wire.h>
 
-//#define RUN_OPEN_LOOP // If we want to run in open-loop (no encoders) mode, uncomment this line or set it with a build flag:
-//#define TESTING;  // For testing without all hardware connected (dev of firmware + software when only uController is available)
+#define RUN_OPEN_LOOP // If we want to run in open-loop (no encoders) mode, uncomment this line or set it with a build flag:
+#define TESTING;  // For testing without all hardware connected (dev of firmware + software when only uController is available)
 //#define DISABLE_LIMIT_SWITCHES // use when no limit switches are available/ connected:
 //#define USE_SERIAL_MONITOR // Send data to Serial monitor instead of USB port (for debugging). 
 //=================================================================================
@@ -249,7 +249,7 @@ int Zero_stage =0;
 int triggerButtonState_curr = LOW;             // the current reading from the input pin
 int triggerButtonState_prev = HIGH;   // the previous reading from the input pin
 unsigned long lastDebounceTime = 0;  // the last time the output pin was toggled
-unsigned long debounceDelay =50;  
+unsigned long debounceDelay = 200;  
 
 volatile bool x_EncoderASet;
 volatile bool x_EncoderBSet;
@@ -1214,85 +1214,6 @@ void HandleOptotuneSYNCInterrupt() {
 /*************************************************************************************
  ******************************* Serial send and Receive *****************************
  *************************************************************************************/
- void serial_send()
- {
-    buffer_tx[0] = byte(phase_code_lastTrigger%256);
-    buffer_tx[1] = byte(phase_code_lastTrigger>>8);
-    
-    #ifdef RUN_OPEN_LOOP
-      x_EncoderTicks = CurrPos_X;
-      y_EncoderTicks = CurrPos_Y;
-      theta_EncoderTicks = CurrPos_Theta;
-    #else 
-      #ifdef TESTING
-        x_EncoderTicks = Step_X/MAX_MICROSTEPS;
-        y_EncoderTicks = Step_Y/MAX_MICROSTEPS;
-        theta_EncoderTicks = Step_Theta/MAX_MICROSTEPS;
-      #endif
-    #endif
-    
-    CurrPos_X_code = x_EncoderTicks;  //right sens of the motor
-    
-    if (CurrPos_X_code>0){
-      buffer_tx[2] = byte(int(0));
-    }
-    else{
-      buffer_tx[2] = byte(int(1));
-      CurrPos_X_code = -CurrPos_X_code;
-    }
-    buffer_tx[3] = byte(CurrPos_X_code>>24);
-    buffer_tx[4] = byte(CurrPos_X_code>>16);
-    buffer_tx[5] = byte(CurrPos_X_code>>8);
-    buffer_tx[6] = byte(CurrPos_X_code%256);
-    
-    CurrPos_Y_code = y_EncoderTicks;
-
-    if (CurrPos_Y_code>0){
-      buffer_tx[7] = byte(int(0));
-    }
-    else{
-      buffer_tx[7] = byte(int(1));
-      CurrPos_Y_code = -CurrPos_Y_code;
-    }
-    buffer_tx[8]  = byte(CurrPos_Y_code>>24);
-    buffer_tx[9]  = byte(CurrPos_Y_code>>16);
-    buffer_tx[10] = byte(CurrPos_Y_code>>8);
-    buffer_tx[11] = byte(CurrPos_Y_code%256);
-   
-    CurrPos_Theta_code = theta_EncoderTicks;
-    
-    if(CurrPos_Theta_code>0) 
-    {
-      buffer_tx[12] = byte(int(0));
-    }
-    else 
-    {
-      buffer_tx[12] = byte(int(1));
-      CurrPos_Theta_code = -CurrPos_Theta_code;
-    }
-    buffer_tx[13] = byte(CurrPos_Theta_code>>24);
-    buffer_tx[14] = byte(CurrPos_Theta_code>>16);
-    buffer_tx[15] = byte(CurrPos_Theta_code>>8);
-    buffer_tx[16] = byte(CurrPos_Theta_code%256);
-
-    // Testing
-    #ifdef TESTING
-      buffer_tx[17] = byte(flag_tracking);
-      buffer_tx[18] = byte(flag_focus_tracking);
-      buffer_tx[19] = byte(flag_homing);
-    #else
-      buffer_tx[17] = byte(!StageManualMode);
-      buffer_tx[18] = byte(!digitalRead(triggerTrack));
-      buffer_tx[19] = byte(flag_homing_complete);
-    #endif
- 
-    digitalWrite(sendSerial_indicator_pin,HIGH);
-    SerialUSB.write(buffer_tx, MSG_LENGTH);
-    digitalWrite(sendSerial_indicator_pin,LOW);
-
-  
- }
-
  void serial_send_position()
  {
     buffer_tx[0] = byte('M');
@@ -1343,11 +1264,8 @@ void HandleOptotuneSYNCInterrupt() {
 
  void serial_send_flag(char flag_name, int flag_state)
  {
-
      buffer_tx[0] = byte('F');
-
      buffer_tx[1] = byte(flag_name);
-
      buffer_tx[2] = byte(flag_state);
 
      for(int count=3;count<MSG_LENGTH;count++)
@@ -1358,13 +1276,11 @@ void HandleOptotuneSYNCInterrupt() {
      digitalWrite(sendSerial_indicator_pin,HIGH);
      SerialUSB.write(buffer_tx, MSG_LENGTH);
      digitalWrite(sendSerial_indicator_pin,LOW);
-
  }
  
 
  void serial_send_monitor()
  {
-
     #ifdef RUN_OPEN_LOOP
       x_EncoderTicks = CurrPos_X;
       y_EncoderTicks = CurrPos_Y;
@@ -1395,10 +1311,7 @@ void HandleOptotuneSYNCInterrupt() {
     SerialUSB.print("Homing flag:");
     SerialUSB.println(flag_homing);
 
-  
  }
- 
-
 //%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 //-------------------------------------------------------------------------------
 //                          Beginning of SETUP
@@ -1762,15 +1675,36 @@ void loop()
         
         if(buffer_rx[0]==0)
         {
-          Step_X = long(buffer_rx[1]*2-1)*(long(buffer_rx[2])*256 + long(buffer_rx[3])); // relative position to move in full-steps
+           Step_X = long(buffer_rx[1]*2-1)*(long(buffer_rx[2])*256 + long(buffer_rx[3])); // relative position to move in full-steps
+           // If an object is detected then move the stage based on the commanded error signal
+          if(StageManualMode == LOW && StageLocked == false)
+          { 
+            #ifdef DISABLE_LIMIT_SWITCHES
+              stepperX.move((long) round((microSteps_X/MAX_MICROSTEPS) * Step_X));
+            #else
+              stepperX.move((long) round((microSteps_X/MAX_MICROSTEPS) * Step_X *((Step_X>0)*_xLimPos + (Step_X<0) *_xLimNeg)));
+            #endif  
+          } 
         }
         else if(buffer_rx[0]==1)
         {
           Step_Y = long(buffer_rx[1]*2-1)*(long(buffer_rx[2])*256 + long(buffer_rx[3])); // relative position to move in full-steps
+           if(StageManualMode == LOW && StageLocked == false)
+          { 
+            #ifdef DISABLE_LIMIT_SWITCHES
+              stepperY.move((long) round((microSteps_Y/MAX_MICROSTEPS) * Step_Y));
+            #else
+              stepperY.move((long) round((microSteps_Y/MAX_MICROSTEPS) * Step_Y * ((Step_Y>0)*_yLimPos + (Step_Y<0) *_yLimNeg)));
+            #endif  
+          } 
         }
         else if(buffer_rx[0]==3)
         {
           Step_Theta = long(buffer_rx[1]*2-1)*(long(buffer_rx[2])*256 + long(buffer_rx[3])); // relative position to move in full-steps
+           if(StageManualMode == LOW && StageLocked == false)
+          { 
+            stepperTHETA.move((long) round((microSteps_Theta/MAX_MICROSTEPS) * Step_Theta));
+          } 
         }
         // Object tracking flag
         else if(buffer_rx[0]==4)
@@ -1856,23 +1790,6 @@ void loop()
           }
         }
         
-        //-------------------------------------------------------------------------------
-        // Automatic Input Block
-        //-------------------------------------------------------------------------------
-        
-        // If an object is detected then move the stage based on the commanded error signal
-        if(StageManualMode == LOW && StageLocked == false)
-        { 
-          stepperTHETA.move((long) round((microSteps_Theta/MAX_MICROSTEPS) * Step_Theta));
-
-          #ifdef DISABLE_LIMIT_SWITCHES
-            stepperX.move((long) round((microSteps_X/MAX_MICROSTEPS) * Step_X));
-            stepperY.move((long) round((microSteps_Y/MAX_MICROSTEPS) * Step_Y));
-          #else
-            stepperX.move((long) round((microSteps_X/MAX_MICROSTEPS) * Step_X *((Step_X>0)*_xLimPos + (Step_X<0) *_xLimNeg)));
-            stepperY.move((long) round((microSteps_Y/MAX_MICROSTEPS) * Step_Y * ((Step_Y>0)*_yLimPos + (Step_Y<0) *_yLimNeg)));
-          #endif  
-        } 
       }
     }
 
