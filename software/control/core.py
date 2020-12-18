@@ -444,7 +444,6 @@ class LiveController(QObject):
         if mode == TriggerMode.HARDWARE:
             print('Setting camera to hardware trigger')
             self.camera.set_hardware_triggered_acquisition()
-
             # Send command to uController to start triggering camera
             self.microcontroller.send_hardware_trigger_command(1)
 
