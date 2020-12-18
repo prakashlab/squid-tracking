@@ -181,6 +181,8 @@ bool calculateCRC_tx = true;
 //--------------------------------------------------
 // Common Physical Variables
 //--------------------------------------------------
+int TIMER_PERIOD = 500; // Main TIMER period in us
+
 int adc_depth = 1023;                                        // Speed Slider: Bit depth of the ADC
 int ManualSampleTime = 500;                                  // Speed Slider:Interval at which the joystick sensitivity is monitored (milliseconds)
 int limitThreshold = 1.8 / 3.3 * 1023;
@@ -242,6 +244,12 @@ bool _xFlip = LOW, _yFlip=LOW, _zFlip = LOW, _xLimPos=LOW, _xLimNeg = LOW, _yLim
 
 // Stage-zeroing state variables
 int Zero_stage =0;
+
+// Button debounce variables
+int triggerButtonState_curr = LOW;             // the current reading from the input pin
+int triggerButtonState_prev = HIGH;   // the previous reading from the input pin
+unsigned long lastDebounceTime = 0;  // the last time the output pin was toggled
+unsigned long debounceDelay =50;  
 
 volatile bool x_EncoderASet;
 volatile bool x_EncoderBSet;
@@ -305,7 +313,6 @@ volatile float phase = 0;
 volatile int phase_code = 0;
 volatile int phase_code_lastTrigger = 0;
 
-int TIMER_PERIOD = 500; // in us
 //=================================================================================
 // Focus-stacks and Homing
 //=================================================================================
@@ -1048,8 +1055,25 @@ void HandleInputEncoderInterrupt()
 }
 
 void HandleTriggerTrackButton()
-{
-  serial_send_flag('T', 1);
+{ 
+//  int reading = digitalRead(triggerTrack);
+//
+//  if(reading != triggerButtonState_prev)
+//  {
+//    // If the switch changed, due to noise or pressing:
+//    lastDebounceTime = millis();
+//  }
+
+  if ((millis() - lastDebounceTime) < debounceDelay) 
+  {
+      return;
+  }
+  else
+  {
+    serial_send_flag('T', 1); 
+    lastDebounceTime = millis();
+  }
+
 }
 
 // https://www.nongnu.org/avr-libc/user-manual/group__util__crc.html

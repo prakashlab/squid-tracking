@@ -53,8 +53,6 @@ class GravityMachine_GUI(QMainWindow):
 					DrawCrossHairs = True, rotate_image_angle=90) 
 
 		
-
-		
 		self.imageDisplayWindow_ThresholdedImage = core.ImageDisplayWindow('Thresholded Image', rotate_image_angle=90, flip_image = 'Horizontal')
 		
 		for key in self.imaging_channels:
@@ -69,7 +67,7 @@ class GravityMachine_GUI(QMainWindow):
 		self.camera = {}
 		if SIMULATION is True:
 			# Define a camera object for each unique image-stream.
-			self.camera = {key:camera.Camera_Simulation() for key in self.imaging_channels}
+			self.camera = {key:camera_Daheng.Camera_Simulation() for key in self.imaging_channels}
 			# self.microcontroller = microcontroller.Microcontroller_Simulation()
 			self.microcontroller = microcontroller.Microcontroller()
 

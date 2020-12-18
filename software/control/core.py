@@ -63,8 +63,11 @@ class StreamHandler(QObject):
         self.timestamp_last_save = 0
         self.timestamp_last_track = 0
 
+        # @@@ This may cause issues if camera width/height is smaller than these values
         self.crop_width = crop_width
         self.crop_height = crop_height
+        self.image_width = crop_width
+        self.image_height = crop_height
         self.working_resolution_scaling = working_resolution_scaling
 
         self.camera = camera
@@ -195,7 +198,7 @@ class StreamHandler(QObject):
         self.get_real_stream_fps()
 
         # crop image
-        image = image_processing.crop_image(camera.current_frame,self.crop_width,self.crop_height)
+        image, self.image_width, self.image_height = image_processing.crop_image(camera.current_frame,self.crop_width,self.crop_height)
         # image = camera.current_frame
 
         # save a copy of full-res image for saving (make sure to do a deep copy)
@@ -203,8 +206,8 @@ class StreamHandler(QObject):
 
         
         if(self.imaging_channel == TRACKING):
-            image_resized = cv2.resize(image,(round(self.crop_width*self.working_resolution_scaling), round(self.crop_height*self.working_resolution_scaling)),cv2.INTER_LINEAR)
-            # image_resized = imutils.resize(image, self.working_image_width)
+            # image_resized = cv2.resize(image,(round(self.crop_width*self.working_resolution_scaling), round(self.crop_height*self.working_resolution_scaling)),cv2.INTER_LINEAR)
+            image_resized = imutils.resize(image, round(self.image_width*self.working_resolution_scaling))
 
             # Threshold the image based on the color-thresholds
             image_thresh = 255*np.array(self.threshold_image(image_resized, color = camera.is_color), dtype = 'uint8')
@@ -236,7 +239,7 @@ class StreamHandler(QObject):
             if(self.imaging_channel == TRACKING):
                 # Send thresholded image to display (only for tracking stream)
                 self.thresh_image_to_display.emit(image_thresh)
-                self.signal_working_resolution.emit(round(self.crop_width*self.working_resolution_scaling))
+                self.signal_working_resolution.emit(round(self.image_width*self.working_resolution_scaling))
             
             self.timestamp_last_display = time_now
 

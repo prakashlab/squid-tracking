@@ -64,7 +64,9 @@ def crop_image(image,crop_width,crop_height):
     roi_top = int(max(image_height/2 - crop_height/2,0))
     roi_bottom = int(min(image_height/2 + crop_height/2,image_height))
     image_cropped = image[roi_top:roi_bottom,roi_left:roi_right]
-    return image_cropped
+    image_cropped_height = image_cropped.shape[0]
+    image_cropped_width = image_cropped.shape[1]
+    return image_cropped, image_cropped_width, image_cropped_height
 
 
 def get_bbox(cnt):
