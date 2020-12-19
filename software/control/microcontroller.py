@@ -49,7 +49,7 @@ class Microcontroller():
 
     def move_x(self,delta):
         direction = int((np.sign(delta)+1)/2)
-        n_microsteps = abs(delta*Motion.STEPS_PER_MM_X*Motion.MAX_MICROSTEPS)
+        n_microsteps = abs(delta*Motion.STEPS_PER_MM_X)
         if n_microsteps > 65535:
             n_microsteps = 65535
         cmd = bytearray(self.tx_buffer_length)
@@ -64,7 +64,7 @@ class Microcontroller():
 
     def move_y(self,delta):
         direction = int((np.sign(delta)+1)/2)
-        n_microsteps = abs(delta*Motion.STEPS_PER_MM_Y*Motion.MAX_MICROSTEPS)
+        n_microsteps = abs(delta*Motion.STEPS_PER_MM_Y)
         if n_microsteps > 65535:
             n_microsteps = 65535
         cmd = bytearray(self.tx_buffer_length)
@@ -79,7 +79,7 @@ class Microcontroller():
 
     def move_z(self,delta):
         direction = int((np.sign(delta)+1)/2)
-        n_microsteps = abs(delta*Motion.STEPS_PER_MM_Z*Motion.MAX_MICROSTEPS)
+        n_microsteps = abs(delta*Motion.STEPS_PER_MM_Z)
         if n_microsteps > 65535:
             n_microsteps = 65535
         cmd = bytearray(self.tx_buffer_length)
@@ -93,7 +93,7 @@ class Microcontroller():
 
     def move_theta(self,delta):
         direction = int((np.sign(delta)+1)/2)
-        n_microsteps = abs(delta*Motion.MAX_MICROSTEPS*Motion.STEPS_PER_REV_THETA_SHAFT/(2*np.pi))
+        n_microsteps = abs(delta*Motion.STEPS_PER_REV_THETA_SHAFT/(2*np.pi))
         if n_microsteps > 65535:
             n_microsteps = 65535
         cmd = bytearray(self.tx_buffer_length)
@@ -107,7 +107,7 @@ class Microcontroller():
 
     def move_x_nonblocking(self,delta):
         direction = int((np.sign(delta)+1)/2)
-        n_microsteps = abs(delta*Motion.MAX_MICROSTEPS*Motion.STEPS_PER_MM_X/10)
+        n_microsteps = abs(delta*Motion.STEPS_PER_MM_X)
         if n_microsteps > 65535:
             n_microsteps = 65535
         cmd = bytearray(self.tx_buffer_length)
@@ -120,7 +120,7 @@ class Microcontroller():
 
     def move_y_nonblocking(self,delta):
         direction = int((np.sign(delta)+1)/2)
-        n_microsteps = abs(delta*Motion.MAX_MICROSTEPS*Motion.STEPS_PER_MM_Y)
+        n_microsteps = abs(delta*Motion.STEPS_PER_MM_Y)
         if n_microsteps > 65535:
             n_microsteps = 65535
         cmd = bytearray(self.tx_buffer_length)
@@ -145,7 +145,7 @@ class Microcontroller():
 
     def move_theta_nonblocking(self,delta):
         direction = int((np.sign(delta)+1)/2)
-        n_microsteps = abs(delta*Motion.MAX_MICROSTEPS/10)
+        n_microsteps = abs(delta)
         if n_microsteps > 65535:
             n_microsteps = 65535
         cmd = bytearray(self.tx_buffer_length)

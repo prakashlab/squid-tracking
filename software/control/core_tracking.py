@@ -205,8 +205,8 @@ class TrackingController(QObject):
 				# initialize the PID controller
 				self.resetPID = True
 
-				# Get initial parameters of the tracking image stream that are immutable
-				self.set_image_props()
+				# Get initial parameters of the tracking image stream that are immutable (eg. color vs GS)
+				self.set_image_type()
 
 				self.update_image_center_width()
 
@@ -248,8 +248,10 @@ class TrackingController(QObject):
 				self.posError_image = self.centroid - self.image_setPoint
 				# Get the error and convert it to mm
 				# x_error, z_error are in mm
+
+				# print('Image width', self.image_width)
 				x_error, z_error = self.units_converter.px_to_mm(self.posError_image[0], self.image_width), self.units_converter.px_to_mm(self.posError_image[1], self.image_width), 
-				# print('Position error: {}, {} mm'.format(x_error, y_error))
+				# print('Position error: {}, {} mm'.format(x_error, z_error))
 				# Flip the sign of Z-error since image coordinates and physical coordinates are reversed.
 				# z_error = -z_error
 
@@ -419,7 +421,7 @@ class TrackingController(QObject):
 
 	# Image related functions
 
-	def set_image_props(self):
+	def set_image_type(self):
 		try:
 			imW, imH, channels = np.shape(self.image)
 
@@ -433,8 +435,8 @@ class TrackingController(QObject):
 
 	def update_image_center_width(self):
 		if(self.image is not None):
+			# The image width determines the actual pixelpermm value for the downsampled image.
 			self.image_center, self.image_width = image_processing.get_image_center_width(self.image)
-			
 			# Update search area
 			self.set_searchArea()
 

@@ -189,6 +189,11 @@ class GravityMachine_GUI(QMainWindow):
 		self.microcontroller_Rec.start_tracking_signal.connect(self.trackingControlWidget.handle_hardware_track_signal)
 		self.recordingControlWidget.start_tracking_signal.connect(self.trackingControlWidget.trigger_track_button)
 		# self.microcontroller_Rec.update_stage_position.connect(self.trackingController.update_stage_position)
+		
+		# Pixel per mm update due to objective change
+		self.liveControlWidget.new_pixelpermm.connect(self.trackingController.units_converter.update_pixel_size)
+		# Changes due to scaling of the image resolution
+		self.liveControlWidget.resolution_scaling_signal.connect(self.trackingController.update_image_center_width)
 		#-----------------------------------------------------
 		# Layout widgets
 		#-----------------------------------------------------

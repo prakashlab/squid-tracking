@@ -154,7 +154,7 @@ class LiveControlWidget(QFrame):
 		- Objective
 		- Display resolution slider
 	'''
-	objective_signal = Signal(str) # Pixel size based on calibration image
+	new_pixelpermm = Signal(int) # Pixel size based on calibration image
 	resolution_scaling_signal = Signal(int)
 	show_window = Signal(bool)
 
@@ -308,7 +308,9 @@ class LiveControlWidget(QFrame):
 		self.objective = self.dropdown_objectiveSelection.currentText()
 		self.internal_state.data['Objective'] = self.objective
 		print('Updated internal state objective {}'.format(self.internal_state.data['Objective'] ))
-		self.objective_signal.emit(self.objective)
+		
+		#@@@ Need to connect this signal to a slot!@@@
+		self.new_pixelpermm.emit(OBJECTIVES[self.objective]['PixelPermm'])
 		
 	def toggle_live(self,pressed):
 		if pressed:
@@ -318,9 +320,7 @@ class LiveControlWidget(QFrame):
 					if(type(self.liveController) is dict):
 						self.liveController[channel].start_live()
 					else:
-						self.liveController.start_live()
-
-					
+						self.liveController.start_live()					
 		else:
 			for channel in self.imaging_channels:
 				if(type(self.liveController) is dict):
@@ -332,6 +332,7 @@ class LiveControlWidget(QFrame):
 	def update_image_properties_tracking(self):
 
 		self.resolution_scaling_signal.emit(self.slider_resolutionScaling.value())
+		print(self.slider_resolutionScaling.value())
 
 	def update_active_channels(self):
 

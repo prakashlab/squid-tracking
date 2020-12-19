@@ -64,13 +64,11 @@ class Units_Converter:
         self.calib_img_width = imW
 
     def update_pixel_size(self, new_pixelPermm):
-        
         self.pixelPermm = new_pixelPermm
 
-        print('new pixel size: {}'.format(self.pixelPermm))
-
     def px_to_mm(self, Dist,resolution_width):
-        return 1/self.pixelPermm/(resolution_width/self.calib_img_width)*Dist   
+        # print('Actual Pixel per mm:', round(self.pixelPermm*resolution_width/self.calib_img_width))
+        return Dist*(1/self.pixelPermm)*(self.calib_img_width/resolution_width)
 
     def mm_to_px(self, Dist,resolution_width):
         return Dist*self.pixelPermm*resolution_width/self.calib_img_width
