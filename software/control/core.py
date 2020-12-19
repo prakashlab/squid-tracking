@@ -130,7 +130,6 @@ class StreamHandler(QObject):
 
     def set_working_resolution_scaling(self, working_resolution_scaling):
         self.working_resolution_scaling = working_resolution_scaling/100
-        # print(self.working_resolution_scaling)
 
     def set_image_thresholds(self, lower_HSV, upper_HSV):
         self.lower_HSV = lower_HSV
@@ -213,7 +212,6 @@ class StreamHandler(QObject):
             image_thresh = 255*np.array(self.threshold_image(image_resized, color = camera.is_color), dtype = 'uint8')
 
         else:
-
             image_resized = np.copy(image)
         
         # Deepak: For now tracking with every image from camera

@@ -192,8 +192,6 @@ class GravityMachine_GUI(QMainWindow):
 		
 		# Pixel per mm update due to objective change
 		self.liveControlWidget.new_pixelpermm.connect(self.trackingController.units_converter.update_pixel_size)
-		# Changes due to scaling of the image resolution
-		self.liveControlWidget.resolution_scaling_signal.connect(self.trackingController.update_image_center_width)
 		#-----------------------------------------------------
 		# Layout widgets
 		#-----------------------------------------------------

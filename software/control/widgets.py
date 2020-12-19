@@ -332,7 +332,6 @@ class LiveControlWidget(QFrame):
 	def update_image_properties_tracking(self):
 
 		self.resolution_scaling_signal.emit(self.slider_resolutionScaling.value())
-		print(self.slider_resolutionScaling.value())
 
 	def update_active_channels(self):
 

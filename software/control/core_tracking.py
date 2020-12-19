@@ -210,8 +210,6 @@ class TrackingController(QObject):
 
 				self.update_image_center_width()
 
-				self.update_tracking_setpoint()
-
 			
 			else:
 
@@ -249,9 +247,11 @@ class TrackingController(QObject):
 				# Get the error and convert it to mm
 				# x_error, z_error are in mm
 
-				# print('Image width', self.image_width)
+				# Need to update this continuously to account for the user changing the resolution on-the-fly.
+				self.update_image_center_width()				
+
 				x_error, z_error = self.units_converter.px_to_mm(self.posError_image[0], self.image_width), self.units_converter.px_to_mm(self.posError_image[1], self.image_width), 
-				# print('Position error: {}, {} mm'.format(x_error, z_error))
+				print('Position error: {}, {} mm'.format(x_error, z_error))
 				# Flip the sign of Z-error since image coordinates and physical coordinates are reversed.
 				# z_error = -z_error
 
@@ -424,7 +424,6 @@ class TrackingController(QObject):
 	def set_image_type(self):
 		try:
 			imW, imH, channels = np.shape(self.image)
-
 			if(channels>2):
 				self.color = True
 			else:
@@ -432,20 +431,15 @@ class TrackingController(QObject):
 		except:
 			self.color = False
 
-
 	def update_image_center_width(self):
 		if(self.image is not None):
 			# The image width determines the actual pixelpermm value for the downsampled image.
 			self.image_center, self.image_width = image_processing.get_image_center_width(self.image)
 			# Update search area
 			self.set_searchArea()
-
 			# The tracking set point is modified since it depends on the image center.
 			self.update_tracking_setpoint()
 			
-			print('New image width: {}'.format(self.image_width))
-
-
 	def update_tracking_setpoint(self):
 
 		self.image_setPoint = self.image_center + self.image_offset
