@@ -23,7 +23,7 @@ import control.core as core
 import control.core_tracking as core_tracking
 import control.microcontroller as microcontroller
 
-SIMULATION = False
+SIMULATION = True
 
 class GravityMachine_GUI(QMainWindow):
 
@@ -47,13 +47,13 @@ class GravityMachine_GUI(QMainWindow):
 
 			if(CAMERAS[key]['make']=='TIS'):
 				self.imageDisplayWindow[key] = core.ImageDisplayWindow(key + ' Display', 
-					DrawCrossHairs = True, rotate_image_angle=90, flip_image = 'Horizontal') 
+					DrawCrossHairs = True) 
 			elif (CAMERAS[key]['make']=='Daheng'):
 				self.imageDisplayWindow[key] = core.ImageDisplayWindow(key + ' Display', 
 					DrawCrossHairs = True, rotate_image_angle=90) 
 
 		
-		self.imageDisplayWindow_ThresholdedImage = core.ImageDisplayWindow('Thresholded Image', rotate_image_angle=90, flip_image = 'Horizontal')
+		self.imageDisplayWindow_ThresholdedImage = core.ImageDisplayWindow('Thresholded Image')
 		
 		for key in self.imaging_channels:
 			self.imageDisplayWindow[key].show()
@@ -85,11 +85,17 @@ class GravityMachine_GUI(QMainWindow):
 			# self.camera = {key:camera.Camera() for key in self.imaging_channels}
 			self.microcontroller = microcontroller.Microcontroller()
 		
+
+		# Image stream handler
+		self.streamHandler = {}
+		for key in self.imaging_channels:
+			if(CAMERAS[key]['make']=='TIS'):
+				self.streamHandler[key] = core.StreamHandler(camera = self.camera[key], imaging_channel = key, rotate_image_angle = 90, flip_image = 'Horizontal')
+			else:
+				self.streamHandler[key] = core.StreamHandler(camera = self.camera[key], imaging_channel = key, rotate_image_angle = 90)
+
+
 		self.internal_state = core_tracking.InternalState()
-
-
-		self.streamHandler = {key: core.StreamHandler(camera = self.camera[key], imaging_channel = key)
-			for key in self.imaging_channels}	
 		#-----------------------------------------------------------------------------------------------
 		# Tracking-related objects
 		#-----------------------------------------------------------------------------------------------		

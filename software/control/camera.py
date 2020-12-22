@@ -188,7 +188,7 @@ class Camera(object):
 
 class Camera_Simulation(object):
 
-    def __init__(self,sn=None,width=2000,height=2000,framerate=30,color=False):
+    def __init__(self,sn=None,width=1920,height=1080,framerate=30,color=False):
         self.height = height
         self.width = width
         self.sample = None
@@ -266,13 +266,13 @@ class Camera_Simulation(object):
         self.timestamp = time.time()
         if self.frame_ID == 1:
             if(self.is_color == False):
-                self.current_frame = np.random.randint(50,size=(2000,2000),dtype=np.uint8)
+                self.current_frame = np.random.randint(50,size=(1080,1920),dtype=np.uint8)
                 # self.current_frame[800:1000,900:1100] = 200
                 # self.current_frame[250:400,400:600] = 200
                 cv2.circle(self.current_frame,(500,1000), 100, (200,0,0), -1)
 
             elif(self.is_color == True):
-                self.current_frame = np.random.randint(50,size=(2000,2000,3),dtype=np.uint8)
+                self.current_frame = np.random.randint(50,size=(1080,1920,3),dtype=np.uint8)
                 self.current_frame[800:1000,900:1100,1] = 200
                 self.current_frame[250:400,400:600,1] = 200
         else:

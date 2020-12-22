@@ -54,7 +54,7 @@ class StreamHandler(QObject):
     Slots
     '''
 
-    def __init__(self, camera = None , crop_width=2000,crop_height=2000, working_resolution_scaling = WORKING_RES_DEFAULT, imaging_channel = TRACKING):
+    def __init__(self, camera = None , crop_width=2000,crop_height=2000, working_resolution_scaling = WORKING_RES_DEFAULT, imaging_channel = TRACKING, rotate_image_angle = 0, flip_image = None ):
         QObject.__init__(self)
         self.fps_display = FPS['display']['default']
         self.fps_save = 1
@@ -69,6 +69,9 @@ class StreamHandler(QObject):
         self.image_width = crop_width
         self.image_height = crop_height
         self.working_resolution_scaling = working_resolution_scaling
+
+        self.rotate_image_angle = rotate_image_angle
+        self.flip_image = flip_image
 
         self.camera = camera
 
@@ -191,13 +194,36 @@ class StreamHandler(QObject):
         camera.image_locked = True
         self.handler_busy = True
         self.signal_new_frame_received.emit() # self.liveController.turn_off_illumination()
-        # This also triggers the microcontroller_Receiever
 
+        image = camera.current_frame
+
+        if(self.rotate_image_angle != 0):
+            '''
+                # ROTATE_90_CLOCKWISE
+                # ROTATE_90_COUNTERCLOCKWISE
+            '''
+            if(self.rotate_image_angle == 90):
+                image = cv2.rotate(image,cv2.ROTATE_90_CLOCKWISE)
+            elif(self.rotate_image_angle == -90):
+                image = cv2.rotate(image,cv2.ROTATE_90_COUNTERCLOCKWISE)
+
+        if(self.flip_image is not None):
+            '''
+                flipcode = 0: flip vertically
+                flipcode > 0: flip horizontally
+                flipcode < 0: flip vertically and horizontally
+            '''
+            if(self.flip_image == 'Vertical'):
+                image = cv2.flip(image, 0)
+            elif(self.flip_image == 'Horizontal'):
+                image = cv2.flip(image, 1)
+            elif(self.flip_image == 'Both'):
+                image = cv2.flip(image, -1)
         
         self.get_real_stream_fps()
 
         # crop image
-        image, self.image_width, self.image_height = image_processing.crop_image(camera.current_frame,self.crop_width,self.crop_height)
+        image, self.image_width, self.image_height = image_processing.crop_image(image ,self.crop_width,self.crop_height)
         # image = camera.current_frame
 
         # save a copy of full-res image for saving (make sure to do a deep copy)
@@ -665,28 +691,7 @@ class ImageDisplayWindow(QMainWindow):
         
       
         
-        if(self.rotate_image_angle != 0):
-            '''
-                # ROTATE_90_CLOCKWISE
-                # ROTATE_90_COUNTERCLOCKWISE
-            '''
-            if(self.rotate_image_angle == 90):
-                image = cv2.rotate(image,cv2.ROTATE_90_CLOCKWISE)
-            elif(self.rotate_image_angle == -90):
-                image = cv2.rotate(image,cv2.ROTATE_90_COUNTERCLOCKWISE)
-
-        if(self.flip_image is not None):
-            '''
-                flipcode = 0: flip vertically
-                flipcode > 0: flip horizontally
-                flipcode < 0: flip vertically and horizontally
-            '''
-            if(self.flip_image == 'Vertical'):
-                image = cv2.flip(image, 0)
-            elif(self.flip_image == 'Horizontal'):
-                image = cv2.flip(image, 1)
-            elif(self.flip_image == 'Both'):
-                image = cv2.flip(image, -1)
+     
 
         if(imaging_channel == TRACKING):
 
