@@ -49,7 +49,7 @@ class Microcontroller():
 
     def move_x(self,delta):
         direction = int((np.sign(delta)+1)/2)
-        n_microsteps = abs(delta*Motion.STEPS_PER_MM_X)
+        n_microsteps = abs(delta*Motion.STEPS_PER_MM_X*Motion.MAX_MICROSTEPS)
         if n_microsteps > 65535:
             n_microsteps = 65535
         cmd = bytearray(self.tx_buffer_length)
@@ -58,13 +58,13 @@ class Microcontroller():
         cmd[2] = round(n_microsteps) >> 8
         cmd[3] = round(n_microsteps) & 0xff
         self.serial.write(cmd)
-        time.sleep(WaitTime.BASE + WaitTime.X*abs(delta))
+        # time.sleep(WaitTime.BASE + WaitTime.X*abs(delta))
         print('Moving  x stage')
         print('X command sent to uController: {} {}'.format(np.sign(delta),n_microsteps))
 
     def move_y(self,delta):
         direction = int((np.sign(delta)+1)/2)
-        n_microsteps = abs(delta*Motion.STEPS_PER_MM_Y)
+        n_microsteps = abs(delta*Motion.STEPS_PER_MM_Y*Motion.MAX_MICROSTEPS)
         if n_microsteps > 65535:
             n_microsteps = 65535
         cmd = bytearray(self.tx_buffer_length)
@@ -73,13 +73,13 @@ class Microcontroller():
         cmd[2] = round(n_microsteps) >> 8
         cmd[3] = round(n_microsteps) & 0xff
         self.serial.write(cmd)
-        time.sleep(WaitTime.BASE + WaitTime.Y*abs(delta))
+        # time.sleep(WaitTime.BASE + WaitTime.Y*abs(delta))
         print('Moving  y stage')
         print('Y command sent to uController: {} {}'.format(np.sign(delta),n_microsteps))
 
     def move_z(self,delta):
         direction = int((np.sign(delta)+1)/2)
-        n_microsteps = abs(delta*Motion.STEPS_PER_MM_Z)
+        n_microsteps = abs(delta*Motion.STEPS_PER_MM_Z*Motion.MAX_MICROSTEPS)
         if n_microsteps > 65535:
             n_microsteps = 65535
         cmd = bytearray(self.tx_buffer_length)
@@ -88,12 +88,12 @@ class Microcontroller():
         cmd[2] = round(n_microsteps) >> 8
         cmd[3] = round(n_microsteps) & 0xff
         self.serial.write(cmd)
-        time.sleep(WaitTime.BASE + WaitTime.Z*abs(delta))
+        # time.sleep(WaitTime.BASE + WaitTime.Z*abs(delta))
         print('Z command sent to uController: {} {}'.format(np.sign(delta),n_microsteps))
 
     def move_theta(self,delta):
         direction = int((np.sign(delta)+1)/2)
-        n_microsteps = abs(delta*Motion.STEPS_PER_REV_THETA_SHAFT/(2*np.pi))
+        n_microsteps = abs(delta*Motion.STEPS_PER_REV_THETA_SHAFT*Motion.MAX_MICROSTEPS/(2*np.pi))
         if n_microsteps > 65535:
             n_microsteps = 65535
         cmd = bytearray(self.tx_buffer_length)
@@ -102,12 +102,12 @@ class Microcontroller():
         cmd[2] = round(n_microsteps) >> 8
         cmd[3] = round(n_microsteps) & 0xff
         self.serial.write(cmd)
-        time.sleep(WaitTime.BASE + WaitTime.Z*abs(delta))
+        # time.sleep(WaitTime.BASE + WaitTime.Z*abs(delta))
         print('Theta command sent to uController: {} {}'.format(np.sign(delta),n_microsteps))
 
     def move_x_nonblocking(self,delta):
         direction = int((np.sign(delta)+1)/2)
-        n_microsteps = abs(delta*Motion.STEPS_PER_MM_X)
+        n_microsteps = abs(delta*Motion.MAX_MICROSTEPS)
         if n_microsteps > 65535:
             n_microsteps = 65535
         cmd = bytearray(self.tx_buffer_length)
@@ -120,7 +120,7 @@ class Microcontroller():
 
     def move_y_nonblocking(self,delta):
         direction = int((np.sign(delta)+1)/2)
-        n_microsteps = abs(delta*Motion.STEPS_PER_MM_Y)
+        n_microsteps = abs(delta*Motion.MAX_MICROSTEPS)
         if n_microsteps > 65535:
             n_microsteps = 65535
         cmd = bytearray(self.tx_buffer_length)
@@ -145,7 +145,7 @@ class Microcontroller():
 
     def move_theta_nonblocking(self,delta):
         direction = int((np.sign(delta)+1)/2)
-        n_microsteps = abs(delta)
+        n_microsteps = abs(delta*Motion.MAX_MICROSTEPS)
         if n_microsteps > 65535:
             n_microsteps = 65535
         cmd = bytearray(self.tx_buffer_length)

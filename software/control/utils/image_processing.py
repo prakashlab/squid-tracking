@@ -209,12 +209,12 @@ def get_image_center_width(image):
 
 def get_image_height_width(image):
     ImShape=image.shape
-    ImH,ImW=ImShape[0],ImShape[1]
+    ImW,ImH=ImShape[0],ImShape[1]
     return ImH, ImW
 
 def get_image_top_center_width(image):
     ImShape=image.shape
-    ImH,ImW=ImShape[0],ImShape[1]
+    ImW,ImH=ImShape[0],ImShape[1]
     return np.array([ImW*0.5,0.25*ImH]),ImW
 
 

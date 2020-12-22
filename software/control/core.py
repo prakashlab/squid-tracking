@@ -663,28 +663,7 @@ class ImageDisplayWindow(QMainWindow):
         
         image = np.copy(image) # Avoid overwriting the source image
         
-        if(imaging_channel == TRACKING):
-
-            self.image_height, self.image_width = image_processing.get_image_height_width(image)
-
-
-            if(self.DrawRect):
-                cv2.rectangle(image, self.ptRect1, self.ptRect2,(255,255,255) , 4) #cv2.rectangle(img, (20,20), (300,300),(0,0,255) , 2)#
-                self.DrawRect=False
-
-            if(self.DrawCirc):
-                cv2.circle(image,(self.centroid[0],self.centroid[1]), 20, (255,0,0), 2)
-                self.DrawCirc=False
-
-            if(self.DrawCrossHairs):
-                # Only need to do this if the image size changes
-                self.update_image_center_width(image)
-
-                self.draw_crosshairs()
-
-
-                cv2.line(image, self.horLine_pt1, self.horLine_pt2, (255,255,255), thickness=3, lineType=8, shift=0) 
-                cv2.line(image, self.verLine_pt1, self.verLine_pt2, (255,255,255), thickness=3, lineType=8, shift=0) 
+      
         
         if(self.rotate_image_angle != 0):
             '''
@@ -709,8 +688,26 @@ class ImageDisplayWindow(QMainWindow):
             elif(self.flip_image == 'Both'):
                 image = cv2.flip(image, -1)
 
+        if(imaging_channel == TRACKING):
 
-     
+            self.image_height, self.image_width = image_processing.get_image_height_width(image)
+
+
+            if(self.DrawRect):
+                cv2.rectangle(image, self.ptRect1, self.ptRect2,(255,255,255) , 4) #cv2.rectangle(img, (20,20), (300,300),(0,0,255) , 2)#
+                self.DrawRect=False
+
+            if(self.DrawCirc):
+                cv2.circle(image,(self.centroid[0],self.centroid[1]), 20, (255,0,0), 2)
+                self.DrawCirc=False
+
+            if(self.DrawCrossHairs):
+                # Only need to do this if the image size changes
+                self.update_image_center_width(image)
+
+                self.draw_crosshairs()
+                cv2.line(image, self.horLine_pt1, self.horLine_pt2, (255,255,255), thickness=3, lineType=8, shift=0) 
+                cv2.line(image, self.verLine_pt1, self.verLine_pt2, (255,255,255), thickness=3, lineType=8, shift=0) 
 
 
         self.graphics_widget.img.setImage(image,autoLevels=False)
@@ -737,6 +734,8 @@ class ImageDisplayWindow(QMainWindow):
 
         self.verLine_pt1 = (int(self.tracking_center[0]), int(self.tracking_center[1] - cross_length/2))
         self.verLine_pt2 = (int(self.tracking_center[0]), int(self.tracking_center[1] + cross_length/2))
+
+      
 
 
     def update_image_center_width(self,image):

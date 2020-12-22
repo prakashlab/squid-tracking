@@ -128,7 +128,7 @@ class MicrocontrollerDef:
     MSG_LENGTH = 12
     CMD_LENGTH = 4
     N_BYTES_POS = 3
-    RUN_OPENLOOP = True # Determines whether stepper/encoders are used to calculate stage positions.
+    RUN_OPENLOOP = False # Determines whether stepper/encoders are used to calculate stage positions.
 
     def __init__(self):
         pass

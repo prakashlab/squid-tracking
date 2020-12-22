@@ -10,8 +10,8 @@
 #include <DueTimer.h>
 #include <Wire.h>
 
-#define RUN_OPEN_LOOP // If we want to run in open-loop (no encoders) mode, uncomment this line or set it with a build flag:
-#define TESTING;  // For testing without all hardware connected (dev of firmware + software when only uController is available)
+//#define RUN_OPEN_/LOOP // If we want to run in open-loop (no encoders) mode, uncomment this line or set it with a build flag:
+//#define TESTING;  // For testing without all hardware connected (dev of firmware + software when only uController is available)
 //#define DISABLE_LIMIT_SWITCHES // use when no limit switches are available/ connected:
 //#define USE_SERIAL_MONITOR // Send data to Serial monitor instead of USB port (for debugging). 
 //=================================================================================
@@ -295,7 +295,7 @@ volatile bool flag_send_pos_update = false;
 
 volatile int counter_read_joystick = 0;
 volatile bool flag_read_joystick = false;
-static const int interval_read_joystick = 100000; // in us
+static const int interval_read_joystick = 50000; // in us
 
 volatile long int counter_send_flag_update = 0;
 volatile bool flag_send_flag_update = false;
@@ -1293,23 +1293,32 @@ void HandleOptotuneSYNCInterrupt() {
     #endif
     #endif
 
-    SerialUSB.print("X position:");
-    SerialUSB.println(x_EncoderTicks);
+    SerialUSB.print("Stage status:");
+    SerialUSB.println(StageManualMode);
 
-    SerialUSB.print("Y position:");
-    SerialUSB.println(y_EncoderTicks);
+    SerialUSB.print("X pos");
+    SerialUSB.println(CurrPos_X);
 
-    SerialUSB.print("Theta position:");
-    SerialUSB.println(theta_EncoderTicks);
-
-    SerialUSB.print("Tracking flag:");
-    SerialUSB.println(flag_tracking);
-
-    SerialUSB.print("Focus tracking flag:");
-    SerialUSB.println(flag_focus_tracking);
-
-    SerialUSB.print("Homing flag:");
-    SerialUSB.println(flag_homing);
+    SerialUSB.print("Theta pos");
+    SerialUSB.println(CurrPos_Theta);
+    
+//    SerialUSB.print("X position:");
+//    SerialUSB.println(x_EncoderTicks);
+//
+//    SerialUSB.print("Y position:");
+//    SerialUSB.println(y_EncoderTicks);
+//
+//    SerialUSB.print("Theta position:");
+//    SerialUSB.println(theta_EncoderTicks);
+//
+//    SerialUSB.print("Tracking flag:");
+//    SerialUSB.println(flag_tracking);
+//
+//    SerialUSB.print("Focus tracking flag:");
+//    SerialUSB.println(flag_focus_tracking);
+//
+//    SerialUSB.print("Homing flag:");
+//    SerialUSB.println(flag_homing);
 
  }
 //%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -1604,8 +1613,12 @@ void loop()
     Xpos = !digitalRead(moveXpos);
     Xneg = !digitalRead(moveXneg);
 
-//    TargetCurr_X = -(Xpos+(-1)*Xneg)*100;
-    TargetCurr_X = -(Xpos*(_xLimPos)+(-1)*Xneg*(_xLimNeg))*100;
+    #ifdef DISABLE_LIMIT_SWITCHES
+      TargetCurr_X = -(Xpos/+(-1)*Xneg)*100;
+    #else
+      TargetCurr_X = -(Xpos*(_xLimPos)+(-1)*Xneg*(_xLimNeg))*100;
+    #endif
+    
     TargetCurr_Theta = -(Thetapos+(-1)*Thetaneg)*100;
     
     stepperTHETA.move(microSteps_Theta * TargetCurr_Theta);
@@ -1648,8 +1661,8 @@ void loop()
   // Update certain status flags periodically
   if(flag_send_flag_update)
   {
-//    serial_send_flag('S', StageManualMode);
-    serial_send_flag('C', flag_trigger_camera + flag_trigger_camera_FL);
+    serial_send_flag('S', StageManualMode);
+//    serial_send_fla/g('C', flag_trigger_camera + flag_trigger_camera_FL);
     flag_send_flag_update = false;
     
   }
@@ -1667,12 +1680,7 @@ void loop()
         buffer_rx_ptr = 0;
  
         isReceived=true;
-
-        //Motion commands
-//        Step_X =0;
-//        Step_Y = 0;
-//        Step_Theta = 0;
-        
+      
         if(buffer_rx[0]==0)
         {
            Step_X = long(buffer_rx[1]*2-1)*(long(buffer_rx[2])*256 + long(buffer_rx[3])); // relative position to move in full-steps

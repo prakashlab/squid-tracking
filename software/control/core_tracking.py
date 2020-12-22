@@ -434,6 +434,7 @@ class TrackingController(QObject):
 		if(self.image is not None):
 			# The image width determines the actual pixelpermm value for the downsampled image.
 			self.image_center, self.image_width = image_processing.get_image_center_width(self.image)
+			print(self.image_center)
 			# Update search area
 			self.set_searchArea()
 			# The tracking set point is modified since it depends on the image center.
@@ -443,7 +444,7 @@ class TrackingController(QObject):
 
 		self.image_setPoint = self.image_center + self.image_offset
 		#@@@Testing
-		# print('New tracking set point :{}'.format(self.image_setPoint))
+		print('New tracking set point :{}'.format(self.image_setPoint))
 
 	def update_image_offset(self, new_image_offset):
 		self.image_offset = new_image_offset
