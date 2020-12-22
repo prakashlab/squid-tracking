@@ -58,7 +58,7 @@ class TrackingController(QObject):
 	save_data_signal -> DataSaver
 
 	'''
-	def __init__(self, microcontroller, internal_state , focus_tracker = 'liq-lens'):
+	def __init__(self, microcontroller, internal_state , focus_tracker = 'liq-lens', rotate_image_angle = 0):
 		QObject.__init__(self)
 		self.microcontroller = microcontroller
 		self.internal_state = internal_state
@@ -105,6 +105,8 @@ class TrackingController(QObject):
 		self.posError_image = np.array([0,0])
 
 		self.image_offset = np.array([0,0])
+
+		self.rotate_image_angle = rotate_image_angle
 
 		# Create a tracking object that does the image-based tracking
 		self.tracker_image = tracking.Tracker_Image()
@@ -250,7 +252,12 @@ class TrackingController(QObject):
 				# Need to update this continuously to account for the user changing the resolution on-the-fly.
 				self.update_image_center_width()				
 
-				x_error, z_error = self.units_converter.px_to_mm(self.posError_image[0], self.image_width), self.units_converter.px_to_mm(self.posError_image[1], self.image_width), 
+				if(self.rotate_image_angle == 0):
+					x_error, z_error = self.units_converter.px_to_mm(self.posError_image[0], self.image_width), self.units_converter.px_to_mm(self.posError_image[1], self.image_width)
+				elif(self.rotate_image_angle == 90):
+					z_error, x_error = self.units_converter.px_to_mm(self.posError_image[0], self.image_width), self.units_converter.px_to_mm(self.posError_image[1], self.image_width)
+
+
 				# Flip the sign of Z-error since image coordinates and physical coordinates are reversed.
 				# z_error = -z_error
 
@@ -434,7 +441,7 @@ class TrackingController(QObject):
 		if(self.image is not None):
 			# The image width determines the actual pixelpermm value for the downsampled image.
 			self.image_center, self.image_width = image_processing.get_image_center_width(self.image)
-			print(self.image_center)
+			# print(self.image_center)
 			# Update search area
 			self.set_searchArea()
 			# The tracking set point is modified since it depends on the image center.
@@ -444,7 +451,7 @@ class TrackingController(QObject):
 
 		self.image_setPoint = self.image_center + self.image_offset
 		#@@@Testing
-		print('New tracking set point :{}'.format(self.image_setPoint))
+		# print('New tracking set point :{}'.format(self.image_setPoint))
 
 	def update_image_offset(self, new_image_offset):
 		self.image_offset = new_image_offset

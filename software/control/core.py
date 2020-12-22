@@ -197,6 +197,9 @@ class StreamHandler(QObject):
 
         image = camera.current_frame
 
+        # crop image
+        image, self.image_width, self.image_height = image_processing.crop_image(image ,self.crop_width,self.crop_height)
+
         if(self.rotate_image_angle != 0):
             '''
                 # ROTATE_90_CLOCKWISE
@@ -222,8 +225,7 @@ class StreamHandler(QObject):
         
         self.get_real_stream_fps()
 
-        # crop image
-        image, self.image_width, self.image_height = image_processing.crop_image(image ,self.crop_width,self.crop_height)
+        
         # image = camera.current_frame
 
         # save a copy of full-res image for saving (make sure to do a deep copy)

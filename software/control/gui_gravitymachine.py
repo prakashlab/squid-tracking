@@ -23,7 +23,7 @@ import control.core as core
 import control.core_tracking as core_tracking
 import control.microcontroller as microcontroller
 
-SIMULATION = True
+SIMULATION = False
 
 class GravityMachine_GUI(QMainWindow):
 
@@ -101,7 +101,7 @@ class GravityMachine_GUI(QMainWindow):
 		#-----------------------------------------------------------------------------------------------		
 		self.liveController = {key:core.LiveController(self.camera[key],self.microcontroller) for key in self.imaging_channels}
 		self.navigationController = core.NavigationController(self.microcontroller)
-		self.trackingController = core_tracking.TrackingController(self.microcontroller,self.internal_state)
+		self.trackingController = core_tracking.TrackingController(self.microcontroller,self.internal_state, rotate_image_angle = 90)
 		self.trackingDataSaver = core_tracking.TrackingDataSaver(self.internal_state)
 		self.microcontroller_Rec = core_tracking.microcontroller_Receiver(self.microcontroller, self.internal_state) # Microcontroller Receiver object
 		#-----------------------------------------------------------------------------------------------
