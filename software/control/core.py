@@ -647,7 +647,7 @@ class ImageDisplayWindow(QMainWindow):
         self.graphics_widget.view.setAspectLocked(True)
         
         ## Create image item
-        self.graphics_widget.img = pg.ImageItem(border='w')
+        self.graphics_widget.img = pg.ImageItem(border='w', axisOrder='row-major')
         self.graphics_widget.view.addItem(self.graphics_widget.img)
 
         self.image_width = None
@@ -717,7 +717,7 @@ class ImageDisplayWindow(QMainWindow):
                 cv2.line(image, self.verLine_pt1, self.verLine_pt2, (255,255,255), thickness=3, lineType=8, shift=0) 
 
 
-        self.graphics_widget.img.setImage(image,autoLevels=False)
+        self.graphics_widget.img.setImage(image, autoLevels=False)
         # print('In ImageDisplayWindow display image')
     
     
@@ -741,9 +741,6 @@ class ImageDisplayWindow(QMainWindow):
 
         self.verLine_pt1 = (int(self.tracking_center[0]), int(self.tracking_center[1] - cross_length/2))
         self.verLine_pt2 = (int(self.tracking_center[0]), int(self.tracking_center[1] + cross_length/2))
-
-      
-
 
     def update_image_center_width(self,image):
         self.image_center, self.image_width = image_processing.get_image_center_width(image)

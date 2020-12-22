@@ -269,7 +269,7 @@ class Camera_Simulation(object):
                 self.current_frame = np.random.randint(50,size=(1080,1920),dtype=np.uint8)
                 # self.current_frame[800:1000,900:1100] = 200
                 # self.current_frame[250:400,400:600] = 200
-                cv2.circle(self.current_frame,(500,1000), 100, (200,0,0), -1)
+                cv2.circle(self.current_frame,(100,600), 100, (200,0,0), -1)
 
             elif(self.is_color == True):
                 self.current_frame = np.random.randint(50,size=(1080,1920,3),dtype=np.uint8)

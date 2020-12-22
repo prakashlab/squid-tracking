@@ -23,7 +23,7 @@ import control.core as core
 import control.core_tracking as core_tracking
 import control.microcontroller as microcontroller
 
-SIMULATION = False
+SIMULATION = True
 
 class GravityMachine_GUI(QMainWindow):
 
@@ -90,9 +90,9 @@ class GravityMachine_GUI(QMainWindow):
 		self.streamHandler = {}
 		for key in self.imaging_channels:
 			if(CAMERAS[key]['make']=='TIS'):
-				self.streamHandler[key] = core.StreamHandler(camera = self.camera[key], imaging_channel = key, rotate_image_angle = 90, flip_image = 'Horizontal')
+				self.streamHandler[key] = core.StreamHandler(camera = self.camera[key], imaging_channel = key)
 			else:
-				self.streamHandler[key] = core.StreamHandler(camera = self.camera[key], imaging_channel = key, rotate_image_angle = 90)
+				self.streamHandler[key] = core.StreamHandler(camera = self.camera[key], imaging_channel = key)
 
 
 		self.internal_state = core_tracking.InternalState()
@@ -101,7 +101,7 @@ class GravityMachine_GUI(QMainWindow):
 		#-----------------------------------------------------------------------------------------------		
 		self.liveController = {key:core.LiveController(self.camera[key],self.microcontroller) for key in self.imaging_channels}
 		self.navigationController = core.NavigationController(self.microcontroller)
-		self.trackingController = core_tracking.TrackingController(self.microcontroller,self.internal_state, rotate_image_angle = 90)
+		self.trackingController = core_tracking.TrackingController(self.microcontroller,self.internal_state)
 		self.trackingDataSaver = core_tracking.TrackingDataSaver(self.internal_state)
 		self.microcontroller_Rec = core_tracking.microcontroller_Receiver(self.microcontroller, self.internal_state) # Microcontroller Receiver object
 		#-----------------------------------------------------------------------------------------------
