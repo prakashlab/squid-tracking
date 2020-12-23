@@ -23,7 +23,7 @@ import control.core as core
 import control.core_tracking as core_tracking
 import control.microcontroller as microcontroller
 
-SIMULATION = True
+SIMULATION = False
 
 class GravityMachine_GUI(QMainWindow):
 
@@ -92,7 +92,7 @@ class GravityMachine_GUI(QMainWindow):
 			if(CAMERAS[key]['make']=='TIS'):
 				self.streamHandler[key] = core.StreamHandler(camera = self.camera[key], imaging_channel = key)
 			else:
-				self.streamHandler[key] = core.StreamHandler(camera = self.camera[key], imaging_channel = key)
+				self.streamHandler[key] = core.StreamHandler(camera = self.camera[key], imaging_channel = key, flip_image = 'Vertical')
 
 
 		self.internal_state = core_tracking.InternalState()

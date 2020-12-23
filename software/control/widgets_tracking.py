@@ -502,7 +502,7 @@ class PID_Group_Widget(QFrame):
 
 class PID_Widget(QGroupBox):
 	
-	def __init__(self,name,Pmax=1,Dmax=1,Imax=1):
+	def __init__(self,name,Pmax=2,Dmax=1,Imax=1):
 		super().__init__()
 		
 		self.setTitle(name)
