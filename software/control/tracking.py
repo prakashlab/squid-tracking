@@ -3,9 +3,13 @@ import numpy as np
 
 try:
 	from control.DaSiamRPN.code.net import SiamRPNvot
-	from control.DaSiamRPN.code import vot 
+	print(1)
+	from control.DaSiamRPN.code import vot
+	print(2) 
 	from control.DaSiamRPN.code.utils import get_axis_aligned_bbox, cxy_wh_2_rect
+	print(3)
 	from control.DaSiamRPN.code.run_SiamRPN import SiamRPN_init, SiamRPN_track
+	print(4)
 except Exception as e:
 	print(e)
 	# print('Warning: DaSiamRPN is not available!')

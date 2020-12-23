@@ -8,7 +8,7 @@ from torch.autograd import Variable
 import torch.nn.functional as F
 
 
-from utils import get_subwindow_tracking
+from control.DaSiamRPN.code.utils import get_subwindow_tracking
 
 
 def generate_anchor(total_stride, scales, ratios, score_size):
