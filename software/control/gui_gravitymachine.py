@@ -9,6 +9,8 @@ from qtpy.QtCore import *
 from qtpy.QtWidgets import *
 from qtpy.QtGui import *
 
+import pyqtgraph.dockarea as dock
+
 QApplication.setAttribute(Qt.AA_EnableHighDpiScaling, True) #enable highdpi scaling
 QApplication.setAttribute(Qt.AA_UseHighDpiPixmaps, True) #use highdpi icons
 
@@ -55,10 +57,10 @@ class GravityMachine_GUI(QMainWindow):
 		
 		self.imageDisplayWindow_ThresholdedImage = core.ImageDisplayWindow('Thresholded Image')
 		
-		for key in self.imaging_channels:
-			self.imageDisplayWindow[key].show()
+		# for key in self.imaging_channels:
+		# 	self.imageDisplayWindow[key].show()
 
-		self.imageDisplayWindow_ThresholdedImage.show()
+		# self.imageDisplayWindow_ThresholdedImage.show()
 		#------------------------------------------------------------------
 		# Load objects
 		#------------------------------------------------------------------
@@ -147,8 +149,6 @@ class GravityMachine_GUI(QMainWindow):
 		self.SettingsTab.addTab(self.PID_Group_Widget, 'PID')
 		self.SettingsTab.addTab(self.navigationWidget, 'Navigation')
 		self.SettingsTab.addTab(self.stageCalibrationWidget, 'Calibration')
-		
-
 
 		#------------------------------------------------------------------
 		# Connections
@@ -198,23 +198,56 @@ class GravityMachine_GUI(QMainWindow):
 		
 		# Pixel per mm update due to objective change
 		self.liveControlWidget.new_pixelpermm.connect(self.trackingController.units_converter.update_pixel_size)
+		
+		# Dock area for displaying image-streams
+
+		nRows = 2
+		nCols = 2
+
+		image_display_dockArea = dock.DockArea()
+
+		image_window_docks = dict()
+
+		last_channel = None
+		for channel in self.imaging_channels:
+
+			image_window_docks[channel] = dock.Dock(channel, autoOrientation = False)
+			image_window_docks[channel].setOrientation(o = 'vertical', force = True)
+			# image_window_docks[channel].setStretch(x = 1000, y= 1000)
+			image_display_dockArea.addDock(image_window_docks[channel], 'bottom')
+
+
+			image_window_docks[channel].addWidget(self.imageDisplayWindow[channel].widget)
+
+			last_channel = channel
+
+		# Add dock for the thresholded image
+		thresholded_image_dock = dock.Dock(channel, autoOrientation = False)
+		
+		image_display_dockArea.addDock(thresholded_image_dock, 'right', image_window_docks[last_channel])
+
+		thresholded_image_dock.addWidget(self.imageDisplayWindow_ThresholdedImage.widget)
 		#-----------------------------------------------------
 		# Layout widgets
 		#-----------------------------------------------------
-		layout = QGridLayout() #layout = QStackedLayout()
+		layout_right = QGridLayout() #layout = QStackedLayout()
 		# layout.addWidget(self.cameraSettingsWidget,0,0)
-		layout.addWidget(self.liveSettings_Tab,0,0)
-		layout.addWidget(self.trackingControlWidget,1,0)
-		layout.addWidget(self.SettingsTab,1,1)
-		layout.addWidget(self.recordingControlWidget,0,1)
+		layout_right.addWidget(self.liveSettings_Tab,0,0)
+		layout_right.addWidget(self.trackingControlWidget,1,0)
+		layout_right.addWidget(self.SettingsTab,1,1)
+		layout_right.addWidget(self.recordingControlWidget,0,1)
 
 		# layout.addWidget(self.cameraSettings_Tab,0,1)
 		# layout.addWidget(self.PID_Group_Widget,1,1)
 
+		overall_layout = QHBoxLayout()
+
+		overall_layout.addWidget(image_display_dockArea)
+		overall_layout.addLayout(layout_right)
 
 		# transfer the layout to the central widget
 		self.centralWidget = QWidget()
-		self.centralWidget.setLayout(layout)
+		self.centralWidget.setLayout(overall_layout)
 		self.setCentralWidget(self.centralWidget)
 
 		# Show sub-windows (now controlled by liveControlWidget:
