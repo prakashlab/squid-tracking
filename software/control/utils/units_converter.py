@@ -41,8 +41,7 @@ class Units_Converter:
         # --------------------------------------------------
         # Z stepper (Rotation stage) (vertical motion compensation)
         # --------------------------------------------------
-        # Rcenter = 87.5 										# Radius to the center line of the fluidic chamber in mm (Wheel 16, 17): Ri=80 mm, Ro=95 mm
-        self.Rcenter = Chamber.R_CENTER                                  # radius to the center-line of the fluidic chamber in mm (Wheel 18). Ri=80 mm R0= 110 mm
+        self.R_home = Chamber.R_HOME  # 2020-12-22: Radial location of X-stage after homing. This depends on the position between optical train and wheel center and needs to be measured for a given setup.
         self.StepsPerRev_Theta = Motion.STEPS_PER_REV_THETA_SHAFT            # No:of steps of the main motor shaft for 1 Rev of the output shaft
 
         # --------------------------------------------------
@@ -77,12 +76,12 @@ class Units_Converter:
     # Transforming mm to stepper motor steps.
     #---------------------------------------------------
     def mmPerRev_Z(self, Xpos_mm):                            #Xpos_mm position in the centerlign of the fluid channel's referenciel
-        return 2*np.pi*(self.Rcenter+Xpos_mm)
+        return 2*np.pi*(self.R_home+Xpos_mm)
 
     def Z_mm_to_step(self, Zmm, Xpos_mm):
         Zstep = (Zmm/self.mmPerRev_Z(Xpos_mm))*self.StepsPerRev_Theta
         return Zstep
     #---------------------------------------------------
     def rad_to_mm(self, ThetaWheel, Xobj):
-        return ThetaWheel*(self.Rcenter + Xobj)          # 2018_09_01: by Deepak. Note major Error previously the radian value was divided by 2*pi which makes the calculation of distance incorrect. 
+        return ThetaWheel*(self.R_home + Xobj)          # 2018_09_01: by Deepak. Note major Error previously the radian value was divided by 2*pi which makes the calculation of distance incorrect. 
         #ThetaWheel is already in radians so there should be no dividing 2*pi factor. Have checked by manually rotating the wheel that this now corresponds to the actual physical distance. To completely confirm will run calibration experiments again.

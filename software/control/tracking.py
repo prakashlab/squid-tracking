@@ -1,14 +1,14 @@
 import control.utils.image_processing as image_processing
-
 import numpy as np
 
 try:
 	from control.DaSiamRPN.code.net import SiamRPNvot
 	from control.DaSiamRPN.code import vot 
-	from control.DaSiamRPN.code.run_SiamRPN import SiamRPN_init, SiamRPN_track
 	from control.DaSiamRPN.code.utils import get_axis_aligned_bbox, cxy_wh_2_rect
-except ImportError:
-	print('Warning: DaSiamRPN is not available!')
+	from control.DaSiamRPN.code.run_SiamRPN import SiamRPN_init, SiamRPN_track
+except Exception as e:
+	print(e)
+	# print('Warning: DaSiamRPN is not available!')
 from control._def import Tracking
 import cv2
 

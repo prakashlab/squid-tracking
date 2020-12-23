@@ -38,7 +38,7 @@ class Chamber:
     R_I = 85
     R_O = 110
     LENGTH = (R_O - R_I)
-    R_CENTER = (R_I + R_O)/2.0
+    R_HOME = 93.10          # Measured for Gravity Machine (Rachel). 
 
     def __init__(self):
         pass
