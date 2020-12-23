@@ -19,7 +19,7 @@ class Microcontroller():
         arduino_ports = [
                 p.device
                 for p in serial.tools.list_ports.comports()
-                if 'Arduino' in p.description]
+                if 'Arduino Due' == p.description]
         if not arduino_ports:
             raise IOError("No Arduino found")
         if len(arduino_ports) > 1:

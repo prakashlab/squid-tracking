@@ -25,7 +25,7 @@ class Microcontroller():
         arduino_ports = [
                 p.device
                 for p in serial.tools.list_ports.comports()
-                if 'Arduino' in p.description]
+                if 'Arduino Due' == p.description]
 
         print(arduino_ports)
 
