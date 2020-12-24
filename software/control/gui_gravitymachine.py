@@ -200,11 +200,13 @@ class GravityMachine_GUI(QMainWindow):
 		self.liveControlWidget.new_pixelpermm.connect(self.trackingController.units_converter.update_pixel_size)
 		
 		# Dock area for displaying image-streams
-
 		nRows = 2
 		nCols = 2
-
+		self.image_window = QMainWindow()
 		image_display_dockArea = dock.DockArea()
+		self.image_window.setCentralWidget(image_display_dockArea)
+
+		self.image_window.setWindowTitle('Image display')
 
 		image_window_docks = dict()
 
@@ -222,10 +224,8 @@ class GravityMachine_GUI(QMainWindow):
 			last_channel = channel
 
 		# Add dock for the thresholded image
-		thresholded_image_dock = dock.Dock(channel, autoOrientation = False)
-		
+		thresholded_image_dock = dock.Dock('Thresholded', autoOrientation = False)
 		image_display_dockArea.addDock(thresholded_image_dock, 'right', image_window_docks[last_channel])
-
 		thresholded_image_dock.addWidget(self.imageDisplayWindow_ThresholdedImage.widget)
 		#-----------------------------------------------------
 		# Layout widgets
@@ -239,10 +239,8 @@ class GravityMachine_GUI(QMainWindow):
 
 		# layout.addWidget(self.cameraSettings_Tab,0,1)
 		# layout.addWidget(self.PID_Group_Widget,1,1)
-
 		overall_layout = QHBoxLayout()
-
-		overall_layout.addWidget(image_display_dockArea)
+		# overall_layout.addWidget(image_display_dockArea)
 		overall_layout.addLayout(layout_right)
 
 		# transfer the layout to the central widget
@@ -250,18 +248,14 @@ class GravityMachine_GUI(QMainWindow):
 		self.centralWidget.setLayout(overall_layout)
 		self.setCentralWidget(self.centralWidget)
 
-		# Show sub-windows (now controlled by liveControlWidget:
-		# for key in self.imaging_channels:
-		# 	self.imageDisplayWindow[key].show()
-		# self.imageDisplayWindow_ThresholdedImage.show()
-
-
 		# Start all image-streams
 		print('Starting image streams')
 		# self.start_imageStreams()
 		for channel in self.imaging_channels:
 			self.camera[channel].start_streaming()
 		print('Started image streams!')
+
+		self.image_window.show()
 
 	
 	def show_image_window(self, channel):
@@ -295,6 +289,7 @@ class GravityMachine_GUI(QMainWindow):
 
 			
 		# self.softwareTriggerGenerator.stop() @@@ => 
+			self.image_window.close()
 
 			for key in self.imaging_channels:
 				self.liveController[key].stop_live()
