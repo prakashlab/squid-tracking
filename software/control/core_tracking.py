@@ -353,7 +353,6 @@ class TrackingController(QObject):
 		self.X_image.append(self.units_converter.px_to_mm(self.centroid[0] - self.image_center[0], self.image_width))
 		self.Z_image.append(self.units_converter.px_to_mm(self.centroid[1] - self.image_center[1], self.image_width))
 
-
 	def update_obj_position(self):
 
 		self.X_objStage.append(self.X_stage[-1] + self.X_image[-1])
@@ -361,9 +360,11 @@ class TrackingController(QObject):
 		self.Y_objStage.append(self.Y_stage[-1])
 
 		if(len(self.Time)>1):
-			self.Z_objStage.append(self.Z_objStage[-1]+(self.Z_image[-1]-self.Z_image[-2])- self.units_converter.rad_to_mm(self.Theta_stage[-1]-self.Theta_stage[-2],self.X_objStage[-1]))
+			self.Z_objStage.append(self.Z_objStage[-1]+(self.Z_image[-1]-self.Z_image[-2]) + self.units_converter.rad_to_mm(self.Theta_stage[-1]-self.Theta_stage[-2],self.X_objStage[-1]))
 		else:
 			self.Z_objStage.append(0)
+
+		print('Virtual depth :{} mm'.format(round(self.Z_objStage[-1], 2)))
 	# def get_motion_commands_xyz(self, x_error, y_error, z_error):
 	# 	# Convert from mm to steps (these are rounded to the nearest integer).
 	# 	x_error_steps = int(Motion.STEPS_PER_MM_XY*x_error)

@@ -249,7 +249,7 @@ class Tracker_Image(object):
 
 				new_bbox = [int(l) for l in new_bbox]
 
-				print('Updated daSiamRPN tracker')
+				# print('Updated daSiamRPN tracker')
 
 
 			return ok, new_bbox
