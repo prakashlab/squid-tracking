@@ -139,7 +139,7 @@ class StreamHandler(QObject):
         self.upper_HSV = upper_HSV
 
         #@@@Testing
-        print('Updated color thresholds to {} and {}'.format(self.lower_HSV, self.upper_HSV))
+        # print('Updated color thresholds to {} and {}'.format(self.lower_HSV, self.upper_HSV))
 
     def update_invert_image_flag(self, flag):
         self.invert_image_flag = flag

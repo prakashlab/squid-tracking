@@ -1,7 +1,10 @@
 import control.utils.image_processing as image_processing
 import numpy as np
+from os.path import realpath, dirname, join
+
 
 try:
+	import torch
 	from control.DaSiamRPN.code.net import SiamRPNvot
 	print(1)
 	from control.DaSiamRPN.code import vot
@@ -79,11 +82,12 @@ class Tracker_Image(object):
 		try:
 			# load net
 			self.net = SiamRPNvot()
-			self.net.load_state_dict(torch.load(join(realpath(dirname(__file__)), 'DaSiamRPN','code','SiamRPNOTB.model')))
+			self.net.load_state_dict(torch.load(join(realpath(dirname(__file__)),'DaSiamRPN','code','SiamRPNOTB.model')))
 			self.net.eval().cuda()
 			print('Finished loading net ...')
 
-		except:
+		except Exception as e:
+			print(e)
 			print('No neural net model found ...')
 			print('reverting to default OpenCV tracker')
 			self.tracker_type = Tracking.DEFAULT_TRACKER
@@ -161,9 +165,9 @@ class Tracker_Image(object):
 			self.tracker = self.OPENCV_OBJECT_TRACKERS[self.tracker_type]()
 
 		elif(self.tracker_type in self.NEURALNETTRACKERS.keys()):
+			print('Using {} tracker'.format(self.tracker_type))
 			pass
 			
-			print('Using {} tracker'.format(self.tracker_type))
 
 	# Signal from Tracking Widget connects to this Function
 	def update_tracker_type(self, tracker_type):
@@ -188,16 +192,21 @@ class Tracker_Image(object):
 			print(self.tracker_type)
 			print(bbox)
 			if(self.color == False):
-				image_bgr = cv2.cvtColor(image, cv2.COLOR_GRAY2BGR)
+				image = cv2.cvtColor(image, cv2.COLOR_GRAY2BGR)
 
-			self.tracker.init(image_bgr, bbox)
+			self.tracker.init(image, bbox)
 
 		# Initialize Neural Net based Tracker
 		elif(self.tracker_type in self.NEURALNETTRACKERS.keys()):
 			# Initialize the tracker with this centroid position
 			target_pos, target_sz = np.array([centroid[0], centroid[1]]), np.array([bbox[2], bbox[3]])
 
-			self.state = SiamRPN_init(image_data, target_pos, target_sz, self.net)
+			if(self.color==False):
+				image = cv2.cvtColor(image, cv2.COLOR_GRAY2BGR)
+
+			self.state = SiamRPN_init(image, target_pos, target_sz, self.net)
+			print('daSiamRPN tracker')
+
 
 		else:
 			pass
@@ -213,9 +222,9 @@ class Tracker_Image(object):
 			self.origLoc = np.array([0,0])
 			# (x,y,w,h)\
 			if(self.color==False):
-				image_bgr = cv2.cvtColor(image, cv2.COLOR_GRAY2BGR)
+				image = cv2.cvtColor(image, cv2.COLOR_GRAY2BGR)
 
-			ok, new_bbox = self.tracker.update(image_bgr)
+			ok, new_bbox = self.tracker.update(image)
 
 			print(ok)
 			print(new_bbox)
@@ -227,6 +236,9 @@ class Tracker_Image(object):
 
 			self.origLoc = np.array([0,0])
 
+			if(self.color==False):
+				image = cv2.cvtColor(image, cv2.COLOR_GRAY2BGR)
+
 			self.state = SiamRPN_track(self.state, image)
 
 			ok = True
@@ -236,6 +248,9 @@ class Tracker_Image(object):
 				new_bbox = cxy_wh_2_rect(self.state['target_pos'], self.state['target_sz'])
 
 				new_bbox = [int(l) for l in new_bbox]
+
+				print('Updated daSiamRPN tracker')
+
 
 			return ok, new_bbox
 
