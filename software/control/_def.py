@@ -223,7 +223,7 @@ if TRACKING_CONFIG == 'XYT':
     SEND_DATA = ['liquidLens_Freq', 'track_focus', 'track_obj_image' , 'X_order', 'Y_order', 'Theta_order', 'Zero_stage']
 
 
-    REC_DATA = ['FocusPhase', 'X_stage', 'Y_stage', 'Theta_stage', 'track_obj_image_hrdware', 'track_obj_stage', 'homing_status']
+    REC_DATA = ['X_stage', 'Y_stage', 'Theta_stage', 'track_obj_image_hrdware', 'track_obj_stage', 'homing_status']
 
 
     INITIAL_VALUES = {'Time':0, 'X_objStage':0, 'Y_objStage':0, 'Z_objStage':0, 'X_stage':0.0, 'Y_stage':0.0,
@@ -234,7 +234,11 @@ if TRACKING_CONFIG == 'XYT':
 
     PLOT_VARIABLES = {'X':'X_objStage','Y':'Y_objStage', 'Z':'Z_objStage', 'Theta':'Theta_stage', 'Phase':'FocusPhase'}
 
+    PLOT_COLORS = {'X':'r','Y':'g', 'Z':'b', 'Theta':'c', 'Phase':'w'}
+
     PLOT_UNITS = {'X':'mm','Y':'mm', 'Z':'mm', 'Theta':'radians','Phase':'radians'}
+    assert list(PLOT_VARIABLES.keys()) == list(PLOT_COLORS.keys())
+    assert list(PLOT_VARIABLES.keys()) == list(PLOT_UNITS.keys())
 
     DEFAULT_PLOTS = ['X', 'Z']
 

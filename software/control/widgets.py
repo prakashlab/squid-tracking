@@ -637,17 +637,20 @@ class dockAreaPlot(dock.DockArea):
 		prev_key = 'Z'
 		for key in PLOT_VARIABLES:
 			if key not in DEFAULT_PLOTS:
-
 				self.addDock(self.docks[key],'above',self.docks[prev_key])
 				prev_key = key
+
+		self.initialise_plot_area()
 
 	def initialise_plot_area(self):
 
 		for key in self.plots.keys():
-			self.plot[key].initialise_plot()
+			self.plots[key].initialise_plot()
 
+	def update_plots(self):
+		for key in self.plots.keys():
 
-
+			self.plots[key].update_plot()
 
 
 class PlotWidget(pg.GraphicsLayoutWidget):
@@ -663,8 +666,8 @@ class PlotWidget(pg.GraphicsLayoutWidget):
 		self.Abs=[]
 		self.Ord=[]
 		self.plot1=self.addPlot(title=title)
-		self.curve=self.plot1.plot(self.Abs,self.Ord)
-
+		self.curve=self.plot1.plot(self.Abs,self.Ord, pen=pg.mkPen(PLOT_COLORS[self.title], width=3))
+		self.curve.setClipToView(True)
 		self.plot1.enableAutoRange('xy', True)
 		self.plot1.showGrid(x=True, y=True)
 		
@@ -677,10 +680,7 @@ class PlotWidget(pg.GraphicsLayoutWidget):
 		data[1] = self.internal_state.data[self.key]
 		
 		self.Abscissa.append(data[0])
-
 		self.Ordinate.append(data[1])
-
-		self.label = PLOT_UNITS[self.title]
 			
 		self.Abs=list(self.Abscissa)
 		self.Ord=list(self.Ordinate)
@@ -692,6 +692,8 @@ class PlotWidget(pg.GraphicsLayoutWidget):
 		self.Ordinate=deque(maxlen=20)
 		self.Abs=[]
 		self.Ord=[]
+		self.label = PLOT_UNITS[self.title]
+
 		self.curve.setData(self.Abs,self.Ord)
 
 # class NavigationWidget(QFrame):

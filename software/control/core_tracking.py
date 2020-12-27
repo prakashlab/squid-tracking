@@ -39,7 +39,6 @@ class TrackingController(QObject):
 	centroid_image = Signal(np.ndarray) 
 	Rect_pt1_pt2 = Signal(np.ndarray)
 	tracking_setPoint = Signal(np.ndarray)
-	plot_data = Signal(np.ndarray)
 	set_trackBusy = Signal(int)
 	clear_trackBusy = Signal(int)
 
@@ -53,7 +52,6 @@ class TrackingController(QObject):
 
 	centroid_image -> ImageDisplayer.draw_object
 	Rect_pt1_pt2 -> ImageDisplayer.draw_bbox
-	plot_data -> PlotWidget
 	multiplex_send_signal -> multiplex_Send
 	save_data_signal -> DataSaver
 
@@ -528,6 +526,7 @@ class microcontroller_Receiver(QObject):
 	update_stage_position = Signal(float, float, float)
 	update_homing_state = Signal()
 	start_tracking_signal = Signal()
+	update_plot = Signal()
 
 	def __init__(self, microcontroller, internal_state):
 		QObject.__init__(self)
@@ -621,6 +620,9 @@ class microcontroller_Receiver(QObject):
 				elif(data[1] == ord('C')):
 					pass
 					# print('Camera trigger flag changed: {}'.format(data[2]))
+
+			# Send update plot signal
+			self.update_plot.emit()
 
 		else:
 			pass

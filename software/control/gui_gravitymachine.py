@@ -25,12 +25,10 @@ import control.core as core
 import control.core_tracking as core_tracking
 import control.microcontroller as microcontroller
 
-SIMULATION = False
+SIMULATION = True
 
 class GravityMachine_GUI(QMainWindow):
 
-	# variables
-	fps_software_trigger = 100
 
 	def __init__(self, *args, **kwargs):
 		super().__init__(*args, **kwargs)
@@ -131,8 +129,8 @@ class GravityMachine_GUI(QMainWindow):
 		self.recordingControlWidget = widgets.RecordingWidget(self.streamHandler,self.imageSaver, self.internal_state, self.trackingDataSaver, self.imaging_channels)
 
 		self.stageCalibrationWidget = widgets_tracking.StageCalibrationWidget(self.internal_state, self.microcontroller) 
-		# self.recordTabWidget = QTabWidget()
-		# self.recordTabWidget.addTab(self.recordingControlWidget, "Acquisition control")
+		self.plotWidget = widgets.dockAreaPlot(self.internal_state)
+
 		
 		self.liveSettings_Tab = QTabWidget()
 		self.liveSettings_Tab.addTab(self.liveControlWidget, 'Live controller')
@@ -149,6 +147,7 @@ class GravityMachine_GUI(QMainWindow):
 		self.SettingsTab.addTab(self.PID_Group_Widget, 'PID')
 		self.SettingsTab.addTab(self.navigationWidget, 'Navigation')
 		self.SettingsTab.addTab(self.stageCalibrationWidget, 'Calibration')
+		self.SettingsTab.addTab(self.plotWidget, 'Plots')
 
 		#------------------------------------------------------------------
 		# Connections
@@ -198,10 +197,9 @@ class GravityMachine_GUI(QMainWindow):
 		
 		# Pixel per mm update due to objective change
 		self.liveControlWidget.new_pixelpermm.connect(self.trackingController.units_converter.update_pixel_size)
-		
+		self.microcontroller_Rec.update_plot.connect(self.plotWidget.update_plots)
+
 		# Dock area for displaying image-streams
-		nRows = 2
-		nCols = 2
 		self.image_window = QMainWindow()
 		image_display_dockArea = dock.DockArea()
 		self.image_window.setCentralWidget(image_display_dockArea)

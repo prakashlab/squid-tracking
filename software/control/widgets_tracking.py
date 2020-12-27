@@ -793,11 +793,3 @@ class FocusTracking_Widget(QFrame):
 		self.hslider_lensFreq.setValue(new_value)
 
 
-
-
-
-# class PlotDisplay_Widget(QFrame):
-
-# 	def __init__(self, main=None, *args, **kwargs):
-# 		super().__init__(*args, **kwargs)
-# 		pass
