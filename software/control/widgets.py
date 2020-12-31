@@ -632,7 +632,7 @@ class dockAreaPlot(dock.DockArea):
 		# Layout of the plots
 		
 		self.addDock(self.docks['X'])
-		self.addDock(self.docks['Z'],'right',self.docks['X'])
+		self.addDock(self.docks['Z'],'above',self.docks['X'])
 
 		prev_key = 'Z'
 		for key in PLOT_VARIABLES:
