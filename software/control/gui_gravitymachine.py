@@ -79,7 +79,7 @@ class GravityMachine_GUI(QMainWindow):
 					self.camera[key] = camera_TIS.Camera(serial=CAMERAS[key]['serial'], width = CAMERAS[key]['px_format'][0], 
 						height = CAMERAS[key]['px_format'][1], framerate = CAMERAS[key]['fps'])
 				elif (CAMERAS[key]['make']=='Daheng'):
-					self.camera[key] = camera_Daheng.Camera()
+					self.camera[key] = camera_Daheng.Camera(sn = CAMERAS[key]['serial'])
 
 			# DaHheng camera object
 			# self.camera = {key:camera.Camera() for key in self.imaging_channels}
