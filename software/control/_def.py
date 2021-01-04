@@ -191,10 +191,8 @@ DEFAULT_OBJECTIVE = '2x'
 
 CAMERAS = {'DF1':{'make':'TIS','serial':"17910090", 'px_format':(1920,1080), 'color_format': 'GRAY8', 'fps': 120}, 'Low-mag':{'make':'Daheng','serial': 'FL0190060033', 'px_format':None, 'color_format': 'GRAY8', 'fps': 30}, 'high-speed':{'make':'Daheng','serial': 'KR0200080050', 'px_format':None, 'color_format': 'GRAY8', 'fps': 30}}
 
-OPTICAL_PATHS = {'DF only':['DF1'], 'DF+FL':['DF1', 'FL1'], 
-            '2-camera':['DF1', 'DF2'], '2-camera-FL':['DF1', 'DF2', 'FL1']}
 
-DEFAULT_OPTICAL_PATH = 'DF+FL'
+
 
 TRACKING = 'DF1'
 
@@ -230,8 +228,8 @@ if TRACKING_CONFIG == 'XYT':
     INITIAL_VALUES = {'Time':0, 'X_objStage':0, 'Y_objStage':0, 'Z_objStage':0, 'X_stage':0.0, 'Y_stage':0.0,
         'Theta_stage':0.0, 'X_image':0, 'Z_image':0, 'track_obj_image':False, 'track_obj_image_hrdware':False, 'track_focus':False, 
         'track_obj_stage':False, 'Acquisition':False, 'homing_status': 'not-complete', 'Zero_stage':0, 'liquidLens_Freq': liquidLens['Freq']['default'], 
-        'liquidLens_Amp': liquidLens['Amp']['default'] , 'FocusPhase':0, 'optical_path': DEFAULT_OPTICAL_PATH, 
-        'imaging channels': OPTICAL_PATHS[DEFAULT_OPTICAL_PATH],  'Objective':DEFAULT_OBJECTIVE, 'basePath':'/', 'experimentID':'track'}
+        'liquidLens_Amp': liquidLens['Amp']['default'] , 'FocusPhase':0, 'optical_path': None, 
+        'imaging channels': list(CAMERAS.keys()),  'Objective':DEFAULT_OBJECTIVE, 'basePath':'/', 'experimentID':'track'}
 
     PLOT_VARIABLES = {'X':'X_objStage','Y':'Y_objStage', 'Z':'Z_objStage', 'Theta':'Theta_stage', 'Phase':'FocusPhase'}
 
@@ -263,8 +261,8 @@ elif TRACKING_CONFIG == 'XYZ':
     INITIAL_VALUES = {'Time':0, 'X_objStage':0, 'Y_objStage':0, 'Z_objStage':0, 'X_stage':0, 'Y_stage':0,
         'Z_stage':0, 'X_image':0, 'Y_image':0, 'track_obj_image':False, 'track_obj_image_hrdware':False, 'track_focus':False, 
         'track_obj_stage':False, 'Acquisition':False, 'homing_status': 'not-complete', 'Zero_stage':0, 'liquidLens_Freq': liquidLens['Freq']['default'], 
-        'liquidLens_Amp': liquidLens['Amp']['default'] , 'FocusPhase':0, 'optical_path': DEFAULT_OPTICAL_PATH, 
-        'imaging channels': OPTICAL_PATHS[DEFAULT_OPTICAL_PATH],  'Objective':DEFAULT_OBJECTIVE, 'basePath':'/', 'experimentID':'track'}
+        'liquidLens_Amp': liquidLens['Amp']['default'] , 'FocusPhase':0, 'optical_path': None, 
+        'imaging channels': list(CAMERAS.keys()),  'Objective':DEFAULT_OBJECTIVE, 'basePath':'/', 'experimentID':'track'}
 
     PLOT_VARIABLES = {'X':'X_objStage','Y':'Y_objStage', 'Z':'Z_objStage', 'Phase':'FocusPhase'}
 
