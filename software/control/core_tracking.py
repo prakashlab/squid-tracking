@@ -881,7 +881,7 @@ class ImageSaver(QObject):
 	imageName -> DataSaver
 
 	'''
-	def __init__(self, internal_state, imaging_channel = None, image_format='.tif'):
+	def __init__(self, internal_state, imaging_channel = None, image_format='.tif', rotate_image_angle = 0, flip_image = None):
 		QObject.__init__(self)
 
 		self.internal_state = internal_state
@@ -896,6 +896,9 @@ class ImageSaver(QObject):
 		self.queue = Queue(10) # max 10 items in the queue
 		self.image_lock = Lock()
 		self.stop_signal_received = False
+
+		self.rotate_image_angle = rotate_image_angle
+		self.flip_image = flip_image
 		self.thread = Thread(target=self.process_queue)
 		 # Start a thread for saving images
 		self.thread.start()
@@ -934,6 +937,32 @@ class ImageSaver(QObject):
 				# Emit the image name so DataSaver can save it along with the stage positions
 				self.imageName.emit(self.imaging_channel, image_file_name)
 				
+				# Image rotations
+				if(self.rotate_image_angle != 0):
+				
+				# ROTATE_90_CLOCKWISE
+				# ROTATE_90_COUNTERCLOCKWISE
+				
+					if(self.rotate_image_angle == 90):
+						image = cv2.rotate(image,cv2.ROTATE_90_CLOCKWISE)
+					elif(self.rotate_image_angle == -90):
+						image = cv2.rotate(image,cv2.ROTATE_90_COUNTERCLOCKWISE)
+					elif(self.rotate_image_angle == 180):
+						image = cv2.rotate(image, cv2.ROTATE_180)
+
+				if(self.flip_image is not None):
+				
+				# flipcode = 0: flip vertically
+				# flipcode > 0: flip horizontally
+				# flipcode < 0: flip vertically and horizontally
+				
+					if(self.flip_image == 'Vertical'):
+						image = cv2.flip(image, 0)
+					elif(self.flip_image == 'Horizontal'):
+						image = cv2.flip(image, 1)
+					elif(self.flip_image == 'Both'):
+						image = cv2.flip(image, -1)
+
 				# Save the image
 				cv2.imwrite(saving_path,image)
 				print('Wrote image {} to disk'.format(image_file_name))
