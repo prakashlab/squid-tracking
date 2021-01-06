@@ -110,7 +110,7 @@ class GravityMachine_GUI(QMainWindow):
 		self.imageSaver = {}
 		
 		for key in self.imaging_channels:
-			self.imageSaver[key] = core_tracking.ImageSaver(self.internal_state, imaging_channel = key)
+			self.imageSaver[key] = core_tracking.ImageSaver(self.internal_state, imaging_channel = key, rotate_image_angle = 180)
 
 
 		self.imageDisplay = {key: core.ImageDisplay() for key in self.imaging_channels}
