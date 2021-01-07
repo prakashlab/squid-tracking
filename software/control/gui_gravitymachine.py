@@ -25,7 +25,7 @@ import control.core as core
 import control.core_tracking as core_tracking
 import control.microcontroller as microcontroller
 
-SIMULATION = False
+SIMULATION = True
 
 class GravityMachine_GUI(QMainWindow):
 
@@ -177,12 +177,13 @@ class GravityMachine_GUI(QMainWindow):
 		self.streamHandler[TRACKING].signal_working_resolution.connect(self.liveControlWidget.update_working_resolution)
 		# Only display the image-display rate of the main/tracking image stream
 		self.streamHandler[TRACKING].signal_fps_display.connect(self.liveControlWidget.update_display_fps)
-		self.streamHandler[TRACKING].signal_fps.connect(self.liveControlWidget.update_stream_fps)
+		# self.streamHandler[TRACKING].signal_fps.connect(self.liveControlWidget.update_stream_fps)
 
 		# self.trackingController.centroid_image.connect(self.imageDisplayWindow[TRACKING].draw_circle)
 		self.trackingController.Rect_pt1_pt2.connect(self.imageDisplayWindow[TRACKING].draw_rectangle)
 		
 		self.trackingController.save_data_signal.connect(self.trackingDataSaver.enqueue)
+		self.trackingController.signal_tracking_fps.connect(self.liveControlWidget.update_stream_fps)
 
 		# Connections for all image-streams
 		for channel in self.imaging_channels:

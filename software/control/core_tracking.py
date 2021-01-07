@@ -47,6 +47,8 @@ class TrackingController(QObject):
 
 	get_roi_bbox = Signal()
 
+	signal_tracking_fps = Signal(int)
+
 	''' 
 	Connection map
 
@@ -74,36 +76,23 @@ class TrackingController(QObject):
 
 		# Focus Tracker type
 		self.focus_tracker = focus_tracker
-
 		self.track_focus = False
-
 		# For testing
 		self.track_obj_image = False
-
 		self.start_flag = True
-
 		self.objectFound = False
-
 		self.tracking_triggered_prev = False
 
 		# Image type of the tracking image stream
 		self.color = False
-
 		self.centroid = None
 		self.rect_pts = None
 
-		
-
 		self.image_setPoint = None
-
 		self.image_center = None
-
 		self.image_width = 720
-
 		self.posError_image = np.array([0,0])
-
 		self.image_offset = np.array([0,0])
-
 		self.rotate_image_angle = rotate_image_angle
 
 		# Create a tracking object that does the image-based tracking
@@ -112,7 +101,6 @@ class TrackingController(QObject):
 		self.tracker_focus = tracking_focus.Tracker_Focus()
 
 		# PID controller for each axis
-
 		self.pid_controller_x = PID.PID()
 		self.pid_controller_y = PID.PID()
 		self.pid_controller_theta = PID.PID()
@@ -144,10 +132,13 @@ class TrackingController(QObject):
 		self.Z_objStage = deque(maxlen=self.dequeLen)
 
 		# Subset of INTERNAL_STATE_MODEL that is updated by Tracking_Controller (self)
-		self.internal_state_vars = ['Time','X_image', 'Z_image', 'X_objStage', 'Y_objStage', 'Z_objStage']
-
-		
+		self.internal_state_vars = ['Time','X_image', 'Z_image', 'X_objStage', 'Y_objStage', 'Z_objStage']		
 		self.tracker_focus.cropped_imSize = int(self.image_width/CROPPED_IMG_RATIO)
+
+		# For fps measurement
+		self.timestamp_last = 0
+		self.counter = 0
+		self.fps_real = 0
 
 
 	# Triggered by signal from StreamHandler
@@ -186,12 +177,6 @@ class TrackingController(QObject):
 			self.update_elapsed_time()
 
 			# print('In track function')
-
-			# Update image parameters
-			# TO DO: Only call this when image resolution changes
-			# DOnE!
-
-
 			# initialize the tracker when a new track is started
 			if self.tracking_frame_counter == 0 or self.objectFound == False:
 				''' 
@@ -199,7 +184,6 @@ class TrackingController(QObject):
 				Get centroid using thresholding and initialize tracker based on this object.
 				initialize the tracker
 				'''
-
 				self.start_flag = True
 
 				# initialize the PID controller
@@ -210,16 +194,13 @@ class TrackingController(QObject):
 
 				self.update_image_center_width()
 
-			
 			else:
 
 				self.start_flag = False
 				self.resetPID = False
-
 				
 			self.objectFound, self.centroid, self.rect_pts = self.tracker_image.track(image, thresh_image, start_flag = self.start_flag)
 			self.tracking_frame_counter += 1
-	
 			#-----------------------------------------------------
 			# Tests
 			#-----------------------------------------------------
@@ -299,6 +280,19 @@ class TrackingController(QObject):
 			# Send a signal to the DataSaver module and instruct it to Save Data
 			self.save_data_signal.emit()
 
+			self.get_real_tracking_fps()
+
+	def get_real_tracking_fps(self):
+		# measure real fps
+		timestamp_now = round(time.time())
+		if timestamp_now == self.timestamp_last:
+			self.counter = self.counter+1
+		else:
+			self.timestamp_last = timestamp_now
+			self.fps_real = self.counter
+			self.counter = 0
+			# print('real camera fps is ' + str(self.fps_real))
+			self.signal_tracking_fps.emit(self.fps_real)
 			
 	# Triggered when you hit track_obj_image
 	def initialise_track(self):

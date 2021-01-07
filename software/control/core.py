@@ -171,7 +171,6 @@ class StreamHandler(QObject):
             self.fps_real = self.counter
             self.counter = 0
             # print('real camera fps is ' + str(self.fps_real))
-
             self.signal_fps.emit(self.fps_real)
 
     def get_real_display_fps(self):
@@ -292,83 +291,8 @@ class StreamHandler(QObject):
         else:
             self.counter_save += 1
 
-
-
-
-
-        
-
         self.handler_busy = False
         camera.image_locked = False
-
-
-    # def on_new_frame_from_simulation(self,image,frame_ID = None,timestamp = None):
-    #     # check whether image is a local copy or pointer, if a pointer, needs to prevent the image being modified while this function is being executed
-    #     color = False
-
-    #     self.handler_busy = True
-    #     self.signal_new_frame_received.emit() # self.liveController.turn_off_illumination()
-    #     # This also triggers the microcontroller_Receiever
-
-    #     # measure real fps
-    #     timestamp_now = round(time.time())
-    #     if timestamp_now == self.timestamp_last:
-    #         self.counter = self.counter+1
-    #     else:
-    #         self.timestamp_last = timestamp_now
-    #         self.fps_real = self.counter
-    #         self.counter = 0
-    #         print('real camera fps is ' + str(self.fps_real))
-
-    #     # crop image
-    #     # image = image_processing.crop_image(camera.current_frame,self.crop_width,self.crop_height)
-    #     image = np.array(np.copy(image), dtype = 'uint8')
-    #     # save a copy of full-res image for saving (make sure to do a deep copy)
-    #     # @@@@@@@@@
-
-    #     # image_resized = cv2.resize(image,(round(self.crop_width*self.working_resolution_scaling), round(self.crop_height*self.working_resolution_scaling)),cv2.INTER_LINEAR)
-    #     image_resized = imutils.resize(image, round(self.image_width*self.working_resolution_scaling))
-
-        
-        
-    #     # Deepak: For now tracking with every image from camera 
-    #     if self.track_flag and self.trackingStream:
-    #         # track is a blocking operation - it needs to be
-    #         # @@@ will cropping before emitting the signal lead to speedup?
-    #         # print('Sending image to tracking controller...')
-
-    #         image_thresh = 255*np.array(self.threshold_image(image_resized, color = False), dtype='uint8')
-
-    #         cv2.imshow('Thresh image',image_thresh)
-    #         cv2.waitKey(1)
-
-    #         self.packet_image_for_tracking.emit(image_resized, image_thresh)
-    #         self.timestamp_last_track = timestamp_now
-
-    #     # send image to display
-    #     time_now = time.time()
-    #     if time_now - self.timestamp_last_display >= 1/self.fps_display:
-    #         # print('Sending image to display...')
-    #         if color:
-    #             image_resized = cv2.cvtColor(image_resized,cv2.COLOR_RGB2BGR)
-
-    #         self.image_to_display.emit(image_resized, self.trackingStream)
-            
-    #         self.timestamp_last_display = time_now
-
-    #     # send image to write
-    #     if self.save_image_flag and time_now-self.timestamp_last_save >= 1/self.fps_save:
-    #         # print('Saving image...')
-    #         if color:
-    #             image = cv2.cvtColor(image,cv2.COLOR_RGB2BGR)
-    #         self.packet_image_to_write.emit(image,camera.frame_ID,camera.timestamp)
-    #         self.timestamp_last_save = time_now
-
-    #     self.handler_busy = False
-
-    # def stop(self):
-    #     pass
-    #     # self.camera.stop()
 
 
 class LiveController(QObject):

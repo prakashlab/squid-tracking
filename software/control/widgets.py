@@ -255,7 +255,7 @@ class LiveControlWidget(QFrame):
 		working_resolution_group.setLayout(working_resolution_layout)
 
 
-		stream_fps_group = QGroupBox('Stream FPS')
+		stream_fps_group = QGroupBox('Tracking FPS')
 		stream_fps_layout = QHBoxLayout()
 		stream_fps_layout.addWidget(self.actual_streamFPS)
 		stream_fps_group.setLayout(stream_fps_layout)
