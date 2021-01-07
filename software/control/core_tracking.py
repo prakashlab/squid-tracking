@@ -147,7 +147,7 @@ class TrackingController(QObject):
 		self.image = image
 
 		# @@@testing
-		# print('In Tracking controller new frame')
+		print('In Tracking controller new frame')
 
 		tracking_triggered = self.internal_state.data['track_obj_image_hrdware']
 

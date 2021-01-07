@@ -226,8 +226,8 @@ class Tracker_Image(object):
 
 			ok, new_bbox = self.tracker.update(image)
 
-			print(ok)
-			print(new_bbox)
+			# print(ok)
+			# print(new_bbox)
 			return ok, new_bbox
 
 				

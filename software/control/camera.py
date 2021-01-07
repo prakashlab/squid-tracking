@@ -211,7 +211,7 @@ class Camera_Simulation(object):
         # self.path = '/Users/deepak/Dropbox/GravityMachine/ExperimentResults/TestData/seacucmber4_auto_verylong_goodtrack/images'
         # self.path = '/Users/deepak/Dropbox/GravityMachine/ExperimentResults/TestData/Stentor'
 
-        self.path = '/Users/deepak/Dropbox/GravityMachine/ExperimentResults/TestData/DensityBead'
+        self.path = '/home/prakashlab/gravitymachine_test_images/DensityBeads'
 
         if(os.path.exists(self.path)):
             self.FileList = os.listdir(self.path)
