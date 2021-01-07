@@ -178,29 +178,23 @@ class GravityMachine_GUI(QMainWindow):
 		# Only display the image-display rate of the main/tracking image stream
 		self.streamHandler[TRACKING].signal_fps_display.connect(self.liveControlWidget.update_display_fps)
 		# self.streamHandler[TRACKING].signal_fps.connect(self.liveControlWidget.update_stream_fps)
-
 		# self.trackingController.centroid_image.connect(self.imageDisplayWindow[TRACKING].draw_circle)
 		self.trackingController.Rect_pt1_pt2.connect(self.imageDisplayWindow[TRACKING].draw_rectangle)
-		
 		self.trackingController.save_data_signal.connect(self.trackingDataSaver.enqueue)
 		self.trackingController.signal_tracking_fps.connect(self.liveControlWidget.update_stream_fps)
 
 		# Connections for all image-streams
 		for channel in self.imaging_channels:
 			self.streamHandler[channel].signal_fps.connect(self.cameraSettingsWidget[channel].update_stream_fps)
-
 		# Connect roi from ImageDisplayWindow to TrackingController.
 		self.trackingController.get_roi_bbox.connect(self.imageDisplayWindow[TRACKING].send_bbox)
 		self.imageDisplayWindow[TRACKING].roi_bbox.connect(self.trackingController.tracker_image.set_roi_bbox)
 		# self.microcontroller_Rec.update_display.connect(self.navigationWidget.update_display)
 		self.trackingControlWidget.show_roi.connect(self.imageDisplayWindow[TRACKING].toggle_ROI_selector)
-
 		self.microcontroller_Rec.update_stage_position.connect(self.navigationWidget.update_display)
-
 		self.microcontroller_Rec.start_tracking_signal.connect(self.trackingControlWidget.handle_hardware_track_signal)
 		self.recordingControlWidget.start_tracking_signal.connect(self.trackingControlWidget.trigger_track_button)
 		# self.microcontroller_Rec.update_stage_position.connect(self.trackingController.update_stage_position)
-		
 		# Pixel per mm update due to objective change
 		self.liveControlWidget.new_pixelpermm.connect(self.trackingController.units_converter.update_pixel_size)
 		self.microcontroller_Rec.update_plot.connect(self.plotWidget.update_plots)
@@ -218,7 +212,10 @@ class GravityMachine_GUI(QMainWindow):
 		for channel in self.imaging_channels:
 
 			image_window_docks[channel] = dock.Dock(channel, autoOrientation = False)
-			image_window_docks[channel].setOrientation(o = 'vertical', force = True)
+			image_window_docks[channel].setTitle(channel)
+			image_window_docks[channel].showTitleBar()
+			print(image_window_docks[channel].title())
+			# image_window_docks[channel].setOrientation(o = 'vertical', force = True)
 			# image_window_docks[channel].setStretch(x = 1000, y= 1000)
 			image_display_dockArea.addDock(image_window_docks[channel], 'bottom')
 
