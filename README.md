@@ -29,8 +29,19 @@ The tracking microscope is run using software (Python) that runs on standard PC,
 
 # Selected Publications
 1. Krishnamurthy, Deepak, Hongquan Li, François Benoit du Rey, Pierre Cambournac, Adam G. Larson, Ethan Li, and Manu Prakash. "Scale-free vertical tracking microscopy." Nature Methods (2020): 1-12. [Weblink](https://www.nature.com/articles/s41592-020-0924-7)
+2. Krishnamurthy, Deepak, Hongquan Li, François Benoit du Rey, Pierre Cambournac, Adam Larson, and Manu Prakash. "Scale-free Vertical Tracking Microscopy: Towards Bridging Scales in Biological Oceanography." bioRxiv (2019): 610246.
 
-
+# To cite this tool
+	@article{krishnamurthy2020scale,
+	  title={Scale-free vertical tracking microscopy},
+	  author={Krishnamurthy, Deepak and Li, Hongquan and du Rey, Fran{\c{c}}ois Benoit and Cambournac, Pierre and Larson, Adam G and Li, Ethan and Prakash, Manu},
+	  journal={Nature Methods},
+	  volume={17},
+	  number={10},
+	  pages={1040--1051},
+	  year={2020},
+	  publisher={Nature Publishing Group}
+	}
 
 
 
