@@ -1,4 +1,4 @@
-# Installation of Scientific Python, CUDA, OpenCV-CUDA and TIS camera modules for gravity machine on Ubuntu 18.04 LTS. 
+# Installation of Gravity Machine on Ubuntu 18.04 LTS with CUDA. 
 
 ---
 These installations and dependencies correspond to the legacy version (1.0.0) of the code-base. 
