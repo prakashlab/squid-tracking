@@ -1,7 +1,8 @@
 # Installation of Scientific Python, CUDA, OpenCV-CUDA and TIS camera modules for gravity machine on Ubuntu 18.04 LTS. 
 
-## These installations and dependencies correspond to the legacy version (1.0.0) of the code-base. 
 ---
+These installations and dependencies correspond to the legacy version (1.0.0) of the code-base. 
+
 ## 1. Preliminaries
 
 Install pip
@@ -68,7 +69,7 @@ Run time dependency
 sudo apt-get install gstreamer1.0-tools gstreamer1.0-x gstreamer1.0-plugins-base gstreamer1.0-plugins-good gstreamer1.0-plugins-bad gstreamer1.0-plugins-ugly libxml2 libpcap0.8 libaudit1 libnotify4 python3-pyqt5 python3-gi
 
 
-### Build tiscamera
+## 3. Install camera drivers (TIScamera)
 
 	git clone --recursive https://github.com/TheImagingSource/tiscamera.git
 	cd tiscamera
@@ -130,7 +131,7 @@ Build fails since the compiler used is greater than gcc-6. Trying to recompile u
 The above command with the compiler specified works!
 
 
-## 5. Install OpenCV (Direct). This alternative to step 4 above.
+## 5. Install OpenCV (Direct). This is alternative to above step.
 	
 	pip3 install opencv-python
 	pip3 install opencv-contrib-python
@@ -151,12 +152,6 @@ Install Tk (for python3)
 	sudo apt-get install python3-tk
 
 
-
-
-If you got this far, you are now ready to run some really kickass experiments with gravity machine!
-
-
-
 ## 6. GUI dependencies (There are specific dependencies to make sure the Qt GUI works)
 
 Make sure that only PyQt5 is installed and not alongside earlier versions
@@ -175,17 +170,8 @@ Install opengl for 3D graphics
 	sudo apt-get install python3-pyqt5.qtsvg
 
 
-
-
-
-
-
-
-
-
-
-
-# install pytorch
+## 7. Other dependencies (for specific OpenCV trackers etc.)
+### install pytorch
 [Instructions](https://medium.com/@balaprasannav2009/install-tensorflow-pytorch-in-ubuntu-18-04-lts-with-cuda-9-0-for-nvidia-1080-ti-9e45eca99573)
 
 	sudo pip3 install http://download.py)torch.org/whl/cu91/torch-0.4.0-cp36-cp36m-linux_x86_64.whl 
@@ -193,10 +179,8 @@ Install opengl for 3D graphics
 	sudo pip3 install torchvision
 
 
-# Install v4l for help with debugging camera issues
+### Install v4l for help with debugging camera issues (Optional)
 $ sudo apt-get update
 $ sudo apt-get install v4l-utils
 
-Install pyserial
 
-	sudo pip3 install pyserial
