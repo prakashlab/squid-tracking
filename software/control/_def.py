@@ -1,7 +1,10 @@
 import os
 
-# TRACKING_CONFIG = 'XYZ'
-TRACKING_CONFIG = 'XYT'
+# Squid-Tracking Mode
+TRACKING_CONFIG = 'XYZ'
+
+# Gravity Machine Tracking Mode
+# TRACKING_CONFIG = 'XYT'
 
 class TriggerMode:
     SOFTWARE = 'Software Trigger'
@@ -265,6 +268,8 @@ elif TRACKING_CONFIG == 'XYZ':
         'imaging channels': list(CAMERAS.keys()),  'Objective':DEFAULT_OBJECTIVE, 'basePath':'/', 'experimentID':'track'}
 
     PLOT_VARIABLES = {'X':'X_objStage','Y':'Y_objStage', 'Z':'Z_objStage', 'Phase':'FocusPhase'}
+
+    PLOT_COLORS = {'X':'r','Y':'g', 'Z':'b', 'Phase':'w'}
 
     PLOT_UNITS = {'X':'mm','Y':'mm', 'Z':'mm','Phase':'radians'}
 

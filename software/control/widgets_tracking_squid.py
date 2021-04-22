@@ -294,7 +294,7 @@ class StageCalibrationWidget(QFrame):
 		
 		self.zero_Y = QPushButton('Zero Y-stage')
 	
-		self.zero_Theta = QPushButton('Zero Theta-stage')
+		self.zero_Z = QPushButton('Zero Z-stage')
 	
 		
 		# Homing Button
@@ -305,7 +305,7 @@ class StageCalibrationWidget(QFrame):
 		stage_control.addWidget(self.homing_button,0,0)
 		stage_control.addWidget(self.zero_X,0,1)
 		stage_control.addWidget(self.zero_Y,1,1)
-		stage_control.addWidget(self.zero_Theta,2,1)
+		stage_control.addWidget(self.zero_Z,2,1)
 
 		self.setLayout(stage_control)
 
@@ -313,7 +313,7 @@ class StageCalibrationWidget(QFrame):
 		# Connections
 		self.zero_X.clicked.connect(self.zero_X_stage)
 		self.zero_Y.clicked.connect(self.zero_Y_stage)
-		self.zero_Theta.clicked.connect(self.zero_Theta_stage)
+		self.zero_Z.clicked.connect(self.zero_Z_stage)
 
 		self.homing_button.clicked.connect(self.homing_button_click)
 
@@ -325,7 +325,7 @@ class StageCalibrationWidget(QFrame):
 
 		self.microcontroller.send_stage_zero_command(1)
 
-	def zero_Theta_stage(self):
+	def zero_Z_stage(self):
 
 		self.microcontroller.send_stage_zero_command(3)
 
@@ -371,18 +371,18 @@ class NavigationWidget(QFrame):
         self.btn_moveY_backward = QPushButton('Backward')
         self.btn_moveY_backward.setDefault(False)
 
-        self.label_Thetapos = QLabel()
-        self.label_Thetapos.setNum(0)
-        self.label_Thetapos.setFrameStyle(QFrame.Panel | QFrame.Sunken)
-        self.entry_dTheta = QDoubleSpinBox()
-        self.entry_dTheta.setMinimum(0) 
-        self.entry_dTheta.setMaximum(2*np.pi) 
-        self.entry_dTheta.setSingleStep(0.01)
-        self.entry_dTheta.setValue(0)
-        self.btn_moveTheta_forward = QPushButton('Forward')
-        self.btn_moveTheta_forward.setDefault(False)
-        self.btn_moveTheta_backward = QPushButton('Backward')
-        self.btn_moveTheta_backward.setDefault(False)
+        self.label_Zpos = QLabel()
+        self.label_Zpos.setNum(0)
+        self.label_Zpos.setFrameStyle(QFrame.Panel | QFrame.Sunken)
+        self.entry_dZ = QDoubleSpinBox()
+        self.entry_dZ.setMinimum(0) 
+        self.entry_dZ.setMaximum(2*np.pi) 
+        self.entry_dZ.setSingleStep(0.01)
+        self.entry_dZ.setValue(0)
+        self.btn_moveZ_forward = QPushButton('Forward')
+        self.btn_moveZ_forward.setDefault(False)
+        self.btn_moveZ_backward = QPushButton('Backward')
+        self.btn_moveZ_backward.setDefault(False)
         
         grid_line0 = QGridLayout()
         grid_line0.addWidget(QLabel('X (mm)'), 0,0)
@@ -399,11 +399,11 @@ class NavigationWidget(QFrame):
         grid_line1.addWidget(self.btn_moveY_backward, 0,4)
 
         grid_line2 = QGridLayout()
-        grid_line2.addWidget(QLabel('Theta (radians)'), 0,0)
-        grid_line2.addWidget(self.label_Thetapos, 0,1)
-        grid_line2.addWidget(self.entry_dTheta, 0,2)
-        grid_line2.addWidget(self.btn_moveTheta_forward, 0,3)
-        grid_line2.addWidget(self.btn_moveTheta_backward, 0,4)
+        grid_line2.addWidget(QLabel('Z (mm)'), 0,0)
+        grid_line2.addWidget(self.label_Zpos, 0,1)
+        grid_line2.addWidget(self.entry_dZ, 0,2)
+        grid_line2.addWidget(self.btn_moveZ_forward, 0,3)
+        grid_line2.addWidget(self.btn_moveZ_backward, 0,4)
 
         self.grid = QGridLayout()
         self.grid.addLayout(grid_line0,0,0)
@@ -415,8 +415,8 @@ class NavigationWidget(QFrame):
         self.btn_moveX_backward.clicked.connect(self.move_x_backward)
         self.btn_moveY_forward.clicked.connect(self.move_y_forward)
         self.btn_moveY_backward.clicked.connect(self.move_y_backward)
-        self.btn_moveTheta_forward.clicked.connect(self.move_theta_forward)
-        self.btn_moveTheta_backward.clicked.connect(self.move_theta_backward)
+        self.btn_moveZ_forward.clicked.connect(self.move_theta_forward)
+        self.btn_moveZ_backward.clicked.connect(self.move_theta_backward)
         
     def move_x_forward(self):
         self.navigationController.move_x(self.entry_dX.value())
@@ -427,14 +427,14 @@ class NavigationWidget(QFrame):
     def move_y_backward(self):
         self.navigationController.move_y(-self.entry_dY.value())
     def move_theta_forward(self):
-        self.navigationController.move_theta(self.entry_dTheta.value())
+        self.navigationController.move_theta(self.entry_dZ.value())
     def move_theta_backward(self):
-        self.navigationController.move_theta(-self.entry_dTheta.value())
+        self.navigationController.move_theta(-self.entry_dZ.value())
     
-    def update_display(self, X_stage, Y_stage, Theta_stage):
+    def update_display(self, X_stage, Y_stage, Z_stage):
     	self.label_Xpos.setText('{:.02f}'.format(round(X_stage,2)))
     	self.label_Ypos.setText('{:.02f}'.format(round(Y_stage,2)))
-    	self.label_Thetapos.setText('{:.02f}'.format(round(Theta_stage,2)))
+    	self.label_Zpos.setText('{:.02f}'.format(round(Z_stage,2)))
 
 
 class PID_Group_Widget(QFrame):
@@ -491,10 +491,10 @@ class PID_Group_Widget(QFrame):
 		self.PID_widget_y.spinboxI.valueChanged.connect(self.trackingController.pid_controller_y.update_I)
 		self.PID_widget_y.spinboxD.valueChanged.connect(self.trackingController.pid_controller_y.update_D)
 
-		# Theta
-		self.PID_widget_z.spinboxP.valueChanged.connect(self.trackingController.pid_controller_theta.update_P)
-		self.PID_widget_z.spinboxI.valueChanged.connect(self.trackingController.pid_controller_theta.update_I)
-		self.PID_widget_z.spinboxD.valueChanged.connect(self.trackingController.pid_controller_theta.update_D)
+		# Z
+		self.PID_widget_z.spinboxP.valueChanged.connect(self.trackingController.pid_controller_z.update_P)
+		self.PID_widget_z.spinboxI.valueChanged.connect(self.trackingController.pid_controller_z.update_I)
+		self.PID_widget_z.spinboxD.valueChanged.connect(self.trackingController.pid_controller_z.update_D)
 
 
 

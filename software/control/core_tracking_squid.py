@@ -103,7 +103,7 @@ class TrackingController(QObject):
 		# PID controller for each axis
 		self.pid_controller_x = PID.PID()
 		self.pid_controller_y = PID.PID()
-		self.pid_controller_theta = PID.PID()
+		self.pid_controller_z = PID.PID()
 
 		self.resetPID = True
 
@@ -121,18 +121,18 @@ class TrackingController(QObject):
 
 
 		self.X_image = deque(maxlen=self.dequeLen)
-		self.Z_image = deque(maxlen=self.dequeLen)
+		self.Y_image = deque(maxlen=self.dequeLen)
 
 		self.X_stage = deque(maxlen=self.dequeLen)
 		self.Y_stage = deque(maxlen=self.dequeLen)
-		self.Theta_stage = deque(maxlen=self.dequeLen)
+		self.Z_stage = deque(maxlen=self.dequeLen)
 
 		self.X_objStage = deque(maxlen=self.dequeLen)
 		self.Y_objStage = deque(maxlen=self.dequeLen)
 		self.Z_objStage = deque(maxlen=self.dequeLen)
 
 		# Subset of INTERNAL_STATE_MODEL that is updated by Tracking_Controller (self)
-		self.internal_state_vars = ['Time','X_image', 'Z_image', 'X_objStage', 'Y_objStage', 'Z_objStage']		
+		self.internal_state_vars = ['Time','X_image', 'Y_image', 'X_objStage', 'Y_objStage', 'Z_objStage']		
 		self.tracker_focus.cropped_imSize = int(self.image_width/CROPPED_IMG_RATIO)
 
 		# For fps measurement
@@ -225,16 +225,16 @@ class TrackingController(QObject):
 				self.stage_auto_prev = self.stage_auto
 				# Find the object's position relative to the tracking set point on the image
 				self.posError_image = self.centroid - self.image_setPoint
+				
 				# Get the error and convert it to mm
-				# x_error, z_error are in mm
-
+				# Note: x_error, y_error are in mm
 				# Need to update this continuously to account for the user changing the resolution on-the-fly.
 				self.update_image_center_width()				
 
 				if(self.rotate_image_angle == 0):
-					x_error, z_error = self.units_converter.px_to_mm(self.posError_image[0], self.image_width), self.units_converter.px_to_mm(self.posError_image[1], self.image_width)
+					x_error, y_error = self.units_converter.px_to_mm(self.posError_image[0], self.image_width), self.units_converter.px_to_mm(self.posError_image[1], self.image_width)
 				elif(self.rotate_image_angle == 90):
-					z_error, x_error = self.units_converter.px_to_mm(self.posError_image[0], self.image_width), self.units_converter.px_to_mm(self.posError_image[1], self.image_width)
+					y_error, x_error = self.units_converter.px_to_mm(self.posError_image[0], self.image_width), self.units_converter.px_to_mm(self.posError_image[1], self.image_width)
 
 
 				# Flip the sign of Z-error since image coordinates and physical coordinates are reversed.
@@ -249,29 +249,28 @@ class TrackingController(QObject):
 					self.tracker_focus.update_data(FocusPhase)
 
 					# y-error in mm
-					y_error = self.tracker_focus.get_focus_error(image, self.centroid)
+					z_error = self.tracker_focus.get_focus_error(image, self.centroid)
 				else:
-					y_error = 0
+					z_error = 0
 
 				# Emit the detected centroid position so other widgets can access it.
 				self.centroid_image.emit(self.centroid)
 				self.Rect_pt1_pt2.emit(self.rect_pts)
 
-				X_stage, Y_stage, Theta_stage = self.internal_state.data['X_stage'], self.internal_state.data['Y_stage'], self.internal_state.data['Theta_stage']
+				X_stage, Y_stage, Z_stage = self.internal_state.data['X_stage'], self.internal_state.data['Y_stage'], self.internal_state.data['Z_stage']
 				
 				self.update_image_position()
-				self.update_stage_position(X_stage, Y_stage, Theta_stage)
+				self.update_stage_position(X_stage, Y_stage, Z_stage)
 				self.update_obj_position()
 				# get motion commands
 				# Error is in mm.
 				# print('Image error: {}, {}, {} mm'.format(x_error, y_error, z_error))
-				X_order, Y_order, Theta_order = self.get_motion_commands(x_error,y_error,z_error)
+				X_order, Y_order, Z_order = self.get_motion_commands(x_error,y_error,z_error)
 
 				# New serial interface (send data directly to micro-controller object)
-
 				self.microcontroller.move_x_nonblocking(X_order)
 				self.microcontroller.move_y_nonblocking(Y_order)
-				self.microcontroller.move_theta_nonblocking(-Theta_order)  
+				self.microcontroller.move_z_nonblocking(Z_order)  
 		
 
 			# Update the Internal State Model
@@ -334,89 +333,53 @@ class TrackingController(QObject):
 
 		self.Time.append(time.time() - self.begining_Time)
 
-	def update_stage_position(self,X,Y,Theta):
+	def update_stage_position(self,X,Y,Z):
 
 		self.X_stage.append(X)
 		self.Y_stage.append(Y)
-		self.Theta_stage.append(Theta)
+		self.Z_stage.append(Z)
 
 	def update_image_position(self):
 		# Object position relative to image center (in mm)
 		self.X_image.append(self.units_converter.px_to_mm(self.centroid[0] - self.image_center[0], self.image_width))
-		self.Z_image.append(self.units_converter.px_to_mm(self.centroid[1] - self.image_center[1], self.image_width))
+		self.Y_image.append(self.units_converter.px_to_mm(self.centroid[1] - self.image_center[1], self.image_width))
 
 	def update_obj_position(self):
 
 		self.X_objStage.append(self.X_stage[-1] + self.X_image[-1])
-
-		self.Y_objStage.append(self.Y_stage[-1])
-
-		if(len(self.Time)>1):
-			self.Z_objStage.append(self.Z_objStage[-1]+(self.Z_image[-1]-self.Z_image[-2]) + self.units_converter.rad_to_mm(self.Theta_stage[-1]-self.Theta_stage[-2],self.X_objStage[-1]))
-		else:
-			self.Z_objStage.append(0)
-
-		print('Virtual depth :{} mm'.format(round(self.Z_objStage[-1], 2)))
-	# def get_motion_commands_xyz(self, x_error, y_error, z_error):
-	# 	# Convert from mm to steps (these are rounded to the nearest integer).
-	# 	x_error_steps = int(Motion.STEPS_PER_MM_XY*x_error)
-	# 	y_error_steps = int(Motion.STEPS_PER_MM_XY*y_error)
-	# 	z_error_steps = int(Motion.STEPS_PER_MM_Z*z_error)
-
-	# 	if self.resetPID:
-	# 		self.pid_controller_x.initiate(x_error_steps,self.Time[-1]) #reset the PID
-	# 		self.pid_controller_y.initiate(y_error_steps,self.Time[-1]) #reset the PID
-	# 		self.pid_controller_z.initiate(z_error_steps,self.Time[-1]) #reset the PID
-			
-	# 		X_order = 0
-	# 		Y_order = 0
-	# 		Z_order = 0
-
-	# 	else:
-	# 		X_order = self.pid_controller_x.update(x_error_steps,self.Time[-1])
-	# 		X_order = round(X_order,2)
-
-	# 		Y_order = self.pid_controller_y.update(y_error_steps,self.Time[-1])
-	# 		Y_order = round(Y_order,2)
-
-	# 		Z_order = self.pid_controller_z.update(z_error_steps,self.Time[-1])
-	# 		Z_order = round(Z_order,2)
+		self.Y_objStage.append(self.Y_stage[-1] + self.Y_image[-1])
+		self.Z_objStage.append(self.Z_stage[-1])
 
 
-	# 	return X_order, Y_order, Z_order
-
-
-	# For Gravity Machine (X, Y, Theta tracking)
 	def get_motion_commands(self, x_error, y_error, z_error):
 		# Take an error signal and pass it through a PID algorithm
 		# Convert from mm to steps (these are rounded to the nearest integer).
 		x_error_steps = int(Motion.STEPS_PER_MM_X*x_error)
 		y_error_steps = int(Motion.STEPS_PER_MM_Y*y_error)
+		z_error_steps = int(Motion.STEPS_PER_MM_Z*z_error)
 
-		theta_error_steps = int(self.units_converter.Z_mm_to_step(z_error, self.X_stage[-1]))
 
 		if self.resetPID:
 			self.pid_controller_x.initiate(x_error_steps,self.Time[-1]) #reset the PID
 			self.pid_controller_y.initiate(y_error_steps,self.Time[-1]) #reset the PID
-			self.pid_controller_theta.initiate(theta_error_steps,self.Time[-1]) #reset the PID
+			self.pid_controller_z.initiate(z_error_steps,self.Time[-1]) #reset the PID
 			
 			X_order = 0
 			Y_order = 0
-			Theta_order = 0
+			Z_order = 0
 
 		else:
 			X_order = self.pid_controller_x.update(x_error_steps,self.Time[-1])
 			X_order = round(X_order,2)
 
 			Y_order = self.pid_controller_y.update(y_error_steps,self.Time[-1])
-			Y_order = y_error_steps #@@@ NonPID focus tracking; may need to reverse the sign
+			# Y_order = y_error_steps #@@@ NonPID focus tracking; may need to reverse the sign
 			Y_order = round(Y_order,2)
 
-			Theta_order = self.pid_controller_theta.update(theta_error_steps,self.Time[-1])
-			Theta_order = round(Theta_order,2)
+			Z_order = self.pid_controller_z.update(z_error_steps,self.Time[-1])
+			Z_order = round(Z_order,2)
 
-
-		return X_order, Y_order, Theta_order
+		return X_order, Y_order, Z_order
 
 	# Image related functions
 
@@ -518,8 +481,6 @@ class microcontroller_Receiver(QObject):
 	StreamHandler (rec new image) -> getData_microcontroller
 	'''
 	update_stage_position = Signal(float, float, float)
-	update_homing_state = Signal()
-	start_tracking_signal = Signal()
 	update_plot = Signal()
 
 	def __init__(self, microcontroller, internal_state):
@@ -543,83 +504,54 @@ class microcontroller_Receiver(QObject):
 
 		self.x_pos = 0
 		self.y_pos = 0
-		self.theta_pos = 0
+		self.z_pos = 0
 
+
+	# This function is triggered by the "rec new image signal" from StreamHandler
 	def getData_microcontroller(self):
+		# for debugging
+		# while True:
 
+		# 	if self.stop_signal_received:
+		# 		return
+		# 	self.time_now = time.time()
+
+			# if(self.time_now - self.time_prev >= UCONTROLLER_READ_INTERVAL):
+				
+				# print(self.time_now)
+				# print("Receiving data from uController")
+
+		# print("Receiving data from uController")
 		data = self.microcontroller.read_received_packet_nowait()
 
 		if(data is not None):
+
 			# Parse the data
-			if(data[0] == ord('M')):
+			self.x_pos = byte_operations.unsigned_to_signed(data[0:3],MicrocontrollerDef.N_BYTES_POS)/Motion.STEPS_PER_MM_XY 
+			self.y_pos = byte_operations.unsigned_to_signed(data[3:6],MicrocontrollerDef.N_BYTES_POS)/Motion.STEPS_PER_MM_XY
+			self.z_pos = byte_operations.unsigned_to_signed(data[6:9],MicrocontrollerDef.N_BYTES_POS)/Motion.STEPS_PER_MM_Z 
 
-				phase = byte_operations.data2byte_to_int(data[1], data[2])*2*np.pi/65535.
+			self.RecData['X_stage'] = self.x_pos
+			self.RecData['Y_stage'] = self.y_pos
+			self.RecData['Z_stage'] = self.z_pos
 
-				if(MicrocontrollerDef.RUN_OPENLOOP == True):
-					# X stage position (mm)					
-					self.x_pos = byte_operations.unsigned_to_signed(data[3:6],MicrocontrollerDef.N_BYTES_POS)/(Motion.STEPS_PER_MM_X*Motion.MAX_MICROSTEPS) 
-					# Y stage position (mm)
-					self.y_pos = byte_operations.unsigned_to_signed(data[6:9],MicrocontrollerDef.N_BYTES_POS)/(Motion.STEPS_PER_MM_Y*Motion.MAX_MICROSTEPS)
-					# Theta stage position (encoder counts to radians)
-					self.theta_pos = 2*np.pi*byte_operations.unsigned_to_signed(data[9:12],MicrocontrollerDef.N_BYTES_POS)/(Motion.STEPS_PER_REV_THETA_SHAFT*Motion.MAX_MICROSTEPS) 
+			for key in REC_DATA:
+				if(key in INTERNAL_STATE_VARIABLES):
+					self.internal_state.data[key] = self.RecData[key]
 
-				elif(MicrocontrollerDef.RUN_OPENLOOP == False):
-					# X stage position (mm)
-					self.x_pos = byte_operations.unsigned_to_signed(data[3:6],MicrocontrollerDef.N_BYTES_POS)/(Encoders.COUNTS_PER_MM_X) 
-					# Y stage position (mm)
-					self.y_pos = byte_operations.unsigned_to_signed(data[6:9],MicrocontrollerDef.N_BYTES_POS)/(Encoders.COUNTS_PER_MM_Y)
-					# Theta stage position (encoder counts to radians)
-					self.theta_pos = 2*np.pi*byte_operations.unsigned_to_signed(data[9:12],MicrocontrollerDef.N_BYTES_POS)/(Encoders.COUNTS_PER_REV_THETA) 
-
-				self.RecData['X_stage'] = self.x_pos
-				self.RecData['Y_stage'] = self.y_pos
-				self.RecData['Theta_stage'] = self.theta_pos
-
-				self.update_stage_position.emit(self.x_pos, self.y_pos, self.theta_pos)
-
-				for key in REC_DATA:
-					if(key in INTERNAL_STATE_VARIABLES):
-						self.internal_state.data[key] = self.RecData[key]
-
-			elif(data[0] == ord('F')):
-				# print('Flag recvd')
-
-				if(data[1] == ord('S')):
-					# print('Automated stage tracking flag recvd: {}'.format(data[2]))
-					self.internal_state.data['track_obj_stage'] = data[2]
-					
-				elif(data[1] == ord('H')):
-					print('Homing flag state recvd: {}'.format(data[2]))
-					if(data[2] == 0):
-						self.internal_state.data['homing-state'] = 'not-complete'
-
-					elif(data[2] == 1):
-						self.internal_state.data['homing-state'] = 'in-progress'
-					elif(data[2] == 2):
-						self.internal_state.data['homing-state'] = 'complete'
-					
-					print('Homing state: {}'.format(self.internal_state.data['homing-state']))
-
-				elif(data[1] == ord('T')):
-					print('Toggle image tracking signal recvd: {}'.format(data[2]))
-
-					self.internal_state.data['track_obj_image_hrdware'] = not(self.internal_state.data['track_obj_image_hrdware'])
-				
-					self.start_tracking_signal.emit()
-
-
-				elif(data[1] == ord('F')):
-					print('Focus tracking flag changed in uController: {}'.format(data[2]))
-
-				elif(data[1] == ord('C')):
-					pass
-					# print('Camera trigger flag changed: {}'.format(data[2]))
-
+			# print('Read packet ... parsing')
+			# for key in REC_DATA:
+			# 	self.RecData[key] = data[key]
+			# 	# Update internal state
+			# 	if(key in INTERNAL_STATE_VARIABLES):
+			# 		self.internal_state.data[key] = data[key]
+			self.update_stage_position.emit(self.x_pos,self.y_pos,self.z_pos)
 			# Send update plot signal
 			self.update_plot.emit()
 
 		else:
 			pass
+
 
 
 	def stop(self):

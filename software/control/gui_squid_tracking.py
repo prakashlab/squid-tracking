@@ -9,6 +9,8 @@ from qtpy.QtCore import *
 from qtpy.QtWidgets import *
 from qtpy.QtGui import *
 
+import pyqtgraph.dockarea as dock
+
 QApplication.setAttribute(Qt.AA_EnableHighDpiScaling, True) #enable highdpi scaling
 QApplication.setAttribute(Qt.AA_UseHighDpiPixmaps, True) #use highdpi icons
 
@@ -16,23 +18,22 @@ QApplication.setAttribute(Qt.AA_UseHighDpiPixmaps, True) #use highdpi icons
 from control._def import *
 # app specific libraries
 import control.widgets as widgets
-import control.widgets_tracking as widgets_tracking
-import control.camera as camera
+import control.widgets_tracking_squid as widgets_tracking
+import control.camera_TIS as camera_TIS
+import control.camera as camera_Daheng
 import control.core as core
-import control.core_tracking as core_tracking
+import control.core_tracking_squid as core_tracking
 import control.microcontroller as microcontroller
 
-SIMULATION = False
+SIMULATION = True
 
-class SquidGUI(QMainWindow):
+class SquidTracking_GUI(QMainWindow):
 
-	# variables
-	fps_software_trigger = 100
 
 	def __init__(self, *args, **kwargs):
 		super().__init__(*args, **kwargs)
 		
-		self.setWindowTitle('Squid')
+		self.setWindowTitle('Squid Tracking v1.0.0')
 
 		self.imaging_channels = CAMERAS.keys()
 
@@ -41,39 +42,60 @@ class SquidGUI(QMainWindow):
 		#------------------------------------------------------------------
 		# load other windows
 		#------------------------------------------------------------------
-		self.imageDisplayWindow = {key:core.ImageDisplayWindow(key + ' Display', 
-			DrawCrossHairs = True, rotate_image_angle=90) 
-			for key in self.imaging_channels}
-
-		
-		self.imageDisplayWindow_ThresholdedImage = core.ImageDisplayWindow('Thresholded Image', rotate_image_angle=90)
-		
+		self.imageDisplayWindow = {}
 		for key in self.imaging_channels:
-			self.imageDisplayWindow[key].show()
 
-		self.imageDisplayWindow_ThresholdedImage.show()
+			if(CAMERAS[key]['make']=='TIS'):
+				self.imageDisplayWindow[key] = core.ImageDisplayWindow(key + ' Display', 
+					DrawCrossHairs = True) 
+			elif (CAMERAS[key]['make']=='Daheng'):
+				self.imageDisplayWindow[key] = core.ImageDisplayWindow(key + ' Display', 
+					DrawCrossHairs = True, rotate_image_angle=90) 
+
+		
+		self.imageDisplayWindow_ThresholdedImage = core.ImageDisplayWindow('Thresholded Image')
+		
+		# for key in self.imaging_channels:
+		# 	self.imageDisplayWindow[key].show()
+
+		# self.imageDisplayWindow_ThresholdedImage.show()
 		#------------------------------------------------------------------
 		# Load objects
 		#------------------------------------------------------------------
+
+		# cameras/image streams
+		self.camera = {}
 		if SIMULATION is True:
 			# Define a camera object for each unique image-stream.
-			self.camera = {key:camera.Camera_Simulation() for key in self.imaging_channels}
+			self.camera = {key:camera_Daheng.Camera_Simulation() for key in self.imaging_channels}
 			# self.microcontroller = microcontroller.Microcontroller_Simulation()
 			self.microcontroller = microcontroller.Microcontroller()
 
 		else:
 			# TIS Camera object
-			# self.camera = {key:camera.Camera(serial=CAMERAS[key]['serial'], width = CAMERAS[key]['px_format'][0], 
-			# 	height = CAMERAS[key]['px_format'][1], framerate = CAMERAS[key]['fps']) for key in self.imaging_channels}
+			for key in self.imaging_channels:
+
+				if(CAMERAS[key]['make']=='TIS'):
+					self.camera[key] = camera_TIS.Camera(serial=CAMERAS[key]['serial'], width = CAMERAS[key]['px_format'][0], 
+						height = CAMERAS[key]['px_format'][1], framerate = CAMERAS[key]['fps'])
+				elif (CAMERAS[key]['make']=='Daheng'):
+					self.camera[key] = camera_Daheng.Camera(sn = CAMERAS[key]['serial'])
+
 			# DaHheng camera object
-			self.camera = {key:camera.Camera() for key in self.imaging_channels}
+			# self.camera = {key:camera.Camera() for key in self.imaging_channels}
 			self.microcontroller = microcontroller.Microcontroller()
 		
+
+		# Image stream handler
+		self.streamHandler = {}
+		for key in self.imaging_channels:
+			if(CAMERAS[key]['make']=='TIS'):
+				self.streamHandler[key] = core.StreamHandler(camera = self.camera[key], imaging_channel = key)
+			else:
+				self.streamHandler[key] = core.StreamHandler(camera = self.camera[key], imaging_channel = key, flip_image = 'Vertical')
+
+
 		self.internal_state = core_tracking.InternalState()
-
-
-		self.streamHandler = {key: core.StreamHandler(camera = self.camera[key], imaging_channel = key)
-			for key in self.imaging_channels}	
 		#-----------------------------------------------------------------------------------------------
 		# Tracking-related objects
 		#-----------------------------------------------------------------------------------------------		
@@ -85,7 +107,12 @@ class SquidGUI(QMainWindow):
 		#-----------------------------------------------------------------------------------------------
 		# Define an ImageSaver, and Image Display object for each image stream
 		#-----------------------------------------------------------------------------------------------
-		self.imageSaver = {key: core_tracking.ImageSaver(self.internal_state, imaging_channel = key) for key in self.imaging_channels}
+		self.imageSaver = {}
+		
+		for key in self.imaging_channels:
+			self.imageSaver[key] = core_tracking.ImageSaver(self.internal_state, imaging_channel = key, rotate_image_angle = 180)
+
+
 		self.imageDisplay = {key: core.ImageDisplay() for key in self.imaging_channels}
 
 		# Open the camera
@@ -98,26 +125,36 @@ class SquidGUI(QMainWindow):
 		#------------------------------------------------------------------
 		# load widgets
 		#------------------------------------------------------------------
-		self.cameraSettingWidget = {key: widgets.CameraSettingsWidget(self.camera[key],self.liveController[key]) for key in self.imaging_channels}
+		self.cameraSettingsWidget = {key: widgets.CameraSettingsWidget(self.camera[key],self.liveController[key]) for key in self.imaging_channels}
 		self.liveControlWidget = widgets.LiveControlWidget(self.streamHandler[TRACKING],self.liveController, self.internal_state)
-		self.streamControlWidget = {key: widgets.StreamControlWidget(self.streamHandler[key], self.liveController[key], self.camera[key]) for key in self.imaging_channels}
 		self.navigationWidget = widgets_tracking.NavigationWidget(self.navigationController, self.internal_state)
 		self.trackingControlWidget = widgets_tracking.TrackingControllerWidget(self.streamHandler[TRACKING], self.trackingController, self.trackingDataSaver, self.internal_state, self.imageDisplayWindow[TRACKING], self.microcontroller)
 		self.PID_Group_Widget = widgets_tracking.PID_Group_Widget(self.trackingController)
 		self.FocusTracking_Widget = widgets_tracking.FocusTracking_Widget(self.trackingController, self.internal_state, self.microcontroller)
-		self.recordingControlWidget = widgets.RecordingWidget(self.streamHandler,self.imageSaver, self.internal_state, self.trackingControlWidget, self.trackingDataSaver, self.imaging_channels)
+		self.recordingControlWidget = widgets.RecordingWidget(self.streamHandler,self.imageSaver, self.internal_state, self.trackingDataSaver, self.imaging_channels)
 
-		# self.recordTabWidget = QTabWidget()
-		# self.recordTabWidget.addTab(self.recordingControlWidget, "Acquisition control")
+		# self.stageCalibrationWidget = widgets_tracking.StageCalibrationWidget(self.internal_state, self.microcontroller) 
 		
-		self.cameraSettings_Tab = QTabWidget()
-		for key in self.imaging_channels:
-			self.cameraSettings_Tab.addTab(self.cameraSettingWidget[key],key)
+		self.plotWidget = widgets.dockAreaPlot(self.internal_state)
 
-		self.streamSettings_Tab = QTabWidget()
+		
+		self.liveSettings_Tab = QTabWidget()
+		self.liveSettings_Tab.addTab(self.liveControlWidget, 'Live controller')
 		for key in self.imaging_channels:
-			self.streamSettings_Tab.addTab(self.streamControlWidget[key],key)
-	
+			self.liveSettings_Tab.addTab(self.cameraSettingsWidget[key],key)
+
+		
+		# self.trackingControl_Tab = QTabWidget()
+		# self.trackingControl_Tab.addTab(self.trackingControlWidget, 'Tracking')
+		# self.trackingControl_Tab.addTab(self.PID_Group_Widget, 'PID')
+		# self.trackingControl_Tab.setTabPosition(QTabWidget.North)
+
+		self.SettingsTab = QTabWidget()
+		self.SettingsTab.addTab(self.PID_Group_Widget, 'PID')
+		self.SettingsTab.addTab(self.navigationWidget, 'Navigation')
+		# self.SettingsTab.addTab(self.stageCalibrationWidget, 'Calibration')
+		self.SettingsTab.addTab(self.plotWidget, 'Plots')
+
 		#------------------------------------------------------------------
 		# Connections
 		#------------------------------------------------------------------
@@ -139,48 +176,77 @@ class SquidGUI(QMainWindow):
 		self.streamHandler[TRACKING].packet_image_for_tracking.connect(self.trackingController.on_new_frame)
 		# @@@ Currently the resolution-scaling only controls the TRACKING stream
 		self.streamHandler[TRACKING].signal_working_resolution.connect(self.liveControlWidget.update_working_resolution)
+		# Only display the image-display rate of the main/tracking image stream
+		self.streamHandler[TRACKING].signal_fps_display.connect(self.liveControlWidget.update_display_fps)
+		# self.streamHandler[TRACKING].signal_fps.connect(self.liveControlWidget.update_stream_fps)
 		# self.trackingController.centroid_image.connect(self.imageDisplayWindow[TRACKING].draw_circle)
 		self.trackingController.Rect_pt1_pt2.connect(self.imageDisplayWindow[TRACKING].draw_rectangle)
-		
 		self.trackingController.save_data_signal.connect(self.trackingDataSaver.enqueue)
+		self.trackingController.signal_tracking_fps.connect(self.liveControlWidget.update_stream_fps)
+
 		# Connections for all image-streams
 		for channel in self.imaging_channels:
-			self.streamHandler[channel].signal_fps.connect(self.streamControlWidget[channel].update_stream_fps)
-			self.streamHandler[channel].signal_fps_display.connect(self.streamControlWidget[channel].update_display_fps)
-
+			self.streamHandler[channel].signal_fps.connect(self.cameraSettingsWidget[channel].update_stream_fps)
 		# Connect roi from ImageDisplayWindow to TrackingController.
 		self.trackingController.get_roi_bbox.connect(self.imageDisplayWindow[TRACKING].send_bbox)
 		self.imageDisplayWindow[TRACKING].roi_bbox.connect(self.trackingController.tracker_image.set_roi_bbox)
 		# self.microcontroller_Rec.update_display.connect(self.navigationWidget.update_display)
 		self.trackingControlWidget.show_roi.connect(self.imageDisplayWindow[TRACKING].toggle_ROI_selector)
+		self.microcontroller_Rec.update_stage_position.connect(self.navigationWidget.update_display)
+		# self.microcontroller_Rec.update_stage_position.connect(self.trackingController.update_stage_position)
+		# Pixel per mm update due to objective change
+		self.liveControlWidget.new_pixelpermm.connect(self.trackingController.units_converter.update_pixel_size)
+		self.microcontroller_Rec.update_plot.connect(self.plotWidget.update_plots)
 
-		self.microcontroller_Rec.update_stage_display.connect(self.navigationWidget.update_display)
+		# Dock area for displaying image-streams
+		self.image_window = QMainWindow()
+		image_display_dockArea = dock.DockArea()
+		self.image_window.setCentralWidget(image_display_dockArea)
+
+		self.image_window.setWindowTitle('Image display')
+
+		image_window_docks = dict()
+
+		last_channel = None
+		for channel in self.imaging_channels:
+
+			image_window_docks[channel] = dock.Dock(channel, autoOrientation = False)
+			image_window_docks[channel].setTitle(channel)
+			image_window_docks[channel].showTitleBar()
+			print(image_window_docks[channel].title())
+			# image_window_docks[channel].setOrientation(o = 'vertical', force = True)
+			# image_window_docks[channel].setStretch(x = 1000, y= 1000)
+			image_display_dockArea.addDock(image_window_docks[channel], 'bottom')
+
+
+			image_window_docks[channel].addWidget(self.imageDisplayWindow[channel].widget)
+
+			last_channel = channel
+
+		# Add dock for the thresholded image
+		thresholded_image_dock = dock.Dock('Thresholded', autoOrientation = False)
+		image_display_dockArea.addDock(thresholded_image_dock, 'right', image_window_docks[last_channel])
+		thresholded_image_dock.addWidget(self.imageDisplayWindow_ThresholdedImage.widget)
 		#-----------------------------------------------------
 		# Layout widgets
 		#-----------------------------------------------------
-		layout = QGridLayout() #layout = QStackedLayout()
-		# layout.addWidget(self.cameraSettingWidget,0,0)
-		layout.addWidget(self.liveControlWidget,0,0)
-		layout.addWidget(self.streamSettings_Tab,0,1)
-		layout.addWidget(self.navigationWidget,0,2)
-		layout.addWidget(self.trackingControlWidget,1,0)
-		# layout.addWidget(self.PID_Group_Widget,2,0)
-		# layout.addWidget(self.navigationWidget,2,0)
-		#layout.addWidget(self.autofocusWidget,3,0)
-		layout.addWidget(self.recordingControlWidget,1,1)
-		layout.addWidget(self.PID_Group_Widget,2,0)
-		# layout.addWidget(self.FocusTracking_Widget,2,0)
-		layout.addWidget(self.cameraSettings_Tab,1,2,1,1)
+		layout_right = QGridLayout() #layout = QStackedLayout()
+		# layout.addWidget(self.cameraSettingsWidget,0,0)
+		layout_right.addWidget(self.liveSettings_Tab,0,0)
+		layout_right.addWidget(self.trackingControlWidget,1,0)
+		layout_right.addWidget(self.SettingsTab,1,1)
+		layout_right.addWidget(self.recordingControlWidget,0,1)
+
+		# layout.addWidget(self.cameraSettings_Tab,0,1)
+		# layout.addWidget(self.PID_Group_Widget,1,1)
+		overall_layout = QHBoxLayout()
+		# overall_layout.addWidget(image_display_dockArea)
+		overall_layout.addLayout(layout_right)
+
 		# transfer the layout to the central widget
 		self.centralWidget = QWidget()
-		self.centralWidget.setLayout(layout)
+		self.centralWidget.setLayout(overall_layout)
 		self.setCentralWidget(self.centralWidget)
-
-		# Show sub-windows (now controlled by liveControlWidget:
-		# for key in self.imaging_channels:
-		# 	self.imageDisplayWindow[key].show()
-		# self.imageDisplayWindow_ThresholdedImage.show()
-
 
 		# Start all image-streams
 		print('Starting image streams')
@@ -189,6 +255,8 @@ class SquidGUI(QMainWindow):
 			self.camera[channel].start_streaming()
 		print('Started image streams!')
 
+		self.image_window.show()
+
 	
 	def show_image_window(self, channel):
 		pass
@@ -196,6 +264,20 @@ class SquidGUI(QMainWindow):
 	def start_imageStreams(self):
 		for key in self.imaging_channels:
 			self.camera[key].start_streaming()
+
+	# @@@ TO DO
+	def add_status_bar(self):
+		# Status bar at the bottom
+		self.statusBar = QStatusBar()
+		self.homing_status = QLabel('Homing status:')
+		self.stage_control = QLabel('Stage control:')
+
+		self.statusBar.addPermanentWidget(self.homing_status)
+		self.statusBar.addPermanentWidget(self.stage_control)
+
+	# @@@ TO DO
+	def update_status_bar(self):
+		pass
 
 	def closeEvent(self, event):
 
@@ -207,6 +289,7 @@ class SquidGUI(QMainWindow):
 
 			
 		# self.softwareTriggerGenerator.stop() @@@ => 
+			self.image_window.close()
 
 			for key in self.imaging_channels:
 				self.liveController[key].stop_live()

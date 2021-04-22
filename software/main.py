@@ -16,14 +16,14 @@ from aqua.qsshelper import QSSHelper
 # app specific libraries
 #import control.gui as gui
 #import control.gui_2cameras_async as gui
-import control.gui_gravitymachine as gui
+import control.gui_squid_tracking as gui
 
 if __name__ == "__main__":
 
 	app = QApplication([])
 	
 	# Main GUI window
-	win = gui.GravityMachine_GUI()
+	win = gui.SquidTracking_GUI()
 
 	# Style sheet
 	qss = QSSHelper.open_qss(os.path.join('aqua', 'aqua.qss'))
