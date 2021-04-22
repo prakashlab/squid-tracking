@@ -33,6 +33,8 @@ class TrackingControllerWidget(QFrame):
 	def __init__(self, streamHandler, trackingController, trackingDataSaver, internal_state, ImageDisplayWindow, microcontroller, main=None, *args, **kwargs):
 		super().__init__(*args, **kwargs)
 
+		# self.setTitle('Tracking Controller')
+
 		self.base_path_is_set = False
 
 		self.streamHandler = streamHandler
@@ -60,25 +62,20 @@ class TrackingControllerWidget(QFrame):
 
 	def add_components(self):
 
-		self.tracking_group = QGroupBox('Tracker', alignment = Qt.AlignCenter)
-
-		tracking_group_layout = QHBoxLayout()
-
 		# Image Tracking Button
-		self.btn_track = QPushButton("Track")
+		self.btn_track = QPushButton("Start Tracking")
 		# self.btn_track.setStyleSheet('QPushButton {color: red;}')
 		self.btn_track.setCheckable(True)
 		self.btn_track.setChecked(False)
 		self.btn_track.setDefault(False)
+		self.btn_track.setIcon(QIcon('icon/track_white.png'))
+
 
 		# Image Tracker Dropdown
 		self.dropdown_TrackerSelection = QComboBox()
 		self.dropdown_TrackerSelection.addItems(TRACKERS)
 		self.dropdown_TrackerSelection.setCurrentText(DEFAULT_TRACKER)
 		self.trackingController.tracker_image.update_tracker_type(self.dropdown_TrackerSelection.currentText())
-
-		tracking_group_layout.addWidget(self.dropdown_TrackerSelection)
-		self.tracking_group.setLayout(tracking_group_layout)
 
 		# Invert thresholded image checkbox (useful when switching between BF and DF)
 		self.invert_image_checkbox = QCheckBox('Invert image')
@@ -90,16 +87,13 @@ class TrackingControllerWidget(QFrame):
 
 		# Layout
 		self.tracking_init_group = QGroupBox('Tracking init method')
-		self.tracking_init_layout = QVBoxLayout()
-		self.tracking_init_layout.addWidget(self.tracking_init_threshold)
-		self.tracking_init_layout.addWidget(self.tracking_init_roi)
+		self.tracking_init_layout = QGridLayout()
+		self.tracking_init_layout.addWidget(self.tracking_init_threshold,0,0)
+		self.tracking_init_layout.addWidget(self.tracking_init_roi,1,0)
+		self.tracking_init_layout.addWidget(self.invert_image_checkbox,0,1)
 		self.tracking_init_group.setLayout(self.tracking_init_layout)
 
-
 		# Image offset settings
-		self.tracking_setPoint_group = QGroupBox('Tracking set-point offset', alignment = Qt.AlignCenter)
-		tracking_setPoint_layout = QGridLayout()
-
 		self.label_x = QLabel('x (px)')
 		# Image tracking offset - X axis
 		self.tracking_setPoint_offset_x = QSpinBox()
@@ -108,60 +102,25 @@ class TrackingControllerWidget(QFrame):
 		self.tracking_setPoint_offset_x.setSingleStep(1)
 		self.tracking_setPoint_offset_x.setValue(0)
 
-		# Image tracking offset - Y axis
-		self.label_y = QLabel('y (px)')
+		# Image tracking offset - Z axis
+		self.label_y = QLabel('z (px)')
 		self.tracking_setPoint_offset_y = QSpinBox()
 		self.tracking_setPoint_offset_y.setMinimum(-round(self.trackingController.image_width/4)) 
 		self.tracking_setPoint_offset_y.setMaximum(round(self.trackingController.image_width/4)) 
 		self.tracking_setPoint_offset_y.setSingleStep(1)
 		self.tracking_setPoint_offset_y.setValue(0)
-		
-		# layout
-		tracking_setPoint_layout.addWidget(self.label_x,0,0,1,1)
-		tracking_setPoint_layout.addWidget(self.tracking_setPoint_offset_x,0,1,1,1)
-		tracking_setPoint_layout.addWidget(self.label_y, 1,0,1,1)
-		tracking_setPoint_layout.addWidget(self.tracking_setPoint_offset_y, 1,1,1,1)
 
-		self.tracking_setPoint_group.setLayout(tracking_setPoint_layout)
-
-
-		# Range sliders for image color thresholding
-		self.group_sliders = QGroupBox('Color thresholds', alignment = Qt.AlignCenter)
-		layout_sliders = QGridLayout()
-		
-		self.label_Hue = QLabel('Hue')
+		# Sliders for image segmentation
+		self.label_Hue = QLabel('H')
 		self.range_slider1 = rangeslider.QRangeSlider()
 		self.range_slider1.setMax(255)
-		self.label_Saturation=QLabel('Saturation')
+		self.label_Saturation=QLabel('S')
 		self.range_slider2=rangeslider.QRangeSlider()
 		self.range_slider2.setMax(255)
-		self.label_Vibrance=QLabel('Value')
+		self.label_Vibrance=QLabel('V')
 		self.range_slider3=rangeslider.QRangeSlider()
 		self.range_slider3.setMax(255)
 		
-		layout_sliders.addWidget(self.label_Hue,0,0,1,1)
-		layout_sliders.addWidget(self.range_slider1,0,1,1,1)
-		layout_sliders.addWidget(self.label_Saturation,1,0,1,1)
-		layout_sliders.addWidget(self.range_slider2,1,1,1,1)
-		layout_sliders.addWidget(self.label_Vibrance,2,0,1,1)
-		layout_sliders.addWidget(self.range_slider3,2,1,1,1)
-		self.group_sliders.setLayout(layout_sliders)
-		self.group_sliders.setEnabled(True)
-
-
-		# groupbox_track_settings = QGroupBox('Tracking Controller')
-
-		groupbox_track_layout = QGridLayout()
-		groupbox_track_layout.addWidget(self.btn_track, 0,0,1,1)
-		# groupbox_track_layout.addWidget(self.dropdown_TrackerSelection, 0,1,1,1)
-		groupbox_track_layout.addWidget(self.tracking_group,0,1,1,1)
-		groupbox_track_layout.addWidget(self.tracking_init_group,0,2,1,1)
-		groupbox_track_layout.addWidget(self.tracking_setPoint_group,1,0,1,2)
-		groupbox_track_layout.addWidget(self.invert_image_checkbox,1,2,1,1)
-		groupbox_track_layout.addWidget(self.group_sliders,2,0,1,3)
-		
-
-
 		# Track button connection
 		self.btn_track.clicked.connect(self.do_track_button_tasks)
 
@@ -184,8 +143,49 @@ class TrackingControllerWidget(QFrame):
 		self.range_slider2.endValueChanged.connect(self.sliders_move)
 		self.range_slider3.endValueChanged.connect(self.sliders_move)
 
+		# Sub-blocks layout
+		tracking_group_layout = QHBoxLayout()
+		tracking_group_layout.addWidget(QLabel('Tracker selection'))
+		tracking_group_layout.addWidget(self.dropdown_TrackerSelection)
+		
+		self.tracking_setPoint_group = QGroupBox('Tracking set-point offset', alignment = Qt.AlignCenter)
+		tracking_setPoint_layout = QGridLayout()
+		tracking_setPoint_layout.addWidget(self.label_x,0,0)
+		tracking_setPoint_layout.addWidget(self.tracking_setPoint_offset_x,0,1)
+		tracking_setPoint_layout.addWidget(self.label_y, 1,0)
+		tracking_setPoint_layout.addWidget(self.tracking_setPoint_offset_y, 1,1)
+		self.tracking_setPoint_group.setLayout(tracking_setPoint_layout)
+
+		# Range sliders for image color thresholding
+		self.group_sliders = QGroupBox('Color thresholds', alignment = Qt.AlignCenter)
+		layout_sliders = QGridLayout()
+		
+		layout_sliders.addWidget(self.label_Hue,0,0,1,1)
+		layout_sliders.addWidget(self.range_slider1,0,1,1,1)
+		layout_sliders.addWidget(self.label_Saturation,1,0,1,1)
+		layout_sliders.addWidget(self.range_slider2,1,1,1,1)
+		layout_sliders.addWidget(self.label_Vibrance,2,0,1,1)
+		layout_sliders.addWidget(self.range_slider3,2,1,1,1)
+		self.group_sliders.setLayout(layout_sliders)
+		self.group_sliders.setEnabled(True)
+
+		# Overall layout
+		groupbox_track_layout = QGridLayout()
+		groupbox_track_layout.addWidget(self.btn_track, 0,0,1,1)
+		# groupbox_track_layout.addWidget(self.dropdown_TrackerSelection, 0,1,1,1)
+		groupbox_track_layout.addLayout(tracking_group_layout,0,1,1,1)
+		groupbox_track_layout.addWidget(self.tracking_setPoint_group,1,0,1,1)
+		groupbox_track_layout.addWidget(self.tracking_init_group,1,1,1,1)
+		groupbox_track_layout.addWidget(self.group_sliders,2,0,1,2)
 		self.setLayout(groupbox_track_layout)
 
+	def trigger_track_button(self):
+
+		if self.btn_track.isChecked():
+			pass
+		else:
+			self.btn_track.setChecked(True)
+			self.do_track_button_tasks()
 
 
 	def do_track_button_tasks(self):
@@ -204,8 +204,10 @@ class TrackingControllerWidget(QFrame):
 
 			self.trackingDataSaver.start_new_track()
 			self.streamHandler.start_tracking()
+			self.btn_track.setText('Stop Tracking')
 
 		else:
+			self.btn_track.setText('Start Tracking')
 			self.streamHandler.stop_tracking()
 			self.internal_state.data['track_obj_image'] = False
 			# Resets the track deques and counters
@@ -214,12 +216,8 @@ class TrackingControllerWidget(QFrame):
 	# This function is connected to the signal from tracking Controller triggered by 
 	# hardware start-tracking input.
 	def handle_hardware_track_signal(self):
-
 		self.btn_track.toggle()
 		self.do_track_button_tasks()
-
-	def handle_aquisition_widget_track_signal(self):
-		self.btn_track.setChecked(True)
 
 	def update_invert_image_flag(self):
 
@@ -276,150 +274,68 @@ class TrackingControllerWidget(QFrame):
 		LOWER[1],UPPER[1]=self.range_slider2.getRange()
 		LOWER[2],UPPER[2]=self.range_slider3.getRange()
 
-		self.streamHandler.set_image_thresholds(np.uint8(LOWER), np.uint8(UPPER))
+		self.streamHandler.set_image_thresholds(np.uint8(LOWER), np.uint8(UPPER))	
 
 
-
-		# self.camera_functions[self.tracking_channel].lower_HSV=np.uint8(LOWER)
-		# # self.object_tracking.lower_HSV=np.uint8(LOWER)
-		# self.camera_functions[self.tracking_channel].upper_HSV=np.uint8(UPPER)
-		# self.object_tracking.upper_HSV=np.uint8(UPPER		
-
-
-# class NavigationWidget(QFrame):
+class StageCalibrationWidget(QFrame):
 	
-# 	def __init__(self, navigationController, internal_state, microcontroller,  main=None, *args, **kwargs):
-# 		super().__init__(*args, **kwargs)
-# 		self.navigationController = navigationController
-# 		self.internal_state = internal_state
-# 		self.microcontroller = microcontroller
-# 		self.add_components()
-# 		self.setFrameStyle(QFrame.Panel | QFrame.Raised)
+	def __init__(self, internal_state, microcontroller,  main=None, *args, **kwargs):
+		super().__init__(*args, **kwargs)
+		self.internal_state = internal_state
+		self.microcontroller = microcontroller
+		self.add_components()
+		self.setFrameStyle(QFrame.Panel | QFrame.Raised)
 
-# 	def add_components(self):
-
-# 		# Stage position display 
-
-# 		self.pos_X_label = pg.ValueLabel(siPrefix=True, suffix = 'm')
-# 		self.pos_X_label.setValue(0)
-# 		# self.pos_X_label.setStyleSheet('color: red')
-
-# 		self.pos_Y_label = pg.ValueLabel(siPrefix=True, suffix = 'm')
-# 		self.pos_Y_label.setValue(0)
-
-# 		self.pos_Z_label = pg.ValueLabel(siPrefix=True, suffix = 'm')
-# 		self.pos_Z_label.setValue(0)
-
-# 		# self.pos_X_label = QLabel()
-# 		# self.pos_X_label.setText('{:.03f}'.format(0))
-
-# 		# self.pos_Y_label = QLabel()
-# 		# self.pos_Y_label.setText('{:.03f}'.format(0))
-
-# 		# self.pos_Z_label = QLabel()
-# 		# self.pos_Z_label.setText('{:.03f}'.format(0))
-
-# 		stage_pos_layout = QGridLayout()
-
-# 		stage_pos_layout.addWidget(QLabel('X-stage'),0,0)
-# 		stage_pos_layout.addWidget(self.pos_X_label, 1,0)
-# 		stage_pos_layout.addWidget(QLabel('Y-stage'),2,0)
-# 		stage_pos_layout.addWidget(self.pos_Y_label, 3,0)
-# 		stage_pos_layout.addWidget(QLabel('Z-stage'),4,0)
-# 		stage_pos_layout.addWidget(self.pos_Z_label, 5,0)
-
-# 		self.stage_position = QGroupBox('Stage positions')
-
-# 		self.stage_position.setLayout(stage_pos_layout)
+	def add_components(self):
 
 
-# 		# Stage zeroing buttons
-# 		self.zero_X = QPushButton('Zero X-stage')
+		# Stage zeroing buttons
+		self.zero_X = QPushButton('Zero X-stage')
 		
-# 		self.zero_Y = QPushButton('Zero Y-stage')
+		self.zero_Y = QPushButton('Zero Y-stage')
 	
-# 		self.zero_Z = QPushButton('Zero Z-stage')
+		self.zero_Theta = QPushButton('Zero Theta-stage')
 	
 		
-# 		# Homing Button
-# 		self.homing_button = pg.FeedbackButton('Run Homing')
+		# Homing Button
+		self.homing_button = QPushButton('Run Homing')
 
-# 		stage_control = QVBoxLayout()
+		stage_control = QGridLayout()
 
-# 		stage_control.addWidget(self.homing_button)
-# 		stage_control.addWidget(self.zero_X)
-# 		stage_control.addWidget(self.zero_Y)
-# 		stage_control.addWidget(self.zero_Z)
+		stage_control.addWidget(self.homing_button,0,0)
+		stage_control.addWidget(self.zero_X,0,1)
+		stage_control.addWidget(self.zero_Y,1,1)
+		stage_control.addWidget(self.zero_Theta,2,1)
 
-# 		self.stage_control_group = QGroupBox('Stage control')
-
-# 		self.stage_control_group.setLayout(stage_control)
-
-# 		layout = QGridLayout()
-
-# 		layout.addWidget(self.stage_position, 0,0,1,1)
-# 		layout.addWidget(self.stage_control_group, 0,1,1,1)
-		
-
-# 		self.setLayout(layout)
+		self.setLayout(stage_control)
 
 
-# 		# Connections
-# 		self.zero_X.clicked.connect(self.zero_X_stage)
-# 		self.zero_Y.clicked.connect(self.zero_Y_stage)
-# 		self.zero_Z.clicked.connect(self.zero_Z_stage)
+		# Connections
+		self.zero_X.clicked.connect(self.zero_X_stage)
+		self.zero_Y.clicked.connect(self.zero_Y_stage)
+		self.zero_Theta.clicked.connect(self.zero_Theta_stage)
 
-# 		self.homing_button.clicked.connect(self.homing_button_click)
+		self.homing_button.clicked.connect(self.homing_button_click)
 
-# 	def zero_X_stage(self):
+	def zero_X_stage(self):
 
-# 		self.internal_state.data['Zero_stage'] = 1
-# 		self.microcontroller.send_stage_zero_command('X')
+		self.microcontroller.send_stage_zero_command(0)
 	
-# 	def zero_Y_stage(self):
+	def zero_Y_stage(self):
 
-# 		self.internal_state.data['Zero_stage'] = 2
-# 		self.microcontroller.send_stage_zero_command('Y')
+		self.microcontroller.send_stage_zero_command(1)
 
-# 	def zero_Z_stage(self):
+	def zero_Theta_stage(self):
 
-# 		self.internal_state.data['Zero_stage'] = 3
-# 		self.microcontroller.send_stage_zero_command('Z')
+		self.microcontroller.send_stage_zero_command(3)
 
-# 	# Triggered by microController_Receiever
-# 	def update_display(self):
-		
-# 		# self.pos_X_label.setText('{:.03f}'.format(self.internal_state.data['X_stage']))
-# 		# self.pos_Y_label.setText('{:.03f}'.format(self.internal_state.data['Y_stage']))
-# 		# self.pos_Z_label.setText('{:.03f}'.format(self.internal_state.data['Theta_stage']))
+	def homing_button_click(self):
+		# Send homing command to microcontroller
+		self.microcontroller.send_homing_command()
 
-# 		self.pos_X_label.setValue(self.internal_state.data['X_stage']*1e-3)
-# 		self.pos_Y_label.setValue(self.internal_state.data['Y_stage']*1e-3)
-# 		self.pos_Z_label.setValue(self.internal_state.data['Z_stage']*1e-3)
+	def update_homing_state():
+		self.homing_button.setText(self.internal_state.data['homing-state'])
 
-# 	def homing_button_click(self):
-
-# 		# Update the internal homing command state
-# 		self.internal_state.data['homing_command'] = True
-
-# 		# Send homing command to microcontroller
-# 		self.microcontroller.send_homing_command()
-
-# 		# self.homing_button.processing('Homing stages...')
-
-# 		#@@@@ Hard-coding this to check button function
-# 		# time.sleep(2.0)
-# 		# self.internal_state.data['homing_state'] = True
-
-# 	# Can implement later if necessary
-# 	def homing_button_feedback(self):
-
-# 		if(self.internal_state.data['homing_state']):
-# 			self.homing_button.success('Homing completed!')
-# 			self.homing_button.setText('Homing complete')
-
-# 		else:
-# 			self.homing_button.failure('Homing failed!')
 
 class NavigationWidget(QFrame):
     def __init__(self, navigationController, main=None, *args, **kwargs):
@@ -455,18 +371,18 @@ class NavigationWidget(QFrame):
         self.btn_moveY_backward = QPushButton('Backward')
         self.btn_moveY_backward.setDefault(False)
 
-        self.label_Zpos = QLabel()
-        self.label_Zpos.setNum(0)
-        self.label_Zpos.setFrameStyle(QFrame.Panel | QFrame.Sunken)
-        self.entry_dZ = QDoubleSpinBox()
-        self.entry_dZ.setMinimum(0) 
-        self.entry_dZ.setMaximum(1000) 
-        self.entry_dZ.setSingleStep(0.2)
-        self.entry_dZ.setValue(0)
-        self.btn_moveZ_forward = QPushButton('Forward')
-        self.btn_moveZ_forward.setDefault(False)
-        self.btn_moveZ_backward = QPushButton('Backward')
-        self.btn_moveZ_backward.setDefault(False)
+        self.label_Thetapos = QLabel()
+        self.label_Thetapos.setNum(0)
+        self.label_Thetapos.setFrameStyle(QFrame.Panel | QFrame.Sunken)
+        self.entry_dTheta = QDoubleSpinBox()
+        self.entry_dTheta.setMinimum(0) 
+        self.entry_dTheta.setMaximum(2*np.pi) 
+        self.entry_dTheta.setSingleStep(0.01)
+        self.entry_dTheta.setValue(0)
+        self.btn_moveTheta_forward = QPushButton('Forward')
+        self.btn_moveTheta_forward.setDefault(False)
+        self.btn_moveTheta_backward = QPushButton('Backward')
+        self.btn_moveTheta_backward.setDefault(False)
         
         grid_line0 = QGridLayout()
         grid_line0.addWidget(QLabel('X (mm)'), 0,0)
@@ -483,11 +399,11 @@ class NavigationWidget(QFrame):
         grid_line1.addWidget(self.btn_moveY_backward, 0,4)
 
         grid_line2 = QGridLayout()
-        grid_line2.addWidget(QLabel('Z (um)'), 0,0)
-        grid_line2.addWidget(self.label_Zpos, 0,1)
-        grid_line2.addWidget(self.entry_dZ, 0,2)
-        grid_line2.addWidget(self.btn_moveZ_forward, 0,3)
-        grid_line2.addWidget(self.btn_moveZ_backward, 0,4)
+        grid_line2.addWidget(QLabel('Theta (radians)'), 0,0)
+        grid_line2.addWidget(self.label_Thetapos, 0,1)
+        grid_line2.addWidget(self.entry_dTheta, 0,2)
+        grid_line2.addWidget(self.btn_moveTheta_forward, 0,3)
+        grid_line2.addWidget(self.btn_moveTheta_backward, 0,4)
 
         self.grid = QGridLayout()
         self.grid.addLayout(grid_line0,0,0)
@@ -499,35 +415,33 @@ class NavigationWidget(QFrame):
         self.btn_moveX_backward.clicked.connect(self.move_x_backward)
         self.btn_moveY_forward.clicked.connect(self.move_y_forward)
         self.btn_moveY_backward.clicked.connect(self.move_y_backward)
-        self.btn_moveZ_forward.clicked.connect(self.move_z_forward)
-        self.btn_moveZ_backward.clicked.connect(self.move_z_backward)
+        self.btn_moveTheta_forward.clicked.connect(self.move_theta_forward)
+        self.btn_moveTheta_backward.clicked.connect(self.move_theta_backward)
         
     def move_x_forward(self):
         self.navigationController.move_x(self.entry_dX.value())
-        print('move x')
     def move_x_backward(self):
         self.navigationController.move_x(-self.entry_dX.value())
     def move_y_forward(self):
         self.navigationController.move_y(self.entry_dY.value())
     def move_y_backward(self):
         self.navigationController.move_y(-self.entry_dY.value())
-    def move_z_forward(self):
-        self.navigationController.move_z(self.entry_dZ.value()/1000)
-    def move_z_backward(self):
-        self.navigationController.move_z(-self.entry_dZ.value()/1000)
+    def move_theta_forward(self):
+        self.navigationController.move_theta(self.entry_dTheta.value())
+    def move_theta_backward(self):
+        self.navigationController.move_theta(-self.entry_dTheta.value())
     
-    def update_display(self, X_stage, Y_stage, Z_stage):
-
-    	self.label_Xpos.setNum(round(X_stage,2))
-    	self.label_Ypos.setNum(round(Y_stage,2))
-    	self.label_Zpos.setNum(round(Z_stage,2))
-
+    def update_display(self, X_stage, Y_stage, Theta_stage):
+    	self.label_Xpos.setText('{:.02f}'.format(round(X_stage,2)))
+    	self.label_Ypos.setText('{:.02f}'.format(round(Y_stage,2)))
+    	self.label_Thetapos.setText('{:.02f}'.format(round(Theta_stage,2)))
 
 
 class PID_Group_Widget(QFrame):
 
 	def __init__(self, trackingController):
 		super().__init__()
+		# self.setTitle('PID settings')
 		self.setFrameStyle(QFrame.Panel | QFrame.Raised)
 
 		# self.setTitle('PID settings')
@@ -542,24 +456,25 @@ class PID_Group_Widget(QFrame):
 		self.PID_widget_z = PID_Widget('Z')
 		self.PID_widget_y = PID_Widget('Y')
 
-		PID_imagePlane = QGroupBox('PID (Image Plane)')
-		PID_imagePlane_layout = QHBoxLayout()
+		# PID_imagePlane = QGroupBox('PID (Image Plane)')
+		# PID_imagePlane_layout = QHBoxLayout()
 
-		PID_imagePlane_layout.addWidget(self.PID_widget_x)
-		PID_imagePlane_layout.addWidget(self.PID_widget_y)
+		# PID_imagePlane_layout.addWidget(self.PID_widget_x)
+		# PID_imagePlane_layout.addWidget(self.PID_widget_y)
 
-		PID_imagePlane.setLayout(PID_imagePlane_layout)
+		# PID_imagePlane.setLayout(PID_imagePlane_layout)
 
-		PID_focus = QGroupBox('PID (Focus)')
-		PID_focus_Layout = QHBoxLayout()
-		PID_focus_Layout.addWidget(self.PID_widget_z)
+		# PID_focus = QGroupBox('PID (Focus)')
+		# PID_focus_Layout = QHBoxLayout()
+		# PID_focus_Layout.addWidget(self.PID_widget_z)
 
-		PID_focus.setLayout(PID_focus_Layout)
+		# PID_focus.setLayout(PID_focus_Layout)
 
 		hor_layout = QGridLayout()
 
-		hor_layout.addWidget(PID_imagePlane,0,0,1,1)
-		hor_layout.addWidget(PID_focus,0,1,1,1)
+		hor_layout.addWidget(self.PID_widget_x,0,0,1,1)
+		hor_layout.addWidget(self.PID_widget_y,1,0,1,1)
+		hor_layout.addWidget(self.PID_widget_z,2,0,1,1)
 
 
 		self.setLayout(hor_layout)
@@ -577,9 +492,9 @@ class PID_Group_Widget(QFrame):
 		self.PID_widget_y.spinboxD.valueChanged.connect(self.trackingController.pid_controller_y.update_D)
 
 		# Theta
-		self.PID_widget_z.spinboxP.valueChanged.connect(self.trackingController.pid_controller_z.update_P)
-		self.PID_widget_z.spinboxI.valueChanged.connect(self.trackingController.pid_controller_z.update_I)
-		self.PID_widget_z.spinboxD.valueChanged.connect(self.trackingController.pid_controller_z.update_D)
+		self.PID_widget_z.spinboxP.valueChanged.connect(self.trackingController.pid_controller_theta.update_P)
+		self.PID_widget_z.spinboxI.valueChanged.connect(self.trackingController.pid_controller_theta.update_I)
+		self.PID_widget_z.spinboxD.valueChanged.connect(self.trackingController.pid_controller_theta.update_D)
 
 
 
@@ -597,7 +512,7 @@ class PID_Widget(QGroupBox):
 		stepP = Pmax/100
 
 		self.labelP = QLabel('P')
-		self.hsliderP = QSlider(Qt.Horizontal)
+		self.hsliderP = QSlider(Qt.Vertical)
 		self.hsliderP.setRange(0,int(Pmax*100))
 		self.hsliderP.setValue(int(defaultP*100))
 		self.spinboxP = QDoubleSpinBox()
@@ -606,10 +521,10 @@ class PID_Widget(QGroupBox):
 		self.spinboxP.setValue(round(defaultP,2))
 		self.hsliderP.valueChanged.connect(self.spinBoxP_setValue)
 		self.spinboxP.valueChanged.connect(self.hsliderP_setValue)
-		sliderP_layout=QHBoxLayout()
-		sliderP_layout.addWidget(self.labelP)
-		sliderP_layout.addWidget(self.hsliderP)
-		sliderP_layout.addWidget(self.spinboxP)
+		sliderP_layout=QGridLayout()
+		sliderP_layout.addWidget(self.labelP,0,0)
+		sliderP_layout.addWidget(self.hsliderP,0,1,2,1)
+		sliderP_layout.addWidget(self.spinboxP,1,0)
 		group_sliderP=QWidget()
 		group_sliderP.setLayout(sliderP_layout)
 		
@@ -618,7 +533,7 @@ class PID_Widget(QGroupBox):
 		stepI = Imax/100
 		# Slider Groupe I
 		self.labelI = QLabel('I')
-		self.hsliderI = QSlider(Qt.Horizontal)
+		self.hsliderI = QSlider(Qt.Vertical)
 		self.hsliderI.setRange(0,int(Imax*100))
 		self.hsliderI.setValue(int(defaultI*100))
 		self.spinboxI=QDoubleSpinBox()
@@ -627,10 +542,10 @@ class PID_Widget(QGroupBox):
 		self.spinboxI.setValue(round(defaultI,2))
 		self.hsliderI.valueChanged.connect(self.spinBoxI_setValue)
 		self.spinboxI.valueChanged.connect(self.hsliderI_setValue)
-		sliderI_layout=QHBoxLayout()
-		sliderI_layout.addWidget(self.labelI)
-		sliderI_layout.addWidget(self.hsliderI)
-		sliderI_layout.addWidget(self.spinboxI)
+		sliderI_layout=QGridLayout()
+		sliderI_layout.addWidget(self.labelI,0,0)
+		sliderI_layout.addWidget(self.hsliderI,0,1,2,1)
+		sliderI_layout.addWidget(self.spinboxI,1,0)
 		group_sliderI=QWidget()
 		group_sliderI.setLayout(sliderI_layout)
 		
@@ -639,24 +554,24 @@ class PID_Widget(QGroupBox):
 		stepD = Dmax/100
 
 		self.labelD = QLabel('D')
-		self.hsliderD = QSlider(Qt.Horizontal)
+		self.hsliderD = QSlider(Qt.Vertical)
 		self.hsliderD.setRange(0,int(Dmax*100))
 		self.hsliderD.setValue(int(defaultD*100))
 		self.spinboxD=QDoubleSpinBox()
 		self.spinboxD.setRange(0,int(Dmax))
-		self.spinboxI.setSingleStep(round(stepD,2))
+		self.spinboxD.setSingleStep(round(stepD,2))
 		self.spinboxD.setValue(round(defaultD,2))
 		self.hsliderD.valueChanged.connect(self.spinBoxD_setValue)
 		self.spinboxD.valueChanged.connect(self.hsliderD_setValue)
-		sliderD_layout=QHBoxLayout()
-		sliderD_layout.addWidget(self.labelD)
-		sliderD_layout.addWidget(self.hsliderD)
-		sliderD_layout.addWidget(self.spinboxD)
+		sliderD_layout=QGridLayout()
+		sliderD_layout.addWidget(self.labelD,0,0)
+		sliderD_layout.addWidget(self.hsliderD,0,1,2,1)
+		sliderD_layout.addWidget(self.spinboxD,1,0)
 		group_sliderD=QWidget()
 		group_sliderD.setLayout(sliderD_layout)
 		
-				# Big PID group
-		groupbox_layout_PID = QVBoxLayout()
+		# Big PID group
+		groupbox_layout_PID = QHBoxLayout()
 		groupbox_layout_PID.addWidget(group_sliderP)   
 		groupbox_layout_PID.addWidget(group_sliderI)
 		groupbox_layout_PID.addWidget(group_sliderD)
@@ -878,11 +793,3 @@ class FocusTracking_Widget(QFrame):
 		self.hslider_lensFreq.setValue(new_value)
 
 
-
-
-
-# class PlotDisplay_Widget(QFrame):
-
-# 	def __init__(self, main=None, *args, **kwargs):
-# 		super().__init__(*args, **kwargs)
-# 		pass

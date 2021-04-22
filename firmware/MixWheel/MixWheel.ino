@@ -58,7 +58,7 @@ AccelStepper stepperTHETA(AccelStepper::DRIVER, STEP_THETA, DIR_THETA);
 
 void setup()
 {
-  int maxManualSpeedTheta = 500;
+  int maxManualSpeedTheta = 5000;
   //-------------------------------------------------------------------------------
   // Set up the DIRECTION pins as OUTPUT
   //-------------------------------------------------------------------------------

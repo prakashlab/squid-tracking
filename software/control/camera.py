@@ -188,7 +188,7 @@ class Camera(object):
 
 class Camera_Simulation(object):
 
-    def __init__(self,sn=None,width=2000,height=2000,framerate=30,color=False):
+    def __init__(self,sn=None,width=1920,height=1080,framerate=30,color=False):
         self.height = height
         self.width = width
         self.sample = None
@@ -208,9 +208,11 @@ class Camera_Simulation(object):
         self.EXPOSURE_TIME_MS_MAX = 4000
 
         # Path for getting an image stream from disk
-        self.path = '/Users/deepak/Dropbox/GravityMachine/ExperimentResults/TestData/seacucmber4_auto_verylong_goodtrack/images'
-        
+        # self.path = '/Users/deepak/Dropbox/GravityMachine/ExperimentResults/TestData/seacucmber4_auto_verylong_goodtrack/images'
         # self.path = '/Users/deepak/Dropbox/GravityMachine/ExperimentResults/TestData/Stentor'
+
+        self.path = '/home/prakashlab/gravitymachine_test_images/DensityBeads'
+
         if(os.path.exists(self.path)):
             self.FileList = os.listdir(self.path)
     
@@ -260,44 +262,43 @@ class Camera_Simulation(object):
     def set_hardware_triggered_acquisition(self):
         pass
 
-    def send_trigger(self):
-
-
-        self.frame_ID = self.frame_ID + 1
-        self.timestamp = time.time()
-        if self.frame_ID == 1:
-            if(self.is_color == False):
-                self.current_frame = np.random.randint(50,size=(2000,2000),dtype=np.uint8)
-                self.current_frame[800:1000,900:1100] = 200
-                # self.current_frame[250:400,400:600] = 200
-                cv2.circle(self.current_frame,(400,400), 100, (200,0,0), -1)
-
-            elif(self.is_color == True):
-                self.current_frame = np.random.randint(50,size=(2000,2000,3),dtype=np.uint8)
-                self.current_frame[800:1000,900:1100,1] = 200
-                self.current_frame[250:400,400:600,1] = 200
-        else:
-            self.current_frame = np.roll(self.current_frame,10,axis=1)
-            # pass 
-            # self.current_frame = np.random.randint(255,size=(768,1024),dtype=np.uint8)
-        if self.new_image_callback_external is not None:
-            self.new_image_callback_external(self)
-
     # def send_trigger(self):
 
     #     self.frame_ID = self.frame_ID + 1
     #     self.timestamp = time.time()
+    #     if self.frame_ID == 1:
+    #         if(self.is_color == False):
+    #             self.current_frame = np.random.randint(50,size=(1080,1920),dtype=np.uint8)
+    #             # self.current_frame[800:1000,900:1100] = 200
+    #             # self.current_frame[250:400,400:600] = 200
+    #             cv2.circle(self.current_frame,(960,400), 100, (200,0,0), -1)
 
-    #     if(self.frame_ID == len(self.FileList)):
-    #         self.frame_ID = 0
-
-    #     file = self.FileList[self.frame_ID]
-
-    #     image = cv2.imread(os.path.join(self.path, file),0)
-    #     self.current_frame = image
-
+    #         elif(self.is_color == True):
+    #             self.current_frame = np.random.randint(50,size=(1080,1920,3),dtype=np.uint8)
+    #             self.current_frame[800:1000,900:1100,1] = 200
+    #             self.current_frame[250:400,400:600,1] = 200
+    #     else:
+    #         self.current_frame = np.roll(self.current_frame,10,axis=1)
+    #         pass 
+    #         # self.current_frame = np.random.randint(255,size=(768,1024),dtype=np.uint8)
     #     if self.new_image_callback_external is not None:
     #         self.new_image_callback_external(self)
+
+    def send_trigger(self):
+
+        self.frame_ID = self.frame_ID + 1
+        self.timestamp = time.time()
+
+        if(self.frame_ID == len(self.FileList)):
+            self.frame_ID = 0
+
+        file = self.FileList[self.frame_ID]
+
+        image = cv2.imread(os.path.join(self.path, file),0)
+        self.current_frame = image
+
+        if self.new_image_callback_external is not None:
+            self.new_image_callback_external(self)
 
     def read_frame(self):
         pass
