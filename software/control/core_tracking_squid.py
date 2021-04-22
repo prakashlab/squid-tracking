@@ -147,7 +147,7 @@ class TrackingController(QObject):
 		self.image = image
 
 		# @@@testing
-		print('In Tracking controller new frame')
+		# print('In Tracking controller new frame')
 
 		tracking_triggered = self.internal_state.data['track_obj_image_hrdware']
 
@@ -264,9 +264,9 @@ class TrackingController(QObject):
 				self.update_obj_position()
 				# get motion commands
 				# Error is in mm.
-				# print('Image error: {}, {}, {} mm'.format(x_error, y_error, z_error))
+				print('Image error: {}, {}, {} mm'.format(x_error, y_error, z_error))
 				X_order, Y_order, Z_order = self.get_motion_commands(x_error,y_error,z_error)
-
+				# print('Motion order: {}, {}, {} mm'.format(X_order, Y_order, Z_order))
 				# New serial interface (send data directly to micro-controller object)
 				self.microcontroller.move_x_nonblocking(X_order)
 				self.microcontroller.move_y_nonblocking(Y_order)
@@ -539,6 +539,7 @@ class microcontroller_Receiver(QObject):
 				if(key in INTERNAL_STATE_VARIABLES):
 					self.internal_state.data[key] = self.RecData[key]
 
+			print('Rec data: {}, {}, {}'.format(self.x_pos, self.y_pos, self.z_pos))
 			# print('Read packet ... parsing')
 			# for key in REC_DATA:
 			# 	self.RecData[key] = data[key]

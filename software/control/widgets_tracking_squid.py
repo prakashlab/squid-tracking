@@ -415,8 +415,8 @@ class NavigationWidget(QFrame):
         self.btn_moveX_backward.clicked.connect(self.move_x_backward)
         self.btn_moveY_forward.clicked.connect(self.move_y_forward)
         self.btn_moveY_backward.clicked.connect(self.move_y_backward)
-        self.btn_moveZ_forward.clicked.connect(self.move_theta_forward)
-        self.btn_moveZ_backward.clicked.connect(self.move_theta_backward)
+        self.btn_moveZ_forward.clicked.connect(self.move_z_forward)
+        self.btn_moveZ_backward.clicked.connect(self.move_z_backward)
         
     def move_x_forward(self):
         self.navigationController.move_x(self.entry_dX.value())
@@ -426,10 +426,10 @@ class NavigationWidget(QFrame):
         self.navigationController.move_y(self.entry_dY.value())
     def move_y_backward(self):
         self.navigationController.move_y(-self.entry_dY.value())
-    def move_theta_forward(self):
-        self.navigationController.move_theta(self.entry_dZ.value())
-    def move_theta_backward(self):
-        self.navigationController.move_theta(-self.entry_dZ.value())
+    def move_z_forward(self):
+        self.navigationController.move_z(self.entry_dZ.value())
+    def move_z_backward(self):
+        self.navigationController.move_z(-self.entry_dZ.value())
     
     def update_display(self, X_stage, Y_stage, Z_stage):
     	self.label_Xpos.setText('{:.02f}'.format(round(X_stage,2)))
