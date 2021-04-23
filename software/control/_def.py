@@ -128,7 +128,7 @@ class Tracking:
 class MicrocontrollerDef:
      # Time interval for reading micro Controller (ms)
     UCONTROLLER_READ_INTERVAL = 25 
-    MSG_LENGTH = 12
+    MSG_LENGTH = 9
     CMD_LENGTH = 4
     N_BYTES_POS = 3
     RUN_OPENLOOP = False # Determines whether stepper/encoders are used to calculate stage positions.

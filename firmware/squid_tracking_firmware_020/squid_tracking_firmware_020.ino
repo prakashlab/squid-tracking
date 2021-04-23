@@ -3,6 +3,8 @@
 #include <DueTimer.h>
 #include <AccelStepper.h>
 
+#define TESTING;  // For testing without all hardware connected (dev of firmware + software when only uController is available)
+
 /***************************************************************************************************/
 /***************************************** Communications ******************************************/
 /***************************************************************************************************/
@@ -320,7 +322,8 @@ void loop() {
     }
   }
 
-
+  #ifndef TESTING
+  
   if(flag_read_joystick) 
   {
     // read x joystick
@@ -386,6 +389,7 @@ void loop() {
     
     flag_read_joystick = false;
   }
+  #endif
 
   // send position update to computer
   if(flag_send_pos_update)
@@ -409,6 +413,7 @@ void loop() {
     flag_send_pos_update = false;
   }
 
+  #ifndef TESTING
   // encoded movement
   if(X_use_encoder)
     stepper_X.setCurrentPosition(X_pos);
@@ -416,7 +421,8 @@ void loop() {
     stepper_Y.setCurrentPosition(Y_pos);
   if(Z_use_encoder)
     stepper_Z.setCurrentPosition(Z_pos);
-
+  #endif
+  
   // check if commanded position has been reached
   if(X_commanded_movement_in_progress && stepper_X.currentPosition()==X_commanded_target_position)
     X_commanded_movement_in_progress = false;
