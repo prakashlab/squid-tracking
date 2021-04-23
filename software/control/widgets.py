@@ -576,7 +576,7 @@ class RecordingWidget(QGroupBox):
 
 		else:
 			self.internal_state.data['Acquisition']= False
-			
+			self.trackingDataSaver.stop_DataSaver()
 			for channel in self.imaging_channels:
 				self.streamHandler[channel].stop_recording()
 				self.checkbox[channel].setEnabled(True)
