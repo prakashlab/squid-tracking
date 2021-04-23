@@ -539,7 +539,6 @@ class microcontroller_Receiver(QObject):
 				if(key in INTERNAL_STATE_VARIABLES):
 					self.internal_state.data[key] = self.RecData[key]
 
-			print('Rec data: {}, {}, {}'.format(self.x_pos, self.y_pos, self.z_pos))
 			# print('Read packet ... parsing')
 			# for key in REC_DATA:
 			# 	self.RecData[key] = data[key]
@@ -592,35 +591,21 @@ class TrackingDataSaver(QObject):
 
 		self.base_path = './'
 		self.experiment_ID = ''
-
 		self.queueLen = 10
-
 		self.queue = Queue(self.queueLen) # max 10 items in the queue
-
 		self.saveDataNames = SAVE_DATA
-
 		self.saveDataNames_imageChannels = None 
-
 		# Update Data fields with no:of imaging channels
 		self.update_imaging_channels()
-
-
-
 		self.DataToQueue = {key:[] for key in self.saveDataNames + self.internal_state.data['imaging channels']}
-
 		# self.DataToSave_dict = {key:[] for key in self.saveDataNames + self.internal_state.data['imaging channels']}
-
 		self.DataToSave_dict = None
 		self.DataToSave = []
-
 		self.current_image_name = {key:[] for key in self.internal_state.data['imaging channels']}
-
 		# CSV register
 		self.csv_register = CSV_Tool.CSV_Register(header = [self.saveDataNames_imageChannels])
-
 		# Use a counter 
 		self.counter = 0
-
 		self.stop_signal_received = False
 		
 		self.thread = Thread(target=self.process_queue)
