@@ -25,7 +25,7 @@ import control.core as core
 import control.core_tracking as core_tracking
 import control.microcontroller as microcontroller
 
-SIMULATION = False
+SIMULATION = True
 
 class GravityMachine_GUI(QMainWindow):
 
@@ -295,11 +295,11 @@ class GravityMachine_GUI(QMainWindow):
 			for key in self.imaging_channels:
 				self.liveController[key].stop_live()
 				self.camera[key].close()
-				self.imageSaver[key].stop_saving_images()
+				self.imageSaver[key].close()
 				self.imageDisplay[key].close()
 				self.imageDisplayWindow[key].close()
 			
-			self.trackingDataSaver.stop_DataSaver()
+			self.trackingDataSaver.close()
 			
 			self.imageDisplayWindow_ThresholdedImage.close()
 
