@@ -147,7 +147,7 @@ class TrackingController(QObject):
 		self.image = image
 
 		# @@@testing
-		print('In Tracking controller new frame')
+		# print('In Tracking controller new frame')
 
 		tracking_triggered = self.internal_state.data['track_obj_image_hrdware']
 
@@ -235,8 +235,6 @@ class TrackingController(QObject):
 					x_error, z_error = self.units_converter.px_to_mm(self.posError_image[0], self.image_width), self.units_converter.px_to_mm(self.posError_image[1], self.image_width)
 				elif(self.rotate_image_angle == 90):
 					z_error, x_error = self.units_converter.px_to_mm(self.posError_image[0], self.image_width), self.units_converter.px_to_mm(self.posError_image[1], self.image_width)
-
-
 				# Flip the sign of Z-error since image coordinates and physical coordinates are reversed.
 				# z_error = -z_error
 
@@ -272,13 +270,14 @@ class TrackingController(QObject):
 				self.microcontroller.move_x_nonblocking(X_order)
 				self.microcontroller.move_y_nonblocking(Y_order)
 				self.microcontroller.move_theta_nonblocking(-Theta_order)  
-		
 
 			# Update the Internal State Model
 			self.update_internal_state()
 
 			# Send a signal to the DataSaver module and instruct it to Save Data
-			self.save_data_signal.emit()
+			if self.internal_state.data['Acquisition'] == True:
+				# print('Sending data for saving...')
+				self.save_data_signal.emit()
 
 			self.get_real_tracking_fps()
 
@@ -356,7 +355,9 @@ class TrackingController(QObject):
 		else:
 			self.Z_objStage.append(0)
 
-		print('Virtual depth :{} mm'.format(round(self.Z_objStage[-1], 2)))
+		# @@@ testing 
+		# print('Virtual depth :{} mm'.format(round(self.Z_objStage[-1], 2)))
+	
 	# def get_motion_commands_xyz(self, x_error, y_error, z_error):
 	# 	# Convert from mm to steps (these are rounded to the nearest integer).
 	# 	x_error_steps = int(Motion.STEPS_PER_MM_XY*x_error)
@@ -661,18 +662,12 @@ class TrackingDataSaver(QObject):
 		self.experiment_ID = ''
 
 		self.queueLen = 10
-
 		self.queue = Queue(self.queueLen) # max 10 items in the queue
-
 		self.saveDataNames = SAVE_DATA
-
 		self.saveDataNames_imageChannels = None 
 
 		# Update Data fields with no:of imaging channels
 		self.update_imaging_channels()
-
-
-
 		self.DataToQueue = {key:[] for key in self.saveDataNames + self.internal_state.data['imaging channels']}
 
 		# self.DataToSave_dict = {key:[] for key in self.saveDataNames + self.internal_state.data['imaging channels']}
@@ -697,8 +692,10 @@ class TrackingDataSaver(QObject):
 
 	def process_queue(self):
 		while True:
+
 			# stop the thread if stop signal is received
 			if self.stop_signal_received:
+				# print('Datasaver stopped... returning')
 				return
 			# process the queue
 			try:
@@ -710,7 +707,7 @@ class TrackingDataSaver(QObject):
 				# print(self.DataToSave)
 				# Register the data to a CSV file
 				self.csv_register.write_line([self.DataToSave])
-
+				# print('Wrote data to CSV file')
 				self.counter = self.counter + 1
 				self.queue.task_done()
 			except:
@@ -720,7 +717,6 @@ class TrackingDataSaver(QObject):
 
 	def enqueue(self):
 
-		# print('Placing data in save queue')
 		# Get the most recent internal state values
 		for key in self.saveDataNames:
 			self.DataToQueue[key] = self.internal_state.data[key]
@@ -731,20 +727,17 @@ class TrackingDataSaver(QObject):
 			# Reset the current image name
 			self.current_image_name[key] = ''
 
-
 		try:
 			self.queue.put_nowait(self.DataToQueue)
-
+			# print('Placing data in save queue')
 		except:
-			'Data queue full, current cycle data not saved'
+			print('Data queue full, current cycle data not saved')
 
-
-	# Stop signal from Acquisition Widget
-	def stop_DataSaver(self):
-		
+	def close(self):
 		# self.queue.join()
-		# self.thread.join()
 		self.stop_signal_received = True
+		self.thread.join()
+
 
 
 	def set_base_path(self,path):
@@ -764,20 +757,12 @@ class TrackingDataSaver(QObject):
 		'''
 		 # @@@ Testing
 		print('Starting new experiment...')
-
 		# generate unique experiment ID
 		if(self.internal_state.data['Acquisition']==True):
-
 			 # @@@ Testing
 			print('Creating folders...')
-
 			self.experiment_ID = experiment_ID + '_' + datetime.now().strftime('%Y-%m-%d %H-%M-%-S')
-			
-
 			self.internal_state.data['experiment_ID'] = self.experiment_ID
-			
-		   
-
 			# create a new folder to hold current experiment data
 			try:
 				os.mkdir(os.path.join(self.base_path, self.experiment_ID))
@@ -788,18 +773,11 @@ class TrackingDataSaver(QObject):
 
 			 # Create and store metadata file
 			self.create_metadata_file()
-
-		   
-		
 		# reset the counter
 		self.track_counter = 0
-
 		self.start_new_track()
 
 		
-
-
-
 	def start_new_track(self):
 		'''
 		Function is called when the track button is pressed. If 'Acquisition' button is also pressed
@@ -827,6 +805,11 @@ class TrackingDataSaver(QObject):
 				self.csv_register.start_write()
 				print('Created new file {}'.format(file_name))
 
+				# Set the stop_signal flag so data saving can begin. 
+				if(self.stop_signal_received == True):
+					self.stop_signal_received = False
+					print('Starting data saver again...')
+				
 		else:
 			pass
 
@@ -959,7 +942,7 @@ class ImageSaver(QObject):
 
 				# Save the image
 				cv2.imwrite(saving_path,image)
-				print('Wrote image {} to disk'.format(image_file_name))
+				# print('Wrote image {} to disk'.format(image_file_name))
 				self.counter = self.counter + 1
 				self.queue.task_done()
 				self.image_lock.release()
@@ -1026,9 +1009,11 @@ class ImageSaver(QObject):
 	def set_recording_time_limit(self,time_limit):
 		self.recording_time_limit = time_limit
 
-	def stop_saving_images(self):
-		# self.queue.join()
+
+	def close(self):
+		self.queue.join()
 		self.stop_signal_received = True
+		self.thread.join()
  
 
 
