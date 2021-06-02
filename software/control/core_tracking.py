@@ -443,7 +443,10 @@ class TrackingController(QObject):
 			
 	def update_tracking_setpoint(self):
 
-		self.image_setPoint = self.image_center + self.image_offset
+		if(self.image_center is not None):
+			self.image_setPoint = self.image_center + self.image_offset
+		else:
+			pass
 		#@@@Testing
 		# print('New tracking set point :{}'.format(self.image_setPoint))
 
