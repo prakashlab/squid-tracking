@@ -1,7 +1,7 @@
 # Scale-free Vertical Tracking Microscopy (aka Gravity Machine)
 
 <p align="center">
-  <img src="tracking_planktonic_larvae.gif" alt="animated" />
+  <img src="https://github.com/deepakkrishnamurthy/gravitymachine-misc/blob/c90dee90b29576826da3b59f27a87a383417460f/snail.gif" alt="animated" />
 </p>
 
 Gravity Machine is a new paradigm in tracking microscopy invented by [Krishnamurthy et al.](https://www.nature.com/articles/s41592-020-0924-7) that uses a "hydrodynamic treadmill for single cells"  to track microscale organisms like marine plankton over theoretically infinite scales in the vertical direction while maintaining microscale resolution. In this repo we share the software (Python) and firmware (C++) for running Gravity Machine. This is jointly developed with other open-microscopy platforms, specifically [Octopi](https://github.com/hongquanli/octopi-research) and [SQUID](https://github.com/prakashlab/squid-tracking) being developed at the [Prakash lab, Stanford](https://github.com/prakashlab). The repo documents both legacy and current versions of the code-base. As we move towards an initial release, kindly watch this space for updates! 
@@ -24,6 +24,13 @@ Gravity Machine allows you to capture dynamics of processes that can span multip
 
 To explore more visit the [Gravity Machine website](https://gravitymachine.org/) and our associated [data-gallery](https://gravitymachine.org/gallery) of the first-ever multi-scale plankton tracks.
 
+<p align="center">
+  <img src="https://github.com/deepakkrishnamurthy/gravitymachine-misc/blob/44969a10a4d9e9104ebcb424e8354a98fb624db1/Volvox_20x_1hour_track_abridged.gif" alt="animated" />
+</p>
+<p align="center">
+<em> Gravity machine can be used to track free-swimming single cells and organisms over long length and time-scales. Shown above is a tracking demonstration of a single algal colony (Volvox sp. ~250um in size) tracked for ~ 1 hour as it swims up by 2.5 meters (10000 body lengths)! </em>
+</p>
+
 ## Getting Started
 
 The tracking microscope is run using software (Python) that runs on standard PC, and handles the real-time image-processing and GUI interaction with the user, along with firmware (C++) that runs on a microcontroller ([Arduino Due](https://store.arduino.cc/usa/due)). The code for each of those can be found within the *software* and *firmware* folders, respectively. Start by installing the software dependencies by following [GravMachine_Install_Ubuntu_18_04_CUDA.md](https://github.com/deepakkrishnamurthy/gravitymachine-research/blob/d5c8d69aa91bfaa6998d162301d82193f917a471/GravMachine_Install_Ubuntu_18_04_CUDA.md).
@@ -33,7 +40,7 @@ The tracking microscope is run using software (Python) that runs on standard PC,
 
 ## Selected Publications
 1. Krishnamurthy, Deepak, Hongquan Li, François Benoit du Rey, Pierre Cambournac, Adam G. Larson, Ethan Li, and Manu Prakash. "Scale-free vertical tracking microscopy." Nature Methods (2020): 1-12. [Weblink](https://www.nature.com/articles/s41592-020-0924-7)
-2. Krishnamurthy, Deepak, Hongquan Li, François Benoit du Rey, Pierre Cambournac, Adam Larson, and Manu Prakash. "Scale-free Vertical Tracking Microscopy: Towards Bridging Scales in Biological Oceanography." bioRxiv (2019): 610246.
+2. Krishnamurthy, Deepak, Hongquan Li, François Benoit du Rey, Pierre Cambournac, Adam Larson, and Manu Prakash. "Scale-free Vertical Tracking Microscopy: Towards Bridging Scales in Biological Oceanography." bioRxiv (2019): 610246. [Weblink](https://doi.org/10.1101/610246)
 
 ## To cite this tool
 	@article{krishnamurthy2020scale,
