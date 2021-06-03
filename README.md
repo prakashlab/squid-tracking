@@ -22,7 +22,7 @@ To explore more visit the [Gravity Machine website](https://gravitymachine.org/)
 
 ## Getting Started
 
-The tracking microscope is run using software (Python) that runs on standard PC, and handles the real-time image-processing and GUI interaction with the user, along with firmware (C++) that runs on a microcontroller ([Arduino Due](https://store.arduino.cc/usa/due)). The code for each of those can be found within the *software* and *firmware* folders, respectively. 
+The tracking microscope is run using software (Python) that runs on standard PC, and handles the real-time image-processing and GUI interaction with the user, along with firmware (C++) that runs on a microcontroller ([Arduino Due](https://store.arduino.cc/usa/due)). The code for each of those can be found within the *software* and *firmware* folders, respectively. Start by installing the software dependencies by following [GravMachine_Install_Ubuntu_18_04_CUDA.md](https://github.com/deepakkrishnamurthy/gravitymachine-research/blob/d5c8d69aa91bfaa6998d162301d82193f917a471/GravMachine_Install_Ubuntu_18_04_CUDA.md).
 
 ## News
 **5 Dec 2020** We are currently working towards a release of the latest software and firmware versions. Please watch this space for updates!
