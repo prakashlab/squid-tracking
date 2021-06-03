@@ -1,7 +1,7 @@
 # Scale-free Vertical Tracking Microscopy (aka Gravity Machine)
 
 <p align="center">
-  <img src="tracking_planktonic_larvae.gif.gif" alt="animated" />
+  <img src="tracking_planktonic_larvae.gif" alt="animated" />
 </p>
 
 Gravity Machine is a new paradigm in tracking microscopy invented by [Krishnamurthy et al.](https://www.nature.com/articles/s41592-020-0924-7) that uses a "hydrodynamic treadmill for single cells"  to track microscale organisms like marine plankton over theoretically infinite scales in the vertical direction while maintaining microscale resolution. In this repo we share the software (Python) and firmware (C++) for running Gravity Machine. This is jointly developed with other open-microscopy platforms, specifically [Octopi](https://github.com/hongquanli/octopi-research) and [SQUID](https://github.com/prakashlab/squid-tracking) being developed at the [Prakash lab, Stanford](https://github.com/prakashlab). The repo documents both legacy and current versions of the code-base. As we move towards an initial release, kindly watch this space for updates! 
