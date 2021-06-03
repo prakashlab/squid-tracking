@@ -28,7 +28,7 @@ To explore more visit the [Gravity Machine website](https://gravitymachine.org/)
   <img src="https://github.com/deepakkrishnamurthy/gravitymachine-research/blob/77954501d28fe29b6daffba4cdd72f2979bc67ac/Volvox_20x_1hour_track_abridged.gif" alt="animated" />
 </p>
 <p align="center">
-<em> Gravity machine can be used to track free-swimming single cells and organisms over long length and time-scales. Shown above is a tracking demonstration of a single algal colony (Volvox sp. 500um in size) tracked for ~ 1 hour as it swims up by 2.5 meters! </em>
+<em> Gravity machine can be used to track free-swimming single cells and organisms over long length and time-scales. Shown above is a tracking demonstration of a single algal colony (Volvox sp. ~250um in size) tracked for ~ 1 hour as it swims up by 2.5 meters! </em>
 </p>
 
 ## Getting Started
