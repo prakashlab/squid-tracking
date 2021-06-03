@@ -1,21 +1,13 @@
 ## Setting up the environments
 
 ### install software dependencies
-```
-sudo rm /var/lib/apt/lists/lock
-sudo apt-get update
-sudo apt-get install python3-pip
-sudo apt-get install python3-pyqtgraph
-sudo apt-get install python3-pyqt5
-pip3 install qtpy pyserial
-```
+
+[Gravity Machine Software dependencies] https://github.com/deepakkrishnamurthy/gravitymachine-research/blob/d5c8d69aa91bfaa6998d162301d82193f917a471/GravMachine_Install_Ubuntu_18_04_CUDA.md
 
 ### install camera drivers
-If you're using The Imaging Source cameras, follow instructions on https://github.com/TheImagingSource/tiscamera 
+If you're using The Imaging Source cameras, follow instructions on https://github.com/TheImagingSource/tiscamera (if not already installed) 
 
 If you're using Daheng cameras, follow instructions in the `drivers and libraries/daheng camera` folder
-
-
 
 ### enable access to serial ports without sudo
 
@@ -45,9 +37,8 @@ Use one of the following to start the program
 ```
 python3 main.py
 python3 main_camera_only.py
-python3 main_motion_only.py
 ```
-To start the program when no hardware is connected, use
+To start the program when no cameras are connected, use
 ```
-python3 main_simulation.py
+python3 main.py --simulation
 ```
