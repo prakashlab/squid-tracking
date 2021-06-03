@@ -25,12 +25,11 @@ import control.core as core
 import control.core_tracking as core_tracking
 import control.microcontroller as microcontroller
 
-SIMULATION = True
+# SIMULATION = True
 
 class GravityMachine_GUI(QMainWindow):
 
-
-	def __init__(self, *args, **kwargs):
+	def __init__(self, simulation = False, *args, **kwargs):
 		super().__init__(*args, **kwargs)
 		
 		self.setWindowTitle('Gravity Machine v2.0')
@@ -55,17 +54,12 @@ class GravityMachine_GUI(QMainWindow):
 		
 		self.imageDisplayWindow_ThresholdedImage = core.ImageDisplayWindow('Thresholded Image')
 		
-		# for key in self.imaging_channels:
-		# 	self.imageDisplayWindow[key].show()
-
-		# self.imageDisplayWindow_ThresholdedImage.show()
 		#------------------------------------------------------------------
 		# Load objects
 		#------------------------------------------------------------------
-
 		# cameras/image streams
 		self.camera = {}
-		if SIMULATION is True:
+		if simulation is True:
 			# Define a camera object for each unique image-stream.
 			self.camera = {key:camera_Daheng.Camera_Simulation() for key in self.imaging_channels}
 			# self.microcontroller = microcontroller.Microcontroller_Simulation()
