@@ -26,7 +26,9 @@ To explore more visit the [Gravity Machine website](https://gravitymachine.org/)
 
 <p align="center">
   <img src="https://github.com/deepakkrishnamurthy/gravitymachine-research/blob/77954501d28fe29b6daffba4cdd72f2979bc67ac/Volvox_20x_1hour_track_abridged.gif" alt="animated" />
-	<em>Gravity machine can be used to track free-swimming single cells and organisms over long length and time-scales. Shown here is an example of a single algal colony (500um in size) tracked for ~ 1 hour as it swims up 2.5 meters! </em>
+</p>
+<p align="center">
+<em> Gravity machine can be used to track free-swimming single cells and organisms over long length and time-scales. Shown above is a tracking demonstration of a single algal colony (Volvox sp. 500um in size) tracked for ~ 1 hour as it swims up by 2.5 meters! </em>
 </p>
 
 ## Getting Started
@@ -38,7 +40,7 @@ The tracking microscope is run using software (Python) that runs on standard PC,
 
 ## Selected Publications
 1. Krishnamurthy, Deepak, Hongquan Li, François Benoit du Rey, Pierre Cambournac, Adam G. Larson, Ethan Li, and Manu Prakash. "Scale-free vertical tracking microscopy." Nature Methods (2020): 1-12. [Weblink](https://www.nature.com/articles/s41592-020-0924-7)
-2. Krishnamurthy, Deepak, Hongquan Li, François Benoit du Rey, Pierre Cambournac, Adam Larson, and Manu Prakash. "Scale-free Vertical Tracking Microscopy: Towards Bridging Scales in Biological Oceanography." bioRxiv (2019): 610246.
+2. Krishnamurthy, Deepak, Hongquan Li, François Benoit du Rey, Pierre Cambournac, Adam Larson, and Manu Prakash. "Scale-free Vertical Tracking Microscopy: Towards Bridging Scales in Biological Oceanography." bioRxiv (2019): 610246. [Weblink](https://doi.org/10.1101/610246)
 
 ## To cite this tool
 	@article{krishnamurthy2020scale,
