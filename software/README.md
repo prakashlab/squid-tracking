@@ -2,7 +2,7 @@
 
 ### install software dependencies
 
-[Gravity Machine Software dependencies] https://github.com/deepakkrishnamurthy/gravitymachine-research/blob/d5c8d69aa91bfaa6998d162301d82193f917a471/GravMachine_Install_Ubuntu_18_04_CUDA.md
+[Gravity Machine Software dependencies](https://github.com/deepakkrishnamurthy/gravitymachine-research/blob/d5c8d69aa91bfaa6998d162301d82193f917a471/GravMachine_Install_Ubuntu_18_04_CUDA.md)
 
 ### install camera drivers
 If you're using The Imaging Source cameras, follow instructions on https://github.com/TheImagingSource/tiscamera (if not already installed) 
