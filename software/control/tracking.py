@@ -199,6 +199,8 @@ class Tracker_Image(object):
 		# Initialize Neural Net based Tracker
 		elif(self.tracker_type in self.NEURALNETTRACKERS.keys()):
 			# Initialize the tracker with this centroid position
+			print('Initializing with daSiamRPN tracker')
+
 			target_pos, target_sz = np.array([centroid[0], centroid[1]]), np.array([bbox[2], bbox[3]])
 
 			if(self.color==False):

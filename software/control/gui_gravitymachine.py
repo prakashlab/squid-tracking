@@ -84,7 +84,7 @@ class GravityMachine_GUI(QMainWindow):
 		self.streamHandler = {}
 		for key in self.imaging_channels:
 			if(CAMERAS[key]['make']=='TIS'):
-				self.streamHandler[key] = core.StreamHandler(camera = self.camera[key], imaging_channel = key)
+				self.streamHandler[key] = core.StreamHandler(camera = self.camera[key], imaging_channel = key, flip_image = 'Vertical')
 			else:
 				self.streamHandler[key] = core.StreamHandler(camera = self.camera[key], imaging_channel = key, flip_image = 'Vertical')
 
