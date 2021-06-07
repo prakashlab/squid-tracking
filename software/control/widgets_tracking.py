@@ -700,17 +700,12 @@ class FocusTracking_Widget(QFrame):
 	def button_focusTracking_clicked(self):
 		
 		if self.button_FocusTracking.isChecked():
-			
 			# Set the internal state value
 			self.internal_state.data['track_focus'] = True
-
 			self.microcontroller.send_focus_tracking_command(True)
-
 			# Start the liquid lens sweep
 			self.trackingController.tracker_focus.liquid_lens.start()
 			self.button_FocusTracking.setText("Stop Focus Tracking")
-
-			
 		else:
 			# Set the internal state value
 			self.internal_state.data['track_focus'] = False
@@ -720,31 +715,21 @@ class FocusTracking_Widget(QFrame):
 			
 	def spinbox_crop_ratio_setValue(self, value):
 		newvalue=int(value)
-
 		self.spinbox_crop_ratio.setValue(newvalue)
-
 		self.trackingController.set_cropped_image_size(newvalue)
 
 	def hslider_crop_ratio_setValue(self, value):
 		newvalue=int(value)
-
 		self.hslider_crop_ratio.setValue(newvalue)
-
-
 
 	def spinbox_lensAmpl_setValue(self,value):
 		newvalue=float(value)/100.
 		self.spinbox_lensAmpl.setValue(newvalue)
 
-		
-
 		# Also send the amplitude change to the liquid lens
 		# @@@@@@ To Implement @@@@@@@
-
 		self.trackingController.tracker_focus.set_Amp(newvalue/2)
-
 		self.trackingController.tracker_focus.liquid_lens.set_Amp(newvalue/2)
-
 
 		# self.object_tracking.liquid_lens_ampl=newvalue/2
 		# self.object_tracking.ytracker.set_ampl(newvalue/2)
