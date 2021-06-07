@@ -144,6 +144,7 @@ class GravityMachine_GUI(QMainWindow):
 
 		self.SettingsTab = QTabWidget()
 		self.SettingsTab.addTab(self.PID_Group_Widget, 'PID')
+		self.SettingsTab.addTab(self.FocusTracking_Widget, 'Liquid Lens')
 		self.SettingsTab.addTab(self.navigationWidget, 'Navigation')
 		self.SettingsTab.addTab(self.stageCalibrationWidget, 'Calibration')
 		self.SettingsTab.addTab(self.plotWidget, 'Plots')

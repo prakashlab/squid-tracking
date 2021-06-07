@@ -166,8 +166,6 @@ class Tracker_Focus():
     def set_maxGain(self,gain):
         self.maxGain=gain
 
-
-
     def initialise_ytracking(self):
         self.YfocusMeasure = deque(maxlen = self.YdequeLen)
         self.YfocusPosition = deque(maxlen = self.YdequeLen) #in mm
