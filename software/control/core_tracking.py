@@ -575,6 +575,7 @@ class microcontroller_Receiver(QObject):
 					# Theta stage position (encoder counts to radians)
 					self.theta_pos = 2*np.pi*byte_operations.unsigned_to_signed(data[9:12],MicrocontrollerDef.N_BYTES_POS)/(Encoders.COUNTS_PER_REV_THETA) 
 
+				self.RecData['FocusPhase'] = phase
 				self.RecData['X_stage'] = self.x_pos
 				self.RecData['Y_stage'] = self.y_pos
 				self.RecData['Theta_stage'] = self.theta_pos

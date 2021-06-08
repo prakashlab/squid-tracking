@@ -728,8 +728,10 @@ class FocusTracking_Widget(QFrame):
 
 		# Also send the amplitude change to the liquid lens
 		# @@@@@@ To Implement @@@@@@@
-		self.trackingController.tracker_focus.set_Amp(newvalue/2)
-		self.trackingController.tracker_focus.liquid_lens.set_Amp(newvalue/2)
+		self.trackingController.tracker_focus.set_Amp(newvalue/2.0)
+		self.trackingController.tracker_focus.liquid_lens.set_Amp(newvalue/2.0)
+
+		internal_state.data['liquidLens_Amp'] = newvalue
 
 		# self.object_tracking.liquid_lens_ampl=newvalue/2
 		# self.object_tracking.ytracker.set_ampl(newvalue/2)
@@ -762,6 +764,8 @@ class FocusTracking_Widget(QFrame):
 
 		# Send new frequency value to microcontroller
 		self.microcontroller.send_liquid_lens_freq(newvalue)
+
+		internal_state.data['liquidLens_Freq'] = newvalue
 
 		# Also send the amplitude change to the liquid lens
 		# @@@@@@ To Implement @@@@@@@
