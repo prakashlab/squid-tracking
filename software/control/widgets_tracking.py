@@ -673,8 +673,12 @@ class FocusTracking_Widget(QFrame):
 		slider_lensAmpl_layout.addWidget(self.label_lensAmpl)
 		slider_lensAmpl_layout.addWidget(self.hslider_lensAmpl)
 		slider_lensAmpl_layout.addWidget(self.spinbox_lensAmpl)
+		tmp = QVBoxLayout()
+		tmp.addLayout(slider_lensAmpl_layout)
+		tmp.addWidget(QLabel('Note: Shown amplitude is for a 10x lens. Multiply the value by 6.25 when using an 4x objective'))
 		group_slider_lensAmpl=QWidget()
-		group_slider_lensAmpl.setLayout(slider_lensAmpl_layout)
+		# group_slider_lensAmpl.setLayout(slider_lensAmpl_layout)
+		group_slider_lensAmpl.setLayout(tmp)
 
 		self.groupbox_FocusTracking = QGroupBox('Focus Tracking')
 
