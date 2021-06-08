@@ -248,6 +248,8 @@ class TrackingController(QObject):
 
 					# y-error in mm
 					y_error = self.tracker_focus.get_focus_error(image, self.centroid)
+					# @@@ Disable focus tracking @@@
+					y_error = 0
 				else:
 					y_error = 0
 

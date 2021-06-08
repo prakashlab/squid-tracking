@@ -186,7 +186,7 @@ FocusTracking = {'Cropped image ratio':{'default':10}}
 # Gravity machine (Image calibration 30Dec2020)
 OBJECTIVES = {'2x':{'magnification':2, 'NA':0.10, 'PixelPermm':217}, '4x':{'magnification':4, 'NA':0.13, 'PixelPermm':432}, '10x':{'magnification':10, 'NA':0.25, 'PixelPermm':1066}, '20x':{'magnification':20, 'NA':0.4, 'PixelPermm':4008}, '40x':{'magnification':40, 'NA':0.6,'PixelPermm':8016}}
 
-DEFAULT_OBJECTIVE = '2x'
+DEFAULT_OBJECTIVE = '4x'
   
 
 CAMERAS = {'DF1':{'make':'TIS','serial':"08910100", 'px_format':(2048, 1536), 'color_format': 'GRAY8', 'fps': 75}, 'DF2':{'make':'TIS','serial':"08910102", 'px_format':(2048, 1536), 'color_format': 'GRAY8', 'fps': 75}}

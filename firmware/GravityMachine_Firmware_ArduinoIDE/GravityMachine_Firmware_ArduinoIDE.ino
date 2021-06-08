@@ -1029,7 +1029,7 @@ void HandleInputEncoderInterrupt()
   _InputEncoderAPrev = _InputEncoderASet;
   _InputEncoderBPrev = _InputEncoderBSet;
 
-  if(!flag_focus_tracking || StageManualMode){
+  if(StageManualMode || true){
     // Step the Focus stage Stepper by a small number of steps
     if(DirInput > 0)
     {
