@@ -162,6 +162,7 @@ class optotune_lens:
 		# This change of amplitude is not necessary
 		# self.amp = 0
 		self.sendMode()
+		self.changeOffset(0):
 		# self.getCurrentLimits()
 		# self.sendProperty("UpperCurr",self.upper_curr)
 		# self.sendProperty("LowerCurr",self.lower_curr)
