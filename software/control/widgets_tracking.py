@@ -782,7 +782,6 @@ class FocusTracking_Widget(QFrame):
 		self.spinbox_lensFreq.setValue(newvalue)
 
 		self.trackingController.tracker_focus.set_Freq(newvalue)
-
 		self.trackingController.tracker_focus.liquid_lens.set_Freq(newvalue)
 
 		# Send new frequency value to microcontroller

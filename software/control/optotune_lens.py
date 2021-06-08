@@ -13,15 +13,12 @@ import warnings
 import serial.tools.list_ports
 from control._def import *
 
-
-
 class optotune_lens:
 	# A class for serial control of optotune liquid lens
 
 	def __init__(self, freq = 0, amp = 0, offset = 0):
 
 		self.serialconn = None
-
 		self.lensConnected = False
 
 		self.freq = freq
@@ -30,7 +27,11 @@ class optotune_lens:
 
 		# Scale factor to translate an amplitude (in microns) to a lower and upper value of current (in 12 bit int -4096 to 4096)
 		self.currentScaleFactor = liquidLens['currentScaleFactor'] 	# inverse of Change in WD (mm) per change in current (12 bit int)
-
+		self.current_to_code_scalling_factor = 292.84/4095 # 292.84 mA for code 4095
+		self.current_range_min = -250
+		self.current_range_max = 250
+		self.op_range_min = -2
+		self.op_range_max = 3
 
 		# Auto-detect the lens-driver
 		for p in serial.tools.list_ports.comports():
@@ -49,15 +50,12 @@ class optotune_lens:
 		else:
 			print('Optotune lens driver found!')
 			self.lensConnected = True
-
 			self.serialconn = serial.Serial(lens_ports[0],115200)
-			
 			self.serialconn.close()
 			self.serialconn.open()
 			time.sleep(2.0)
 			print('Serial Connection Open')
 
-			
 			# Establish Connection to the lens driver
 			ok = self.handshake()
 
@@ -72,10 +70,7 @@ class optotune_lens:
 			else:
 				warnings.warn("Connection to lens driver not successful")
 		
-	   
-	
-		
-		
+
 	def sendData(self, data):
 		if(self.lensConnected):
 			self.serialconn.write(data)
@@ -83,37 +78,26 @@ class optotune_lens:
 			pass
 
 	def recData(self, nBytes):
-		
 		if(self.lensConnected):
 			data = bytearray(nBytes)
-
 			for i in range(nBytes):
 				data[i] = ord(self.serialconn.read())
-
 			return data
-
 		else:
 			return None
-
-
 
 	def handshake(self):
 
 		start_cmd = bytearray("Start", 'utf-8')
-
 		self.sendData(start_cmd)
-
 		rec_data = self.recData(7)
 		print(rec_data)
-
-
 		if(rec_data == bytearray(b'Ready\r\n')):
 			print('Handshaking complete')
 			return True
 		else:
 			print('Failed to connect to lens driver')
 			return False
-
 
 	def split_int_4byte(self, number):
 		byte0 = (number >> 24) & 0xFF
@@ -139,13 +123,10 @@ class optotune_lens:
 		return int(number) >> 8, int(number)% 256
 
 	def getCurrentLimits(self):
-		
 		self.upper_curr = int((self.offset + self.amp)*self.currentScaleFactor)
 		self.lower_curr = int((self.offset - self.amp)*self.currentScaleFactor)
 
 	
-
-
 	def start(self):
 		print('Starting liquid lens sweep')
 		self.mode = "Sinusoid"
@@ -171,7 +152,6 @@ class optotune_lens:
 		self.mode = mode
 		self.sendMode()
 
-
 	def set_Freq(self, freq):
 		self.freq = freq
 		self.sendProperty("Freq",self.freq)
@@ -180,6 +160,13 @@ class optotune_lens:
 	def set_Amp(self, amp):
 		self.amp = amp
 		self.getCurrentLimits()
+		self.sendProperty("UpperCurr",self.upper_curr)
+		self.sendProperty("LowerCurr",self.lower_curr)
+		print('set new amplitude of liquid lens:low {}, high {}'.format(self.lower_curr, self.upper_curr))
+
+	def set_Amp_mA(self, amp_mA):
+		self.upper_curr = int((amp_mA/2)/self.current_to_code_scalling_factor)
+		self.lower_curr = -int((amp_mA/2)/self.current_to_code_scalling_factor)
 		self.sendProperty("UpperCurr",self.upper_curr)
 		self.sendProperty("LowerCurr",self.lower_curr)
 		print('set new amplitude of liquid lens:low {}, high {}'.format(self.lower_curr, self.upper_curr))
@@ -194,16 +181,10 @@ class optotune_lens:
 		self.lower_curr = lower_curr
 		self.upper_curr = upper_curr
 
-	
-
-
 	def sendMode(self):
-
 		cmd = bytearray(4) # Data array 
-
 		cmd[0], cmd[1] = ord('M'),ord('w')
 		cmd[3] = ord('A')
-
 
 		if self.mode == "Sinusoid":
 			cmd[2] = ord('S')
@@ -215,20 +196,14 @@ class optotune_lens:
 			cmd[2] = ord('T')
 
 		# print('Sent data without crc bytes: {}'.format(cmd))
-
 		cmd_crc = self.addcrcCheckSum(cmd)
-
 		# print('Sent data with crc bytes: {}'.format(cmd_crc))
-
 		self.sendData(cmd_crc)
 
 		if(self.lensConnected):
 			rec_data = self.recData(7)
-
 			rec_string = bytearray(3)
-
 			rec_string[0], rec_string[1], rec_string[2] = cmd_crc[0],cmd_crc[2], cmd_crc[3]
-
 			check = self.calculate_crc(rec_data[:5])
 			if(rec_data[:3] == rec_string and check==0 ):
 				print('Mode set successfully to : {}'.format(self.mode))
@@ -238,16 +213,11 @@ class optotune_lens:
 
 	def sendCurrent(self, value):
 			cmd = bytearray(4) # Data array 
-
 			cmd[0], cmd[1] = ord('A'),ord('w')
 			cmd[2], cmd[3] = self.split_signed_int_2byte(value)
-
 			cmd_crc = self.addcrcCheckSum(cmd)
-
 			self.sendData(cmd_crc)
-
 			print("Current set to {}".format(value))
-
 
 	def sendProperty(self, prop, value):
 
@@ -276,48 +246,32 @@ class optotune_lens:
 			cmd[4], cmd[5], cmd[6], cmd[7] = self.split_int_4byte(int(1000*value)) # Since value needs to be sent in mHz
 
 		# print('Sent data without crc bytes: {}'.format(cmd))
-
 		cmd_crc = self.addcrcCheckSum(cmd)
-
 		# print('Sent data with crc bytes: {}'.format(cmd_crc))
-
-
 		self.sendData(cmd_crc)
-
 		print("Set {} to {}".format(prop, value))
 	
 	def calculate_crc(self, data):
-
 		crc_sum = 0
-
 		for ii in range(len(data)):
 			crc_sum = self.crc_16_update(crc_sum, data[ii])
-
 		return crc_sum # crc checksum over all data elements
 
-
 	def crc_16_update(self, crc, a):
-
 		crc ^= a
-
 		for ii in range(8):
 			if (crc & 1):
 				crc = (crc >> 1) ^ 0xA001
 			else:
 				crc = (crc >> 1)
-		
 		return crc
 
 	def addcrcCheckSum(self, data):
-
 		dataLen = len(data)
 		# We need two more bytes to store the checksum 
 		data_new = bytearray(dataLen + 2)
-
 		crc_sum = self.calculate_crc(data)
-
 		data_new[:dataLen] = data
-
 		# For CRC Low byte first and then High byte
 		# the int2byte function returns High Byte first
 		data_new[dataLen + 1 ], data_new[dataLen] = self.split_int_2byte(crc_sum)
