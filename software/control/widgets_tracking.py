@@ -615,6 +615,12 @@ class FocusTracking_Widget(QFrame):
 
 	def add_components(self):
 
+		# liquid lens scanning enable/disable
+		self.button_EnableLiquidLensScanning = QPushButton('Start Liquid Lens Scanning')
+		self.button_EnableLiquidLensScanning.setCheckable(True)
+		self.button_EnableLiquidLensScanning.setChecked(False)
+
+		# focus tracking enable/disable
 		self.button_FocusTracking = QPushButton('Start Focus Tracking')
 		self.button_FocusTracking.setCheckable(True)
 		self.button_FocusTracking.setChecked(False)
@@ -634,6 +640,7 @@ class FocusTracking_Widget(QFrame):
 		slider_crop_ratio_layout.addWidget(self.spinbox_crop_ratio)
 		group_slider_crop_ratio=QWidget()
 		group_slider_crop_ratio.setLayout(slider_crop_ratio_layout)
+		group_slider_crop_ratio.setEnabled(False) # disable before fully implementing the functionality
 
 		# Liquid lens freq
 		self.label_lensFreq = QLabel('Liquid lens frequency (Hz)')
@@ -672,18 +679,22 @@ class FocusTracking_Widget(QFrame):
 		self.groupbox_FocusTracking = QGroupBox('Focus Tracking')
 
 		# layout
-		groupbox_layout_FocusTracking = QGridLayout()
-		groupbox_layout_FocusTracking.addWidget(self.button_FocusTracking,0,0,1,1)
-		groupbox_layout_FocusTracking.addWidget(group_slider_crop_ratio,0,1,1,1)
-		groupbox_layout_FocusTracking.addWidget(group_slider_lensFreq,1,0,1,2)  
-		groupbox_layout_FocusTracking.addWidget(group_slider_lensAmpl,2,0,1,2)
+		groupbox_layout = QGridLayout()
+		groupbox_layout.addWidget(group_slider_lensFreq,1,0,1,2)  
+		groupbox_layout.addWidget(group_slider_lensAmpl,0,0,1,2)
+		groupbox_layout.addWidget(self.button_EnableLiquidLensScanning,2,0,1,2)
+		groupbox_layout.addWidget(group_slider_crop_ratio,3,0,1,1)
+		groupbox_layout.addWidget(self.button_FocusTracking,3,1,1,1)
+		groupbox_layout.addWidget(QLabel(''),4,0,1,1) # add empty space
+
 		# groupbox_layout_YTracking.addWidget(group_slider_lensGain) 
 		# self.groupbox_YTracking.setLayout(groupbox_layout_YTracking)
 
-		self.setLayout(groupbox_layout_FocusTracking)
+		self.setLayout(groupbox_layout)
 
 		# Connections
 		self.button_FocusTracking.clicked.connect(self.button_focusTracking_clicked)
+		self.button_EnableLiquidLensScanning.clicked.connect(self.button_EnableLiquidLensScanning_clicked)
 
 		self.hslider_crop_ratio.valueChanged.connect(self.spinbox_crop_ratio_setValue)
 		self.spinbox_crop_ratio.valueChanged.connect(self.hslider_crop_ratio_setValue)
@@ -695,10 +706,22 @@ class FocusTracking_Widget(QFrame):
 		self.spinbox_lensAmpl.valueChanged.connect(self.hslider_lensAmpl_setValue)
 
 
-
+	def button_EnableLiquidLensScanning_clicked(self):
+		if self.button_EnableLiquidLensScanning.isChecked():
+			# Set the internal state value
+			self.internal_state.data['track_focus'] = True 				# to do: add a seperate flag for liquid lens scanning, reuse the track_focus flag for now
+			self.microcontroller.send_focus_tracking_command(True)		# to do: add a seperate flag for liquid lens scanning, reuse the track_focus flag for now
+			# Start the liquid lens sweep
+			self.trackingController.tracker_focus.liquid_lens.start()	# to do: add a seperate flag for liquid lens scanning, reuse the track_focus flag for now
+			self.button_EnableLiquidLensScanning.setText("Stop Liquid Lens Scanning")
+		else:
+			# Set the internal state value
+			self.internal_state.data['track_focus'] = False 			# to do: add a seperate flag for liquid lens scanning, reuse the track_focus flag for now
+			self.microcontroller.send_focus_tracking_command(False)		# to do: add a seperate flag for liquid lens scanning, reuse the track_focus flag for now
+			self.trackingController.tracker_focus.liquid_lens.stop()	# to do: add a seperate flag for liquid lens scanning, reuse the track_focus flag for now
+			self.button_EnableLiquidLensScanning.setText("Start Liquid Lens Scanning")
 
 	def button_focusTracking_clicked(self):
-		
 		if self.button_FocusTracking.isChecked():
 			# Set the internal state value
 			self.internal_state.data['track_focus'] = True
