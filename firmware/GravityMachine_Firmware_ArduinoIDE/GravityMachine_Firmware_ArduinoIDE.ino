@@ -168,7 +168,7 @@ bool calculateCRC_tx = true;
 //--------------------------------------------------
 # define triggerCamera 26
 # define triggerCamera_FL 0
-# define triggerLED 22
+# define triggerLED 24
 # define optotune_SYNC 19 //@@@
 //# define trigger_indicator_Pin 50
 # define sendSerial_indicator_pin 24
@@ -1170,6 +1170,7 @@ void timer_interrupt_handler(){
     {
       counter_timer = 0;
       digitalWrite(triggerCamera,HIGH);
+      digitalWrite(triggerCamera_FL,HIGH);
       phase_code_lastTrigger = phase_code;
       //timestamp_lastTrigger = millis();
       timestamp_lastTrigger = timestamp_lastTrigger+1; // repurposed as trigger counter
@@ -1178,6 +1179,7 @@ void timer_interrupt_handler(){
     if (counter_timer==1) 
     {
       digitalWrite(triggerCamera,LOW);
+      digitalWrite(triggerCamera_FL,LOW);
 
     }
   }
