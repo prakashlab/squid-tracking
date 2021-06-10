@@ -189,7 +189,7 @@ OBJECTIVES = {'2x':{'magnification':2, 'NA':0.10, 'PixelPermm':217}, '4x':{'magn
 DEFAULT_OBJECTIVE = '4x'
   
 
-CAMERAS = {'DF1':{'make':'TIS','serial':"08910100", 'px_format':(2048, 1536), 'color_format': 'GRAY8', 'fps': 75}, 'DF2':{'make':'TIS','serial':"08910102", 'px_format':(2048, 1536), 'color_format': 'GRAY8', 'fps': 75}}
+CAMERAS = {'DF1':{'make':'TIS','serial':"08910100", 'px_format':(2048, 1536), 'color_format': 'GRAY8', 'fps': 75, 'is_color': False}, 'DF2':{'make':'TIS','serial':"08910102", 'px_format':(2048, 1536), 'color_format': 'GRAY8', 'fps': 75, 'is_color': False}}
 
 # CAMERAS = {'DF1':{'make':'Daheng','serial':"FU0200070043", 'px_format':None, 'color_format': 'GRAY8', 'fps': 30}}
 
