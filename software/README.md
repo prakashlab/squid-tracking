@@ -1,8 +1,10 @@
 ## Setting up the environments
 
-### install software dependencies
+### install Ubuntu 18.04 on a computer with Nvidia GPU
+[install Ubuntu 18.04 on a computer with Nvidia GPU](https://github.com/deepakkrishnamurthy/gravitymachine-research/blob/master/Setting%20up%20a%20new%20computer%20with%20Ubuntu%2018.04%20%2B%20GPU%20driver.md)
 
-[Gravity Machine Software dependencies](https://github.com/deepakkrishnamurthy/gravitymachine-research/blob/d5c8d69aa91bfaa6998d162301d82193f917a471/GravMachine_Install_Ubuntu_18_04_CUDA.md)
+### set up the software environment
+[set up the software environment](https://github.com/deepakkrishnamurthy/gravitymachine-research/blob/master/Setting%20up%20the%20software%20environment.md)
 
 ### install camera drivers
 If you're using The Imaging Source cameras, follow instructions on https://github.com/TheImagingSource/tiscamera (if not already installed) 
