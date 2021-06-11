@@ -4,6 +4,7 @@
 ```
 sudo rm /var/lib/apt/lists/lock
 sudo apt-get update
+sudo apt install git
 sudo apt-get install python3-pip
 sudo apt-get install python3-pyqtgraph
 sudo apt-get install python3-pyqt5
