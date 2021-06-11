@@ -624,6 +624,7 @@ class FocusTracking_Widget(QFrame):
 		self.button_FocusTracking = QPushButton('Start Focus Tracking')
 		self.button_FocusTracking.setCheckable(True)
 		self.button_FocusTracking.setChecked(False)
+		self.button_FocusTracking.setEnabled(False) # disable before fully implementing the functionality
 
 		# cropRatio
 		self.label_crop_ratio = QLabel('Cropping ratio')
