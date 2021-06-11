@@ -108,7 +108,10 @@ class GravityMachine_GUI(QMainWindow):
 		self.imageSaver = {}
 		
 		for key in self.imaging_channels:
-			self.imageSaver[key] = core_tracking.ImageSaver(self.internal_state, imaging_channel = key, rotate_image_angle = 180)
+			if CAMERAS[key]['is_color'] == False:
+				self.imageSaver[key] = core_tracking.ImageSaver(self.internal_state, imaging_channel = key, image_format = '.tif', rotate_image_angle = 180)
+			else:
+				self.imageSaver[key] = core_tracking.ImageSaver(self.internal_state, imaging_channel = key, image_format = '.bmp', rotate_image_angle = 180)
 
 
 		self.imageDisplay = {key: core.ImageDisplay() for key in self.imaging_channels}
