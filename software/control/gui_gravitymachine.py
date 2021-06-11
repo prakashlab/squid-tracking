@@ -87,10 +87,10 @@ class GravityMachine_GUI(QMainWindow):
 				if(key == 'DF1'):
 					self.streamHandler[key] = core.StreamHandler(camera = self.camera[key], imaging_channel = key, flip_image = 'Vertical')
 				else:
-					self.streamHandler[key] = core.StreamHandler(camera = self.camera[key], imaging_channel = key, flip_image = 'Vertical')
+					self.streamHandler[key] = core.StreamHandler(camera = self.camera[key], crop_width = CAMERAS[key]['px_format'][0], crop_height= CAMERAS[key]['px_format'][1], imaging_channel = key, flip_image = 'Vertical')
 
 			else:
-				self.streamHandler[key] = core.StreamHandler(camera = self.camera[key], imaging_channel = key, flip_image = 'Vertical')
+				self.streamHandler[key] = core.StreamHandler(camera = self.camera[key], crop_width = CAMERAS[key]['px_format'][0], crop_height= CAMERAS[key]['px_format'][1], imaging_channel = key, flip_image = 'Vertical')
 
 
 		self.internal_state = core_tracking.InternalState()
