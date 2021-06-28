@@ -331,6 +331,9 @@ class Microcontroller_Simulation():
 
     def move_z_nonblocking(self,delta):
         pass
+
+    def move_theta_nonblocking(self,delta):
+        pass
         
     def move_z(self,delta):
         pass
