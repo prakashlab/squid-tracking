@@ -239,7 +239,8 @@ class StreamHandler(QObject):
             image_thresh = 255*np.array(self.threshold_image(image_resized, color = camera.is_color), dtype = 'uint8')
 
         else:
-            image_resized = np.copy(image)
+            # image_resized = np.copy(image)
+            image_resized = imutils.resize(image, round(self.image_width*self.working_resolution_scaling))
         
         # Deepak: For now tracking with every image from camera
         time_now = time.time() 
