@@ -44,14 +44,16 @@ class GravityMachine_GUI(QMainWindow):
 		#------------------------------------------------------------------
 		self.imageDisplayWindow = {}
 		for key in self.imaging_channels:
-
 			if(CAMERAS[key]['make']=='TIS'):
 				self.imageDisplayWindow[key] = core.ImageDisplayWindow(key + ' Display', 
 					DrawCrossHairs = True) 
 			elif (CAMERAS[key]['make']=='Daheng'):
 				self.imageDisplayWindow[key] = core.ImageDisplayWindow(key + ' Display', 
 					DrawCrossHairs = True, rotate_image_angle=90) 
-
+		
+		if TWO_CAMERA_PDAF:
+			self.imageDisplayWindow['PDAF_image1'] = core.ImageDisplayWindow(key + ' Display', DrawCrossHairs = True) 
+			self.imageDisplayWindow['PDAF_image2'] = core.ImageDisplayWindow(key + ' Display', DrawCrossHairs = True) 
 		
 		self.imageDisplayWindow_ThresholdedImage = core.ImageDisplayWindow('Thresholded Image')
 		
@@ -64,7 +66,7 @@ class GravityMachine_GUI(QMainWindow):
 			# Define a camera object for each unique image-stream.
 			self.camera = {key:camera_Daheng.Camera_Simulation() for key in self.imaging_channels}
 			# self.microcontroller = microcontroller.Microcontroller_Simulation()
-			self.microcontroller = microcontroller.Microcontroller()
+			self.microcontroller = microcontroller.Microcontroller_Simulation()
 
 		else:
 			# TIS Camera object
@@ -210,6 +212,9 @@ class GravityMachine_GUI(QMainWindow):
 		if TWO_CAMERA_PDAF:
 			self.streamHandler['DF1'].image_to_display.connect(self.PDAFController.register_image_from_camera_1) 
 			self.streamHandler['DF2'].image_to_display.connect(self.PDAFController.register_image_from_camera_2) 
+			# for debugging:
+			self.PDAFController.signal_image1.connect(self.imageDisplayWindow['PDAF_image1'].display_image)
+			self.PDAFController.signal_image2.connect(self.imageDisplayWindow['PDAF_image2'].display_image)
 
 		# Dock area for displaying image-streams
 		self.image_window = QMainWindow()
@@ -240,6 +245,16 @@ class GravityMachine_GUI(QMainWindow):
 		thresholded_image_dock = dock.Dock('Thresholded', autoOrientation = False)
 		image_display_dockArea.addDock(thresholded_image_dock, 'right', image_window_docks[last_channel])
 		thresholded_image_dock.addWidget(self.imageDisplayWindow_ThresholdedImage.widget)
+
+		# PDAF debug
+		if TWO_CAMERA_PDAF:
+			PDAF_image1_dock = dock.Dock('PDAF_image1', autoOrientation = False)
+			image_display_dockArea.addDock(PDAF_image1_dock, 'bottom')
+			PDAF_image1_dock.addWidget(self.imageDisplayWindow['PDAF_image1'].widget)
+			PDAF_image2_dock = dock.Dock('PDAF_image2', autoOrientation = False)
+			image_display_dockArea.addDock(PDAF_image2_dock, 'right', PDAF_image1_dock)
+			PDAF_image2_dock.addWidget(self.imageDisplayWindow['PDAF_image2'].widget)
+
 		#-----------------------------------------------------
 		# Layout widgets
 		#-----------------------------------------------------
@@ -310,6 +325,10 @@ class GravityMachine_GUI(QMainWindow):
 				self.imageSaver[key].close()
 				self.imageDisplay[key].close()
 				self.imageDisplayWindow[key].close()
+
+			if TWO_CAMERA_PDAF:
+				self.imageDisplayWindow['PDAF_image1'].close()
+				self.imageDisplayWindow['PDAF_image2'].close()
 			
 			self.trackingDataSaver.close()
 			

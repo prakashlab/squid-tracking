@@ -30,6 +30,11 @@ class PDAFController(QObject):
     # input: from internal_states shared variables
     # output: amount of defocus, which may be read by or emitted to focusTrackingController (that manages focus tracking on/off, PID coefficients)
 
+    signal_defocus_pixel_shift = Signal(float)
+    signal_defocus_mm = Signal(float)
+    signal_image1 = Signal(np.ndarray)
+    signal_image2 = Signal(np.ndarray)
+
     def __init__(self,tracking_controller_in_plane):
         QObject.__init__(self)
         self.coefficient_shift2defocus = 1
@@ -38,6 +43,7 @@ class PDAFController(QObject):
         self.image2_received = False
         self.locked = False
         self.tracking_controller_in_plane = tracking_controller_in_plane
+        self.pixelshift2mm = 1
 
     def register_image_from_camera_1(self,image):
         if(self.locked==True):
@@ -57,20 +63,30 @@ class PDAFController(QObject):
             self.calculate_defocus()
 
     def calculate_defocus(self):
-        if self.tracking_controller_in_plane.centroid: 
+        if self.tracking_controller_in_plane.centroid is not None: 
             self.locked = True
             # cropping parameters
             self.x = self.tracking_controller_in_plane.centroid[0]
             self.y = self.tracking_controller_in_plane.centroid[1]
-            self.w = abs(self.tracking_controller_in_plane.rect_pts[0][1]-self.tracking_controller_in_plane.rect_pts[1][1])*2
-            self.h = abs(self.tracking_controller_in_plane.rect_pts[0][0]-self.tracking_controller_in_plane.rect_pts[1][0])
-            # double check which dimension to multiply
-
+            self.w = int(abs(self.tracking_controller_in_plane.rect_pts[0][1]-self.tracking_controller_in_plane.rect_pts[1][1])*3) # double check which dimension to multiply
+            self.h = int(abs(self.tracking_controller_in_plane.rect_pts[0][0]-self.tracking_controller_in_plane.rect_pts[1][0])*1.5)
+            #print('w: ' + str(self.w) + ' h: ' + str(self.h))
             # crop
             self.image1 = self.image1[(self.y-int(self.h/2)):(self.y+int(self.h/2)),(self.x-int(self.w/2)):(self.x+int(self.w/2))]
             self.image2 = self.image2[(self.y-int(self.h/2)):(self.y+int(self.h/2)),(self.x-int(self.w/2)):(self.x+int(self.w/2))] # additional offsets may need to be added
-            shift = self._compute_shift_from_image_pair()
-            self.defocus = shift*self.coefficient_shift2defocus
+            self.signal_image1.emit(self.image1)
+            self.signal_image2.emit(self.image2)
+            #print(self.image1.shape)
+            # only do the calculation if the cropped area is fully within the image
+            if self.image1.shape == (self.h,self.w):
+                # calculate and emit defocus
+                shift, error = self._compute_shift_from_image_pair()
+                # only output the defocus when calculation is reliable
+                if error < 0.5:
+                    self.defocus = shift*self.coefficient_shift2defocus
+                    self.signal_defocus_pixel_shift.emit(self.defocus)
+                    self.signal_defocus_mm.emit(self.defocus*self.pixelshift2mm)
+            # get ready for the next calculation
             self.image1_received = False
             self.image2_received = False
             self.locked = False
@@ -90,8 +106,8 @@ class PDAFController(QObject):
         '''
         # method 2: use skimage.registration.phase_cross_correlation
         shifts,error,phasediff = skimage.registration.phase_cross_correlation(self.image1,self.image2,upsample_factor=self.registration_upsample_factor,space='real')
-        print(shifts) # for debugging
-        return shifts[0] # can be shifts[1] - depending on camera orientation
+        print('shift: ' + str(shifts) + ', error: ' + "{:.2f}".format(error) ) # for debugging
+        return shifts[1], error # can be shifts[1] - depending on camera orientation
 
     def close(self):
         pass
@@ -235,7 +251,7 @@ class TwoCamerasPDAFCalibrationController(QObject):
         # z-stack
         for k in range(self.NZ):
             file_ID = str(k)
-            if self.configurationManager:
+            if self.configurationManager is not None:
                 # iterate through selected modes
                 for config in self.selected_configurations:
                     self.signal_current_configuration.emit(config)
