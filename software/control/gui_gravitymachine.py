@@ -24,6 +24,7 @@ import control.camera as camera_Daheng
 import control.core as core
 import control.core_tracking as core_tracking
 import control.microcontroller as microcontroller
+import control.core_PDAF as core_PDAF
 
 # SIMULATION = True
 
@@ -94,6 +95,7 @@ class GravityMachine_GUI(QMainWindow):
 
 
 		self.internal_state = core_tracking.InternalState()
+
 		#-----------------------------------------------------------------------------------------------
 		# Tracking-related objects
 		#-----------------------------------------------------------------------------------------------		
@@ -102,6 +104,9 @@ class GravityMachine_GUI(QMainWindow):
 		self.trackingController = core_tracking.TrackingController(self.microcontroller,self.internal_state)
 		self.trackingDataSaver = core_tracking.TrackingDataSaver(self.internal_state)
 		self.microcontroller_Rec = core_tracking.microcontroller_Receiver(self.microcontroller, self.internal_state) # Microcontroller Receiver object
+		# PDAF
+		if TWO_CAMERA_PDAF:
+			self.PDAFController = core_PDAF.PDAFController(self.trackingController)
 		#-----------------------------------------------------------------------------------------------
 		# Define an ImageSaver, and Image Display object for each image stream
 		#-----------------------------------------------------------------------------------------------
@@ -200,6 +205,11 @@ class GravityMachine_GUI(QMainWindow):
 		# Pixel per mm update due to objective change
 		self.liveControlWidget.new_pixelpermm.connect(self.trackingController.units_converter.update_pixel_size)
 		self.microcontroller_Rec.update_plot.connect(self.plotWidget.update_plots)
+
+		# PDAF
+		if TWO_CAMERA_PDAF:
+			self.streamHandler['DF1'].image_to_display.connect(self.PDAFController.register_image_from_camera_1) 
+			self.streamHandler['DF2'].image_to_display.connect(self.PDAFController.register_image_from_camera_2) 
 
 		# Dock area for displaying image-streams
 		self.image_window = QMainWindow()

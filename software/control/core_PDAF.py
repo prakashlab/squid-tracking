@@ -30,14 +30,14 @@ class PDAFController(QObject):
     # input: from internal_states shared variables
     # output: amount of defocus, which may be read by or emitted to focusTrackingController (that manages focus tracking on/off, PID coefficients)
 
-    def __init__(self,internal_states):
+    def __init__(self,tracking_controller_in_plane):
         QObject.__init__(self)
         self.coefficient_shift2defocus = 1
         self.registration_upsample_factor = 5
         self.image1_received = False
         self.image2_received = False
         self.locked = False
-        self.shared_variables = internal_states
+        self.tracking_controller_in_plane = tracking_controller_in_plane
 
     def register_image_from_camera_1(self,image):
         if(self.locked==True):
@@ -57,20 +57,25 @@ class PDAFController(QObject):
             self.calculate_defocus()
 
     def calculate_defocus(self):
-        self.locked = True
-        # cropping parameters
-        self.x = self.shared_variables.x
-        self.y = self.shared_variables.y
-        self.w = self.shared_variables.w*2 # double check which dimension to multiply
-        self.h = self.shared_variables.h
-        # crop
-        self.image1 = self.image1[(self.y-int(self.h/2)):(self.y+int(self.h/2)),(self.x-int(self.w/2)):(self.x+int(self.w/2))]
-        self.image2 = self.image2[(self.y-int(self.h/2)):(self.y+int(self.h/2)),(self.x-int(self.w/2)):(self.x+int(self.w/2))] # additional offsets may need to be added
-        shift = self._compute_shift_from_image_pair()
-        self.defocus = shift*self.coefficient_shift2defocus
-        self.image1_received = False
-        self.image2_received = False
-        self.locked = False
+        if self.tracking_controller_in_plane.centroid: 
+            self.locked = True
+            # cropping parameters
+            self.x = self.tracking_controller_in_plane.centroid[0]
+            self.y = self.tracking_controller_in_plane.centroid[1]
+            self.w = abs(self.tracking_controller_in_plane.rect_pts[0][1]-self.tracking_controller_in_plane.rect_pts[1][1])*2
+            self.h = abs(self.tracking_controller_in_plane.rect_pts[0][0]-self.tracking_controller_in_plane.rect_pts[1][0])
+            # double check which dimension to multiply
+
+            # crop
+            self.image1 = self.image1[(self.y-int(self.h/2)):(self.y+int(self.h/2)),(self.x-int(self.w/2)):(self.x+int(self.w/2))]
+            self.image2 = self.image2[(self.y-int(self.h/2)):(self.y+int(self.h/2)),(self.x-int(self.w/2)):(self.x+int(self.w/2))] # additional offsets may need to be added
+            shift = self._compute_shift_from_image_pair()
+            self.defocus = shift*self.coefficient_shift2defocus
+            self.image1_received = False
+            self.image2_received = False
+            self.locked = False
+        else:
+            pass
 
     def _compute_shift_from_image_pair(self):
         # method 1: calculate 2D cross correlation -> find peak or centroid
@@ -96,7 +101,7 @@ class TwoCamerasPDAFCalibrationController(QObject):
     acquisitionFinished = Signal()
     image_to_display_camera1 = Signal(np.ndarray)
     image_to_display_camera2 = Signal(np.ndarray)
-    signal_current_configuration = Signal(Configuration)
+    # signal_current_configuration = Signal(Configuration)
 
     z_pos = Signal(float)
 
