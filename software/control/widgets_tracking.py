@@ -862,9 +862,9 @@ class PDAFControllerWidget(QFrame):
         # self.label_Error = QLabel()
         # self.label_Error.setFrameStyle(QFrame.Panel | QFrame.Sunken)
         self.display_defocus_um = QLCDNumber()
-        self.display_defocus_um.setNumDigits(2)
+        self.display_defocus_um.setNumDigits(4)
         self.display_error = QLCDNumber()
-        self.display_error.setNumDigits(3)
+        self.display_error.setNumDigits(4)
         
         grid_line0 = QGridLayout()
         grid_line0.addWidget(QLabel('X Crop Offset'), 0,0)
