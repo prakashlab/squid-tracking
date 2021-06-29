@@ -143,10 +143,10 @@ class PID_parameters:
 
 
 class PDAF:
-    ROI_ratio_width_default = 1.5
-    ROI_ratio_height_default = 3
-    x_offset_default = 0
-    y_offset_default = 0
+    ROI_ratio_width_default = 2
+    ROI_ratio_height_default = 2.5
+    x_offset_default = -32
+    y_offset_default = -50
     shift_to_distance_um_default = 1
 
 
