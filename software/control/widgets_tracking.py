@@ -827,7 +827,7 @@ class PDAFControllerWidget(QFrame):
         self.entry_y_offset = QSpinBox()
         self.entry_y_offset.setMinimum(-1000) 
         self.entry_y_offset.setMaximum(1000)
-        self.entry_x_offset.setValue(PDAF.y_offset_default)
+        self.entry_y_offset.setValue(PDAF.y_offset_default)
 
         self.entry_ROI_ratio_width = QDoubleSpinBox()
         self.entry_ROI_ratio_width.setMinimum(0.5) 
@@ -890,14 +890,35 @@ class PDAFControllerWidget(QFrame):
 
         self.setLayout(vbox)
 
-        self.btn_enable_calculation.clicked.connect(self.PDAFController.enable_caculation)
-        self.btn_enable_tracking.clicked.connect(self.PDAFController.enable_tracking)
+        # self.btn_enable_calculation.clicked.connect(self.PDAFController.enable_caculation)
+        # self.btn_enable_tracking.clicked.connect(self.PDAFController.enable_tracking)
         self.entry_x_offset.valueChanged.connect(self.PDAFController.set_x_offset)
         self.entry_y_offset.valueChanged.connect(self.PDAFController.set_y_offset)
         self.entry_ROI_ratio_width.valueChanged.connect(self.PDAFController.set_ROI_ratio_width)
         self.entry_ROI_ratio_height.valueChanged.connect(self.PDAFController.set_ROI_ratio_height)
         self.entry_shift_to_distance_um.valueChanged.connect(self.PDAFController.set_ROI_ratio_height)
 
+        self.btn_enable_calculation.clicked.connect(self.enable_caculation)
+        self.btn_enable_tracking.clicked.connect(self.enable_tracking)
+
         self.PDAFController.signal_defocus_um_display.connect(self.display_defocus_um.display)
         self.PDAFController.signal_error.connect(self.display_error.display)
+
+    def enable_caculation(self,pressed):
+    	if pressed:
+    		self.PDAFController.enable_caculation(True)
+    	else:
+    		if self.btn_enable_tracking.isChecked():
+    			self.btn_enable_calculation.setChecked(True)
+    		else:
+    			self.PDAFController.enable_caculation(False)
+
+    def enable_tracking(self,pressed):
+    	if pressed:
+    		if self.btn_enable_calculation.isChecked() == False:
+    			self.btn_enable_calculation.setChecked(True)
+    			self.PDAFController.enable_caculation(True)
+    		self.PDAFController.enable_tracking(True)
+    	else:
+    		self.PDAFController.enable_tracking(False)
 

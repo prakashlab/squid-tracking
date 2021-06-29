@@ -201,6 +201,7 @@ CAMERAS = {'DF1':{'make':'TIS','serial':"08910100", 'px_format':(2048, 1536), 'c
 TWO_CAMERA_PDAF = True
 if TWO_CAMERA_PDAF == True:
     CAMERAS = {'DF1':{'make':'Daheng','serial':'FW0200050063','px_format':(2560,2048),'color_format':'GRAY8','fps': 60,'is_color': False},'DF2':{'make':'Daheng','serial':'FW0200050068','px_format':(2560,2048),'color_format':'GRAY8','fps':60,'is_color': False}}
+    LIQUID_LENS_FOCUS_TRACKING = False
 
 TRACKING = 'DF1'
 

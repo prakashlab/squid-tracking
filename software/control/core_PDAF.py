@@ -97,7 +97,11 @@ class PDAFController(QObject):
                     self.signal_error.emit(error)
                     # emit defocus for tracking
                     if self.PDAF_tracking_enable:
-                        self.signal_defocus_um_tracking.emit(self.defocus_um)
+                        # self.signal_defocus_um_tracking.emit(self.defocus_um)
+                        self.tracking_controller_in_plane.track_focus = True
+                        self.tracking_controller_in_plane.y_error = self.defocus_um/1000.0
+                    else:
+                        self.tracking_controller_in_plane.track_focus = False
             # get ready for the next calculation
             self.image1_received = False
             self.image2_received = False
@@ -143,6 +147,14 @@ class PDAFController(QObject):
     def enable_tracking(self,enabled):
         self.PDAF_tracking_enable = enabled
         print('PDAF tracking: ' + str(enabled))
+        if enabled:
+            self.tracking_controller_in_plane.internal_state.data['track_focus'] = True
+            self.tracking_controller_in_plane.microcontroller.send_focus_tracking_command(True)
+            # note that self.tracking_controller_in_plane.track_focus is set to True in the calculate_defocus section - only when error is smaller than a set threshold
+        else:
+            self.tracking_controller_in_plane.internal_state.data['track_focus'] = False
+            self.tracking_controller_in_plane.microcontroller.send_focus_tracking_command(False)
+            self.tracking_controller_in_plane.track_focus = False
 
     def close(self):
         pass

@@ -119,6 +119,7 @@ class TrackingController(QObject):
 		self.begining_Time = time.time()           #Time begin the first time we click on the start_tracking button
 		self.Time = deque(maxlen=self.dequeLen)
 
+		self.y_error = 0 # for PDAF focus tracking
 
 		self.X_image = deque(maxlen=self.dequeLen)
 		self.Z_image = deque(maxlen=self.dequeLen)
@@ -242,16 +243,18 @@ class TrackingController(QObject):
 				# Is the object position necessary for this? Alternatively we can pass the centroid
 				# and handle this downstream
 				if(self.track_focus):
-				
-					# Update the focus phase
-					self.tracker_focus.update_data(FocusPhase)
-
-					# y-error in mm
-					y_error = self.tracker_focus.get_focus_error(image, self.centroid)
-					# @@@ Disable focus tracking @@@
-					y_error = 0
+					# # Update the focus phase
+					# self.tracker_focus.update_data(FocusPhase) # may be removed in the future as we use either PDAF or liquid lens w/ a separate imaging channel
+					# # y-error in mm
+					# y_error = self.tracker_focus.get_focus_error(image, self.centroid)
+					# y_error = 0 # @@@ Disable focus tracking @@@
+					pass
+					'''
+					y_error will be set by the y focus tracking controller, 
+					which has a reference of this tracking controller, and can set self.y_error and self.track_focus
+					'''
 				else:
-					y_error = 0
+					self.y_error = 0
 
 				# Emit the detected centroid position so other widgets can access it.
 				self.centroid_image.emit(self.centroid)
@@ -265,12 +268,14 @@ class TrackingController(QObject):
 				# get motion commands
 				# Error is in mm.
 				# print('Image error: {}, {}, {} mm'.format(x_error, y_error, z_error))
-				X_order, Y_order, Theta_order = self.get_motion_commands(x_error,y_error,z_error)
+				X_order, Y_order, Theta_order = self.get_motion_commands(x_error,self.y_error,z_error)
 
 				# New serial interface (send data directly to micro-controller object)
 
 				self.microcontroller.move_x_nonblocking(X_order)
-				self.microcontroller.move_y_nonblocking(Y_order)
+				if LIQUID_LENS_FOCUS_TRACKING == False:
+					self.microcontroller.move_y_nonblocking(Y_order)
+					# when doing focus tracking with liquid lens, because of the potential difference update rate, y_order is sent separately
 				self.microcontroller.move_theta_nonblocking(-Theta_order)  
 
 			# Update the Internal State Model
@@ -412,7 +417,7 @@ class TrackingController(QObject):
 			X_order = round(X_order,2)
 
 			Y_order = self.pid_controller_y.update(y_error_steps,self.Time[-1])
-			Y_order = y_error_steps #@@@ NonPID focus tracking; may need to reverse the sign
+			# Y_order = y_error_steps #@@@ NonPID focus tracking; may need to reverse the sign - no longer needed, to remove in the next update
 			Y_order = round(Y_order,2)
 
 			Theta_order = self.pid_controller_theta.update(theta_error_steps,self.Time[-1])
