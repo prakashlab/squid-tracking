@@ -44,6 +44,10 @@ class PDAFController(QObject):
         self.locked = False
         self.tracking_controller_in_plane = tracking_controller_in_plane
         self.pixelshift2mm = 1
+        
+        self.offset_x = 50
+        self.offset_y = 50
+        self.PDAF_calculation_enable = True
 
     def register_image_from_camera_1(self,image):
         if(self.locked==True):
@@ -68,17 +72,17 @@ class PDAFController(QObject):
             # cropping parameters
             self.x = self.tracking_controller_in_plane.centroid[0]
             self.y = self.tracking_controller_in_plane.centroid[1]
-            self.w = int(abs(self.tracking_controller_in_plane.rect_pts[0][1]-self.tracking_controller_in_plane.rect_pts[1][1])*3) # double check which dimension to multiply
-            self.h = int(abs(self.tracking_controller_in_plane.rect_pts[0][0]-self.tracking_controller_in_plane.rect_pts[1][0])*1.5)
+            self.w = int(abs(self.tracking_controller_in_plane.rect_pts[0][1]-self.tracking_controller_in_plane.rect_pts[1][1])*1.5)
+            self.h = int(abs(self.tracking_controller_in_plane.rect_pts[0][0]-self.tracking_controller_in_plane.rect_pts[1][0])*3)
             #print('w: ' + str(self.w) + ' h: ' + str(self.h))
             # crop
             self.image1 = self.image1[(self.y-int(self.h/2)):(self.y+int(self.h/2)),(self.x-int(self.w/2)):(self.x+int(self.w/2))]
-            self.image2 = self.image2[(self.y-int(self.h/2)):(self.y+int(self.h/2)),(self.x-int(self.w/2)):(self.x+int(self.w/2))] # additional offsets may need to be added
+            self.image2 = self.image2[(self.y+self.offset_y-int(self.h/2)):(self.y+self.offset_y+int(self.h/2)),(self.x+self.offset_x-int(self.w/2)):(self.x+self.offset_x+int(self.w/2))] # additional offsets may need to be added
             self.signal_image1.emit(self.image1)
             self.signal_image2.emit(self.image2)
             #print(self.image1.shape)
             # only do the calculation if the cropped area is fully within the image
-            if self.image1.shape == (self.h,self.w):
+            if self.image1.shape == (self.h,self.w) and self.image1.shape == self.image2.shape and self.PDAF_calculation_enable:
                 # calculate and emit defocus
                 shift, error = self._compute_shift_from_image_pair()
                 # only output the defocus when calculation is reliable

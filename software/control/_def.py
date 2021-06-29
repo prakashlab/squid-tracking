@@ -191,7 +191,7 @@ DEFAULT_OBJECTIVE = '4x'
 
 CAMERAS = {'DF1':{'make':'TIS','serial':"08910100", 'px_format':(2048, 1536), 'color_format': 'GRAY8', 'fps': 75, 'is_color': False}, 'DF2':{'make':'TIS','serial':"08910102", 'px_format':(2048, 1536), 'color_format': 'GRAY8', 'fps': 75, 'is_color': False}}
 # CAMERAS = {'DF1':{'make':'Daheng','serial':"FU0200070043", 'px_format':None, 'color_format': 'GRAY8', 'fps': 30}}
-TWO_CAMERA_PDAF = False
+TWO_CAMERA_PDAF = True
 if TWO_CAMERA_PDAF == True:
     CAMERAS = {'DF1':{'make':'Daheng','serial':'FW0200050063','px_format':(2560,2048),'color_format':'GRAY8','fps': 60,'is_color': False},'DF2':{'make':'Daheng','serial':'FW0200050068','px_format':(2560,2048),'color_format':'GRAY8','fps':60,'is_color': False}}
 
