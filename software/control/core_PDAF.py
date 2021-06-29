@@ -31,23 +31,27 @@ class PDAFController(QObject):
     # output: amount of defocus, which may be read by or emitted to focusTrackingController (that manages focus tracking on/off, PID coefficients)
 
     signal_defocus_pixel_shift = Signal(float)
-    signal_defocus_mm = Signal(float)
+    signal_defocus_um_display = Signal(float)
+    signal_defocus_um_tracking = Signal(float)
+    signal_error = Signal(float)
     signal_image1 = Signal(np.ndarray)
     signal_image2 = Signal(np.ndarray)
 
     def __init__(self,tracking_controller_in_plane):
         QObject.__init__(self)
-        self.coefficient_shift2defocus = 1
         self.registration_upsample_factor = 5
         self.image1_received = False
         self.image2_received = False
         self.locked = False
         self.tracking_controller_in_plane = tracking_controller_in_plane
-        self.pixelshift2mm = 1
         
-        self.offset_x = 50
-        self.offset_y = 50
-        self.PDAF_calculation_enable = True
+        self.offset_x = PDAF.x_offset_default
+        self.offset_y = PDAF.y_offset_default
+        self.ROI_ratio_width = PDAF.ROI_ratio_width_default
+        self.ROI_ratio_height = PDAF.ROI_ratio_height_default
+        self.shift_to_distance_um = PDAF.shift_to_distance_um_default
+        self.PDAF_calculation_enable = False
+        self.PDAF_tracking_enable = False
 
     def register_image_from_camera_1(self,image):
         if(self.locked==True):
@@ -72,24 +76,28 @@ class PDAFController(QObject):
             # cropping parameters
             self.x = self.tracking_controller_in_plane.centroid[0]
             self.y = self.tracking_controller_in_plane.centroid[1]
-            self.w = int(abs(self.tracking_controller_in_plane.rect_pts[0][1]-self.tracking_controller_in_plane.rect_pts[1][1])*1.5)
-            self.h = int(abs(self.tracking_controller_in_plane.rect_pts[0][0]-self.tracking_controller_in_plane.rect_pts[1][0])*3)
-            #print('w: ' + str(self.w) + ' h: ' + str(self.h))
+            self.w = int(abs(self.tracking_controller_in_plane.rect_pts[0][1]-self.tracking_controller_in_plane.rect_pts[1][1])*self.ROI_ratio_width)
+            self.h = int(abs(self.tracking_controller_in_plane.rect_pts[0][0]-self.tracking_controller_in_plane.rect_pts[1][0])*self.ROI_ratio_height)
             # crop
             self.image1 = self.image1[(self.y-int(self.h/2)):(self.y+int(self.h/2)),(self.x-int(self.w/2)):(self.x+int(self.w/2))]
             self.image2 = self.image2[(self.y+self.offset_y-int(self.h/2)):(self.y+self.offset_y+int(self.h/2)),(self.x+self.offset_x-int(self.w/2)):(self.x+self.offset_x+int(self.w/2))] # additional offsets may need to be added
             self.signal_image1.emit(self.image1)
             self.signal_image2.emit(self.image2)
-            #print(self.image1.shape)
-            # only do the calculation if the cropped area is fully within the image
-            if self.image1.shape == (self.h,self.w) and self.image1.shape == self.image2.shape and self.PDAF_calculation_enable:
-                # calculate and emit defocus
+            # print(self.image1.shape)
+            # print((self.h,self.w))
+            # print('---')
+            if self.image1.shape[0] > 0.9*self.h and self.image1.shape[1] > 0.9*self.w and self.image1.shape == self.image2.shape and self.PDAF_calculation_enable:
+                # calculate shift
                 shift, error = self._compute_shift_from_image_pair()
                 # only output the defocus when calculation is reliable
                 if error < 0.5:
-                    self.defocus = shift*self.coefficient_shift2defocus
-                    self.signal_defocus_pixel_shift.emit(self.defocus)
-                    self.signal_defocus_mm.emit(self.defocus*self.pixelshift2mm)
+                    # self.signal_defocus_pixel_shift.emit(shift)
+                    self.defocus_um = shift*self.shift_to_distance_um
+                    self.signal_defocus_um_display.emit(self.defocus_um)
+                    self.signal_error.emit(error)
+                    # emit defocus for tracking
+                    if self.PDAF_tracking_enable:
+                        self.signal_defocus_um_tracking.emit(self.defocus_um)
             # get ready for the next calculation
             self.image1_received = False
             self.image2_received = False
@@ -111,7 +119,30 @@ class PDAFController(QObject):
         # method 2: use skimage.registration.phase_cross_correlation
         shifts,error,phasediff = skimage.registration.phase_cross_correlation(self.image1,self.image2,upsample_factor=self.registration_upsample_factor,space='real')
         print('shift: ' + str(shifts) + ', error: ' + "{:.2f}".format(error) ) # for debugging
-        return shifts[1], error # can be shifts[1] - depending on camera orientation
+        return shifts[0], error # shift[0] vs shift[1] depends on camera orientation
+
+    def set_x_offset(self,value):
+        self.offset_x = value
+
+    def set_y_offset(self,value):
+        self.offset_y = value
+
+    def set_ROI_ratio_width(self,value):
+        self.ROI_ratio_width = value
+
+    def set_ROI_ratio_height(self,value):
+        self.ROI_ratio_height = value
+
+    def set_shift_to_distance_um(self,value):
+        self.shift_to_distance_um = value
+
+    def enable_caculation(self,enabled):
+        self.PDAF_calculation_enable = enabled
+        print('PDAF calculation: ' + str(enabled))
+
+    def enable_tracking(self,enabled):
+        self.PDAF_tracking_enable = enabled
+        print('PDAF tracking: ' + str(enabled))
 
     def close(self):
         pass

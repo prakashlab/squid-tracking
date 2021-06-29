@@ -142,6 +142,13 @@ class PID_parameters:
     PID_OUTPUT_MAX = MAX_DISTANCE*STEP_PER_MM_TYPICAL*Motion.MAX_MICROSTEPS
 
 
+class PDAF:
+    ROI_ratio_width_default = 1.5
+    ROI_ratio_height_default = 3
+    x_offset_default = 0
+    y_offset_default = 0
+    shift_to_distance_um_default = 1
+
 
 # class FocusTracking:
 

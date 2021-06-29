@@ -109,6 +109,7 @@ class GravityMachine_GUI(QMainWindow):
 		# PDAF
 		if TWO_CAMERA_PDAF:
 			self.PDAFController = core_PDAF.PDAFController(self.trackingController)
+
 		#-----------------------------------------------------------------------------------------------
 		# Define an ImageSaver, and Image Display object for each image stream
 		#-----------------------------------------------------------------------------------------------
@@ -140,7 +141,8 @@ class GravityMachine_GUI(QMainWindow):
 		self.PID_Group_Widget = widgets_tracking.PID_Group_Widget(self.trackingController)
 		self.FocusTracking_Widget = widgets_tracking.FocusTracking_Widget(self.trackingController, self.internal_state, self.microcontroller)
 		self.recordingControlWidget = widgets.RecordingWidget(self.streamHandler,self.imageSaver, self.internal_state, self.trackingDataSaver, self.imaging_channels)
-
+		if TWO_CAMERA_PDAF:
+			self.PDAFControllerWidget = widgets_tracking.PDAFControllerWidget(self.PDAFController)
 		self.stageCalibrationWidget = widgets_tracking.StageCalibrationWidget(self.internal_state, self.microcontroller) 
 		self.plotWidget = widgets.dockAreaPlot(self.internal_state)
 
@@ -159,6 +161,8 @@ class GravityMachine_GUI(QMainWindow):
 		self.SettingsTab = QTabWidget()
 		self.SettingsTab.addTab(self.PID_Group_Widget, 'PID')
 		self.SettingsTab.addTab(self.FocusTracking_Widget, 'Liquid Lens')
+		if TWO_CAMERA_PDAF:
+			self.SettingsTab.addTab(self.PDAFControllerWidget, 'PDAF')
 		self.SettingsTab.addTab(self.navigationWidget, 'Navigation')
 		self.SettingsTab.addTab(self.stageCalibrationWidget, 'Calibration')
 		self.SettingsTab.addTab(self.plotWidget, 'Plots')

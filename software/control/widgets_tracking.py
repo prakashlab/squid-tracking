@@ -810,3 +810,94 @@ class FocusTracking_Widget(QFrame):
 		self.hslider_lensFreq.setValue(new_value)
 
 
+class PDAFControllerWidget(QFrame):
+    def __init__(self, PDAFController, main=None, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.PDAFController = PDAFController
+        self.add_components()
+        self.setFrameStyle(QFrame.Panel | QFrame.Raised)
+
+    def add_components(self):
+ 
+        self.entry_x_offset = QSpinBox()
+        self.entry_x_offset.setMinimum(-1000) 
+        self.entry_x_offset.setMaximum(1000) 
+        self.entry_x_offset.setValue(PDAF.x_offset_default)
+
+        self.entry_y_offset = QSpinBox()
+        self.entry_y_offset.setMinimum(-1000) 
+        self.entry_y_offset.setMaximum(1000)
+        self.entry_x_offset.setValue(PDAF.y_offset_default)
+
+        self.entry_ROI_ratio_width = QDoubleSpinBox()
+        self.entry_ROI_ratio_width.setMinimum(0.5) 
+        self.entry_ROI_ratio_width.setMaximum(10) 
+        self.entry_ROI_ratio_width.setSingleStep(0.1)
+        self.entry_ROI_ratio_width.setValue(PDAF.ROI_ratio_width_default)
+
+        self.entry_ROI_ratio_height = QDoubleSpinBox()
+        self.entry_ROI_ratio_height.setMinimum(0.5) 
+        self.entry_ROI_ratio_height.setMaximum(10) 
+        self.entry_ROI_ratio_height.setSingleStep(0.1)
+        self.entry_ROI_ratio_height.setValue(PDAF.ROI_ratio_height_default)
+
+        self.entry_shift_to_distance_um = QDoubleSpinBox()
+        self.entry_shift_to_distance_um.setMinimum(0.5) 
+        self.entry_shift_to_distance_um.setMaximum(10) 
+        self.entry_shift_to_distance_um.setSingleStep(0.1)
+        self.entry_shift_to_distance_um.setValue(PDAF.shift_to_distance_um_default)
+
+        self.btn_enable_calculation = QPushButton('Enable Calculation')
+        self.btn_enable_calculation.setCheckable(True)
+        self.btn_enable_calculation.setChecked(False)
+        self.btn_enable_calculation.setDefault(False)
+        
+        self.btn_enable_tracking = QPushButton('Enable Focus Tracking')
+        self.btn_enable_tracking.setCheckable(True)
+        self.btn_enable_tracking.setChecked(False)
+        self.btn_enable_tracking.setDefault(False)
+
+        # self.label_Shift = QLabel()
+        # self.label_Shift.setFrameStyle(QFrame.Panel | QFrame.Sunken)
+        # self.label_Error = QLabel()
+        # self.label_Error.setFrameStyle(QFrame.Panel | QFrame.Sunken)
+        self.display_defocus_um = QLCDNumber()
+        self.display_defocus_um.setNumDigits(2)
+        self.display_error = QLCDNumber()
+        self.display_error.setNumDigits(3)
+        
+        grid_line0 = QGridLayout()
+        grid_line0.addWidget(QLabel('X Crop Offset'), 0,0)
+        grid_line0.addWidget(self.entry_x_offset, 0,1)
+        grid_line0.addWidget(QLabel('Y Crop Offset'), 0,2)
+        grid_line0.addWidget(self.entry_y_offset, 0,3)
+        grid_line0.addWidget(QLabel('ROI Width Scaling'), 1,0)
+        grid_line0.addWidget(self.entry_ROI_ratio_width, 1,1)
+        grid_line0.addWidget(QLabel('ROI Height Scaling'), 1,2)
+        grid_line0.addWidget(self.entry_ROI_ratio_height, 1,3)
+        grid_line0.addWidget(self.btn_enable_calculation, 2,0,1,2)
+        grid_line0.addWidget(self.btn_enable_tracking, 2,2,1,2)
+        grid_line0.addWidget(QLabel('Defocus (um)'), 3,0,1,1)
+        grid_line0.addWidget(self.display_defocus_um, 3,1,1,1)
+        grid_line0.addWidget(QLabel('Error'), 3,2,1,1)
+        grid_line0.addWidget(self.display_error, 3,3,1,1)
+
+        self.grid = QGridLayout()
+        self.grid.addLayout(grid_line0,0,0)
+        vbox = QVBoxLayout()
+        vbox.addLayout(self.grid)
+        vbox.addStretch()
+
+        self.setLayout(vbox)
+
+        self.btn_enable_calculation.clicked.connect(self.PDAFController.enable_caculation)
+        self.btn_enable_tracking.clicked.connect(self.PDAFController.enable_tracking)
+        self.entry_x_offset.valueChanged.connect(self.PDAFController.set_x_offset)
+        self.entry_y_offset.valueChanged.connect(self.PDAFController.set_y_offset)
+        self.entry_ROI_ratio_width.valueChanged.connect(self.PDAFController.set_ROI_ratio_width)
+        self.entry_ROI_ratio_height.valueChanged.connect(self.PDAFController.set_ROI_ratio_height)
+        self.entry_shift_to_distance_um.valueChanged.connect(self.PDAFController.set_ROI_ratio_height)
+
+        self.PDAFController.signal_defocus_um_display.connect(self.display_defocus_um.display)
+        self.PDAFController.signal_error.connect(self.display_error.display)
+
