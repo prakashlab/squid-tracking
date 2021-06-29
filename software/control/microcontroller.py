@@ -338,6 +338,9 @@ class Microcontroller_Simulation():
     def move_z(self,delta):
         pass
 
+    def send_focus_tracking_command(self,focus_tracking_flag):
+        pass
+
     def send_command(self,command):
         pass
 
