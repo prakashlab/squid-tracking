@@ -842,7 +842,7 @@ class PDAFControllerWidget(QFrame):
         self.entry_ROI_ratio_height.setValue(PDAF.ROI_ratio_height_default)
 
         self.entry_shift_to_distance_um = QDoubleSpinBox()
-        self.entry_shift_to_distance_um.setMinimum(0.5) 
+        self.entry_shift_to_distance_um.setMinimum(-10) 
         self.entry_shift_to_distance_um.setMaximum(10) 
         self.entry_shift_to_distance_um.setSingleStep(0.1)
         self.entry_shift_to_distance_um.setValue(PDAF.shift_to_distance_um_default)

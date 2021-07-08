@@ -71,7 +71,7 @@ class PDAFController(QObject):
             self.calculate_defocus()
 
     def calculate_defocus(self):
-        if self.tracking_controller_in_plane.centroid is not None: 
+        if self.tracking_controller_in_plane.centroid is not None and self.tracking_controller_in_plane.objectFound is True: 
             self.locked = True
             # cropping parameters
             self.x = self.tracking_controller_in_plane.centroid[0]
