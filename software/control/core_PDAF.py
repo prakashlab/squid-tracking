@@ -123,7 +123,7 @@ class PDAFController(QObject):
         # method 2: use skimage.registration.phase_cross_correlation
         shifts,error,phasediff = skimage.registration.phase_cross_correlation(self.image1,self.image2,upsample_factor=self.registration_upsample_factor,space='real')
         print('shift: ' + str(shifts) + ', error: ' + "{:.2f}".format(error) ) # for debugging
-        return shifts[0], error # shift[0] vs shift[1] depends on camera orientation
+        return shifts[1], error # shift[0] vs shift[1] depends on camera orientation
 
     def set_x_offset(self,value):
         self.offset_x = value
