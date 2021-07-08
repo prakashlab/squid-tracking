@@ -143,11 +143,11 @@ class PID_parameters:
 
 
 class PDAF:
-    ROI_ratio_width_default = 2
+    ROI_ratio_width_default = 2.5
     ROI_ratio_height_default = 2.5
-    x_offset_default = -32
-    y_offset_default = -50
-    shift_to_distance_um_default = 5
+    x_offset_default = 31
+    y_offset_default = -41
+    shift_to_distance_um_default = -5.0
 
 
 # class FocusTracking:
@@ -201,12 +201,20 @@ ROTATE_IMAGE_ANGLE = 90
 FLIP_IMAGE = 'Vertical' # Horizontal, Both
 LIQUID_LENS_FOCUS_TRACKING = False
 
+# stage movement sign - it depends on camera orientation and stage configuration
+TRACKING_STAGE_MOVEMENT_SIGN_X = 1
+TRACKING_STAGE_MOVEMENT_SIGN_Y = 1
+TRACKING_STAGE_MOVEMENT_SIGN_THETA = -1
+
 TWO_CAMERA_PDAF = True
 if TWO_CAMERA_PDAF == True:
     CAMERAS = {'DF1':{'make':'Daheng','serial':'FW0200050063','px_format':(2560,2048),'color_format':'GRAY8','fps': 60,'is_color': False},'DF2':{'make':'Daheng','serial':'FW0200050068','px_format':(2560,2048),'color_format':'GRAY8','fps':60,'is_color': False}}
     LIQUID_LENS_FOCUS_TRACKING = False
     ROTATE_IMAGE_ANGLE = 90
-    FLIP_IMAGE = None # Horizontal, Both
+    FLIP_IMAGE = 'Horizontal' # Horizontal, Both
+    STAGE_MOVEMENT_SIGN_X = -1
+    STAGE_MOVEMENT_SIGN_Y = None # not used
+    STAGE_MOVEMENT_SIGN_THETA = -1
 
 TRACKING = 'DF1'
 

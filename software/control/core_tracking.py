@@ -272,11 +272,11 @@ class TrackingController(QObject):
 
 				# New serial interface (send data directly to micro-controller object)
 
-				self.microcontroller.move_x_nonblocking(X_order)
+				self.microcontroller.move_x_nonblocking(X_order*STAGE_MOVEMENT_SIGN_X)
 				if LIQUID_LENS_FOCUS_TRACKING == False:
-					self.microcontroller.move_y_nonblocking(Y_order)
+					self.microcontroller.move_y_nonblocking(Y_order*STAGE_MOVEMENT_SIGN_Y)
 					# when doing focus tracking with liquid lens, because of the potential difference update rate, y_order is sent separately
-				self.microcontroller.move_theta_nonblocking(-Theta_order)  
+				self.microcontroller.move_theta_nonblocking(Theta_order*STAGE_MOVEMENT_SIGN_THETA)  
 
 			# Update the Internal State Model
 			self.update_internal_state()
