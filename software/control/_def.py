@@ -201,9 +201,9 @@ DEFAULT_OBJECTIVE = '4x'
 
 
 # Gravity Machine -3 (DO NOT CHANGE)
-CAMERAS = {'DF1':{'make':'Daheng','serial':"FU0200070043", 'px_format':(4000, 3000), 'color_format': None, 'fps': 30, 'is_color':True}}
+CAMERAS = {'DF1':{'make':'Daheng','serial':"FU0200070043", 'px_format':(4000, 3000), 'color_format': None, 'fps': 30, 'is_color':True}, 'low-mag':{'make':'Daheng','serial':"FW0200050061", 'px_format':(4000, 3000), 'color_format': None, 'fps': 30, 'is_color':False}}
 
-ROTATE_IMAGE_ANGLE = 90
+ROTATE_IMAGE_ANGLE = None
 FLIP_IMAGE = 'Vertical' # Horizontal, Both
 LIQUID_LENS_FOCUS_TRACKING = False
 
