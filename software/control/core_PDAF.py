@@ -65,7 +65,7 @@ class PDAFController(QObject):
         if(self.locked==True):
             return
         self.image2 = np.copy(image)
-        self.image2 = np.fliplr(self.image2) # can be flipud depending on camera orientation
+        self.image2 = np.flipud(self.image2) # can be fliplr depending on camera orientation
         self.image2_received = True
         if(self.image1_received):
             self.calculate_defocus()
