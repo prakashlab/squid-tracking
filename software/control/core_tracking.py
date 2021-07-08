@@ -58,7 +58,7 @@ class TrackingController(QObject):
 	save_data_signal -> DataSaver
 
 	'''
-	def __init__(self, microcontroller, internal_state , focus_tracker = 'liq-lens', rotate_image_angle = 0):
+	def __init__(self, microcontroller, internal_state , focus_tracker = 'liq-lens', rotate_image_angle = 0, color = False):
 		QObject.__init__(self)
 		self.microcontroller = microcontroller
 		self.internal_state = internal_state
@@ -96,7 +96,7 @@ class TrackingController(QObject):
 		self.rotate_image_angle = rotate_image_angle
 
 		# Create a tracking object that does the image-based tracking
-		self.tracker_image = tracking.Tracker_Image()
+		self.tracker_image = tracking.Tracker_Image(color = color)
 		# Create a tracking object that does the focus-based tracking
 		self.tracker_focus = tracking_focus.Tracker_Focus()
 
