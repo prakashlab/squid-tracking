@@ -220,7 +220,10 @@ STAGE_MOVEMENT_SIGN_THETA = -1
 
 TWO_CAMERA_PDAF = False
 if TWO_CAMERA_PDAF == True:
+    # IMX178 PDAF (DO NOT CHANGE THE LINE BELOW)
     CAMERAS = {'DF1':{'make':'Daheng','serial':'FW0200050063','px_format':(2560,2048),'color_format':'GRAY8','fps': 60,'is_color': False},'DF2':{'make':'Daheng','serial':'FW0200050068','px_format':(2560,2048),'color_format':'GRAY8','fps':60,'is_color': False}}
+    # IMX226 PDAF (DO NOT CHANGE THE LINE BELOW)
+    # CAMERAS = {'DF1':{'make':'Daheng','serial':'FW0190090100','px_format':(4000,3000),'color_format':'GRAY8','fps': 30,'is_color': False},'DF2':{'make':'Daheng','serial':'FW0200050070','px_format':(4000,3000),'color_format':'GRAY8','fps':30,'is_color': False}}
     LIQUID_LENS_FOCUS_TRACKING = False
     ROTATE_IMAGE_ANGLE = 90
     FLIP_IMAGE = 'Horizontal' # Horizontal, Both
