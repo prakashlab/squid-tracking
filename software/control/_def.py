@@ -208,7 +208,7 @@ CAMERAS = {'DF1':{'make':'Daheng','serial':"FU0200070043", 'px_format':(4000, 30
 # LIQUID_LENS_FOCUS_TRACKING = False
 
 # Gravity Machine X
-CAMERAS = {'DF1':{'make':'Daheng','serial':"FU0200080047", 'px_format':(4000,3000), 'color_format': 'GRAY8', 'fps': 30,'is_color':True}}
+CAMERAS = {'DF1':{'make':'Daheng','serial':"FU0200080047", 'px_format':(2200,2000), 'color_format': 'GRAY8', 'fps': 30,'is_color':True}}
 ROTATE_IMAGE_ANGLE = 90
 FLIP_IMAGE = 'Both' # Horizontal, Both
 LIQUID_LENS_FOCUS_TRACKING = False
