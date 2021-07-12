@@ -691,7 +691,7 @@ class ImageDisplayWindow(QMainWindow):
         width = self.roi_size[0]
         height = self.roi_size[1]
         xmin = max(0, self.roi_pos[0])
-        ymin = max(0, self.image_height - height - self.roi_pos[1])
+        ymin = max(0, self.roi_pos[1])
         # print('Bbox from ImageDisplay: {}'.format([xmin, ymin, width, height]))
 
         self.roi_bbox.emit(np.array([xmin, ymin, width, height]))
