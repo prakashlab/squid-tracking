@@ -146,8 +146,12 @@ class StreamHandler(QObject):
         
     def threshold_image(self, image_resized, color):
         if(color):
-            thresh_image = image_processing.threshold_image(image_resized,self.lower_HSV,self.upper_HSV)  #The threshold image as one channel
-
+            thresh_image = cv2.cvtColor(image_resized, cv2.COLOR_BGR2GRAY)
+            image_resized = np.array(thresh_image, dtype='uint8')
+            thresh_image = image_processing.threshold_image_gray(image_resized, self.lower_HSV[2], self.upper_HSV[2])
+            # thresh_image = image_processing.threshold_image(image_resized,self.lower_HSV,self.upper_HSV)  #The threshold image as one channel
+            if(self.invert_image_flag==True):
+                thresh_image = 1 - thresh_image
         else:
             # print(self.lower_HSV[2])
             # print(self.upper_HSV[2])

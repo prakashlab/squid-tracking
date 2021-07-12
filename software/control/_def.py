@@ -195,20 +195,35 @@ OBJECTIVES = {'2x':{'magnification':2, 'NA':0.10, 'PixelPermm':217}, '4x':{'magn
 
 DEFAULT_OBJECTIVE = '4x'
   
-CAMERAS = {'DF1':{'make':'TIS','serial':"08910100", 'px_format':(2048, 1536), 'color_format': 'GRAY8', 'fps': 75, 'is_color': False}, 'DF2':{'make':'TIS','serial':"08910102", 'px_format':(2048, 1536), 'color_format': 'GRAY8', 'fps': 75, 'is_color': False}}
-# CAMERAS = {'DF1':{'make':'Daheng','serial':"FU0200070043", 'px_format':None, 'color_format': 'GRAY8', 'fps': 30}}
+
+# 2 camera PDAF (Gravity Machine 4)
+# CAMERAS = {'DF1':{'make':'TIS','serial':"08910100", 'px_format':(2048, 1536), 'color_format': 'GRAY8', 'fps': 75, 'is_color': False}, 'DF2':{'make':'TIS','serial':"08910102", 'px_format':(2048, 1536), 'color_format': 'GRAY8', 'fps': 75, 'is_color': False}}
+
+
+# Gravity Machine -3 (DO NOT CHANGE)
+CAMERAS = {'DF1':{'make':'Daheng','serial':"FU0200070043", 'px_format':(4000, 3000), 'color_format': None, 'fps': 30, 'is_color':True}, 'low-mag':{'make':'Daheng','serial':"FW0200050061", 'px_format':(4000, 3000), 'color_format': None, 'fps': 30, 'is_color':False}}
+
+# ROTATE_IMAGE_ANGLE = None
+# FLIP_IMAGE = 'Vertical' # Horizontal, Both
+# LIQUID_LENS_FOCUS_TRACKING = False
+
+# Gravity Machine X
+CAMERAS = {'DF1':{'make':'Daheng','serial':"FU0200080047", 'px_format':(2200,2000), 'color_format': 'GRAY8', 'fps': 30,'is_color':True}}
 ROTATE_IMAGE_ANGLE = 90
-FLIP_IMAGE = 'Vertical' # Horizontal, Both
+FLIP_IMAGE = 'Both' # Horizontal, Both
 LIQUID_LENS_FOCUS_TRACKING = False
 
 # stage movement sign - it depends on camera orientation and stage configuration
-TRACKING_STAGE_MOVEMENT_SIGN_X = 1
-TRACKING_STAGE_MOVEMENT_SIGN_Y = 1
-TRACKING_STAGE_MOVEMENT_SIGN_THETA = -1
+STAGE_MOVEMENT_SIGN_X = 1
+STAGE_MOVEMENT_SIGN_Y = 1
+STAGE_MOVEMENT_SIGN_THETA = -1
 
-TWO_CAMERA_PDAF = True
+TWO_CAMERA_PDAF = False
 if TWO_CAMERA_PDAF == True:
+    # IMX178 PDAF (DO NOT CHANGE THE LINE BELOW)
     CAMERAS = {'DF1':{'make':'Daheng','serial':'FW0200050063','px_format':(2560,2048),'color_format':'GRAY8','fps': 60,'is_color': False},'DF2':{'make':'Daheng','serial':'FW0200050068','px_format':(2560,2048),'color_format':'GRAY8','fps':60,'is_color': False}}
+    # IMX226 PDAF (DO NOT CHANGE THE LINE BELOW)
+    # CAMERAS = {'DF1':{'make':'Daheng','serial':'FW0190090100','px_format':(4000,3000),'color_format':'GRAY8','fps': 30,'is_color': False},'DF2':{'make':'Daheng','serial':'FW0200050070','px_format':(4000,3000),'color_format':'GRAY8','fps':30,'is_color': False}}
     LIQUID_LENS_FOCUS_TRACKING = False
     ROTATE_IMAGE_ANGLE = 90
     FLIP_IMAGE = 'Horizontal' # Horizontal, Both
