@@ -1,4 +1,5 @@
 import os
+import glob
 
 # TRACKING_CONFIG = 'XYZ'
 TRACKING_CONFIG = 'XYT'
@@ -32,6 +33,7 @@ class AF:
     def __init__(self):
         pass
 
+# this one can be redefined in machine specific files
 class Chamber:
     # Chamber dimensions in mm
     WIDTH = 5
@@ -194,47 +196,35 @@ FocusTracking = {'Cropped image ratio':{'default':10}}
 OBJECTIVES = {'2x':{'magnification':2, 'NA':0.10, 'PixelPermm':217}, '4x':{'magnification':4, 'NA':0.13, 'PixelPermm':432}, '10x':{'magnification':10, 'NA':0.25, 'PixelPermm':1066}, '20x':{'magnification':20, 'NA':0.4, 'PixelPermm':4008}, '40x':{'magnification':40, 'NA':0.6,'PixelPermm':8016}}
 
 DEFAULT_OBJECTIVE = '4x'
-  
 
-# 2 camera PDAF (Gravity Machine 4)
-# CAMERAS = {'DF1':{'make':'TIS','serial':"08910100", 'px_format':(2048, 1536), 'color_format': 'GRAY8', 'fps': 75, 'is_color': False}, 'DF2':{'make':'TIS','serial':"08910102", 'px_format':(2048, 1536), 'color_format': 'GRAY8', 'fps': 75, 'is_color': False}}
+##########################################################
+#### start of loading machine specific configurations ####
+##########################################################
+# # stage movement sign - it depends on camera orientation and stage configuration
+# STAGE_MOVEMENT_SIGN_X = 1
+# STAGE_MOVEMENT_SIGN_Y = 1
+# STAGE_MOVEMENT_SIGN_THETA = -1
 
+# X_ENCODER_SIGN = 1
+# Y_ENCODER_SIGN = 1
+# THETA_ENCODER_SIGN = -1
 
-# Gravity Machine -3 (DO NOT CHANGE)
-CAMERAS = {'DF1':{'make':'Daheng','serial':"FU0200070043", 'px_format':(4000, 3000), 'color_format': None, 'fps': 30, 'is_color':True}, 'low-mag':{'make':'Daheng','serial':"FW0200050061", 'px_format':(4000, 3000), 'color_format': None, 'fps': 30, 'is_color':False}}
-
-# ROTATE_IMAGE_ANGLE = None
-# FLIP_IMAGE = 'Vertical' # Horizontal, Both
 # LIQUID_LENS_FOCUS_TRACKING = False
+# TWO_CAMERA_PDAF = False
+# PDAF_FLIPUD = True
 
-# Gravity Machine X
-CAMERAS = {'DF1':{'make':'Daheng','serial':"FU0200080047", 'px_format':(2200,2000), 'color_format': 'GRAY8', 'fps': 30,'is_color':True}}
-ROTATE_IMAGE_ANGLE = 90
-FLIP_IMAGE = 'Both' # Horizontal, Both
-LIQUID_LENS_FOCUS_TRACKING = False
+# CAMERAS = {'DF1':{'make':'Daheng','serial':'FW0200050063','px_format':(2560,2048),'color_format':'GRAY8','fps': 60,'is_color':False,'rotate image angle':0,'flip image':'Horizental'},\
+#            'DF2':{'make':'Daheng','serial':'FW0200050068','px_format':(2560,2048),'color_format':'GRAY8','fps':60,'is_color':False,'rotate image angle':0,'flip image':'Horizental'}, \
+#            'low-mag':{'make':'Daheng','serial':'FW0200050061','px_format':(2560,2048),'color_format':'GRAY8','fps':30,'is_color':False,'rotate image angle':0,'flip image':'Horizental'}}
 
-# stage movement sign - it depends on camera orientation and stage configuration
-STAGE_MOVEMENT_SIGN_X = 1
-STAGE_MOVEMENT_SIGN_Y = 1
-STAGE_MOVEMENT_SIGN_THETA = -1
+config_files = glob.glob('.' + '/' + 'configuration*.txt')
+if config_files:
+    print('load machine-specific configuration')
+    exec(open(config_files[0]).read())
 
-X_ENCODER_SIGN = 1
-Y_ENCODER_SIGN = 1
-THETA_ENCODER_SIGN = -1
-
-TWO_CAMERA_PDAF = True
-if TWO_CAMERA_PDAF == True:
-    # IMX178 PDAF (DO NOT CHANGE THE LINE BELOW)
-    CAMERAS = {'DF1':{'make':'Daheng','serial':'FW0200050063','px_format':(2560,2048),'color_format':'GRAY8','fps': 60,'is_color': False},'DF2':{'make':'Daheng','serial':'FW0200050068','px_format':(2560,2048),'color_format':'GRAY8','fps':60,'is_color': False}}
-    # IMX226 PDAF (DO NOT CHANGE THE LINE BELOW)
-    # CAMERAS = {'DF1':{'make':'Daheng','serial':'FW0190090100','px_format':(4000,3000),'color_format':'GRAY8','fps': 30,'is_color': False},'DF2':{'make':'Daheng','serial':'FW0200050070','px_format':(4000,3000),'color_format':'GRAY8','fps':30,'is_color': False}}
-    LIQUID_LENS_FOCUS_TRACKING = False
-    ROTATE_IMAGE_ANGLE = 90
-    FLIP_IMAGE = 'Horizontal' # Vertical, Both
-    STAGE_MOVEMENT_SIGN_X = 1
-    STAGE_MOVEMENT_SIGN_Y = 1
-    STAGE_MOVEMENT_SIGN_THETA = -1
-    PDAF_FLIPUD = True
+########################################################
+#### end of loading machine specific configurations ####
+########################################################
 
 TRACKING = 'DF1'
 

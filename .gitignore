@@ -111,3 +111,6 @@ venv.bak/
 # Vim swapfiles
 *.swp
 *.swo
+
+# configuration files
+*.txt
