@@ -847,6 +847,18 @@ class PDAFControllerWidget(QFrame):
         self.entry_shift_to_distance_um.setSingleStep(0.1)
         self.entry_shift_to_distance_um.setValue(PDAF.shift_to_distance_um_default)
 
+        self.entry_tracking_range_min_um = QDoubleSpinBox()
+        self.entry_tracking_range_min_um.setMinimum(-10000) 
+        self.entry_tracking_range_min_um.setMaximum(10000) 
+        self.entry_tracking_range_min_um.setSingleStep(0.1)
+        self.entry_tracking_range_min_um.setValue(-10000)
+
+        self.entry_tracking_range_max_um = QDoubleSpinBox()
+        self.entry_tracking_range_max_um.setMinimum(-10000) 
+        self.entry_tracking_range_max_um.setMaximum(10000) 
+        self.entry_tracking_range_max_um.setSingleStep(0.1)
+        self.entry_tracking_range_max_um.setValue(10000)
+
         self.btn_enable_calculation = QPushButton('Enable Calculation')
         self.btn_enable_calculation.setCheckable(True)
         self.btn_enable_calculation.setChecked(False)
@@ -884,10 +896,17 @@ class PDAFControllerWidget(QFrame):
 
         self.grid = QGridLayout()
         self.grid.addLayout(grid_line0,0,0)
+
+        self.grid2 = QGridLayout()
+        self.grid2.addWidget(QLabel('tracking range min (um)'),0,0)
+        self.grid2.addWidget(self.entry_tracking_range_min_um,0,1)
+        self.grid2.addWidget(QLabel('tracking range max (um)'),0,2)
+        self.grid2.addWidget(self.entry_tracking_range_max_um,0,3)
+        
         vbox = QVBoxLayout()
         vbox.addLayout(self.grid)
         vbox.addStretch()
-
+        vbox.addLayout(self.grid2)
         self.setLayout(vbox)
 
         # self.btn_enable_calculation.clicked.connect(self.PDAFController.enable_caculation)
@@ -903,6 +922,9 @@ class PDAFControllerWidget(QFrame):
 
         self.PDAFController.signal_defocus_um_display.connect(self.display_defocus_um.display)
         self.PDAFController.signal_error.connect(self.display_error.display)
+
+        self.entry_tracking_range_min_um.valueChanged.connect(self.PDAFController.set_defocus_um_for_enable_tracking_min)
+        self.entry_tracking_range_max_um.valueChanged.connect(self.PDAFController.set_defocus_um_for_enable_tracking_max)
 
     def enable_caculation(self,pressed):
     	if pressed:

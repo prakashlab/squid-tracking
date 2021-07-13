@@ -55,6 +55,9 @@ class PDAFController(QObject):
 
         self.scale_factor = 1.0 # for keeping the image size for PDAF calculation below 512 x 512 (for now)
 
+        self.defocus_um_for_enable_tracking_min = -10000
+        self.defocus_um_for_enable_tracking_max = 10000
+
     def register_image_from_camera_1(self,image):
         if(self.locked==True):
             return
@@ -114,7 +117,7 @@ class PDAFController(QObject):
                         self.signal_defocus_um_display.emit(self.defocus_um)
                         self.signal_error.emit(error)
                         # emit defocus for tracking
-                        if self.PDAF_tracking_enable:
+                        if self.PDAF_tracking_enable and ( self.defocus_um >= self.defocus_um_for_enable_tracking_min ) and ( self.defocus_um <= self.defocus_um_for_enable_tracking_max):
                             # self.signal_defocus_um_tracking.emit(self.defocus_um)
                             self.tracking_controller_in_plane.track_focus = True
                             self.tracking_controller_in_plane.y_error = self.defocus_um/1000.0
@@ -178,6 +181,12 @@ class PDAFController(QObject):
             self.tracking_controller_in_plane.internal_state.data['track_focus'] = False
             self.tracking_controller_in_plane.microcontroller.send_focus_tracking_command(False)
             self.tracking_controller_in_plane.track_focus = False
+
+    def set_defocus_um_for_enable_tracking_min(self,value):
+        self.defocus_um_for_enable_tracking_min = value
+        
+    def set_defocus_um_for_enable_tracking_max(self,value):
+        self.defocus_um_for_enable_tracking_max = value
 
     def close(self):
         pass
