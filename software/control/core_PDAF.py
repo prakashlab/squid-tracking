@@ -53,6 +53,8 @@ class PDAFController(QObject):
         self.PDAF_calculation_enable = False
         self.PDAF_tracking_enable = False
 
+        self.scale_factor = 1.0 # for keeping the image size for PDAF calculation below 512 x 512 (for now)
+
     def register_image_from_camera_1(self,image):
         if(self.locked==True):
             return
@@ -65,7 +67,10 @@ class PDAFController(QObject):
         if(self.locked==True):
             return
         self.image2 = np.copy(image)
-        self.image2 = np.flipud(self.image2) # can be fliplr depending on camera orientation
+        if PDAF_FLIPUD: 
+            self.image2 = np.flipud(self.image2)
+        else:
+            self.image2 = np.fliplr(self.image2)
         self.image2_received = True
         if(self.image1_received):
             self.calculate_defocus()
@@ -76,32 +81,47 @@ class PDAFController(QObject):
             # cropping parameters
             self.x = self.tracking_controller_in_plane.centroid[0]
             self.y = self.tracking_controller_in_plane.centroid[1]
-            self.w = int(abs(self.tracking_controller_in_plane.rect_pts[0][1]-self.tracking_controller_in_plane.rect_pts[1][1])*self.ROI_ratio_width)
-            self.h = int(abs(self.tracking_controller_in_plane.rect_pts[0][0]-self.tracking_controller_in_plane.rect_pts[1][0])*self.ROI_ratio_height)
+            self.w = int(abs(self.tracking_controller_in_plane.rect_pts[0][0]-self.tracking_controller_in_plane.rect_pts[1][0])*self.ROI_ratio_width)
+            self.h = int(abs(self.tracking_controller_in_plane.rect_pts[0][1]-self.tracking_controller_in_plane.rect_pts[1][1])*self.ROI_ratio_height)
             # crop
-            self.image1 = self.image1[(self.y-int(self.h/2)):(self.y+int(self.h/2)),(self.x-int(self.w/2)):(self.x+int(self.w/2))]
-            self.image2 = self.image2[(self.y+self.offset_y-int(self.h/2)):(self.y+self.offset_y+int(self.h/2)),(self.x+self.offset_x-int(self.w/2)):(self.x+self.offset_x+int(self.w/2))] # additional offsets may need to be added
-            self.signal_image1.emit(self.image1)
-            self.signal_image2.emit(self.image2)
-            # print(self.image1.shape)
-            # print((self.h,self.w))
-            # print('---')
-            if self.image1.shape[0] > 0.9*self.h and self.image1.shape[1] > 0.9*self.w and self.image1.shape == self.image2.shape and self.PDAF_calculation_enable:
-                # calculate shift
-                shift, error = self._compute_shift_from_image_pair()
-                # only output the defocus when calculation is reliable
-                if error < 0.5:
-                    # self.signal_defocus_pixel_shift.emit(shift)
-                    self.defocus_um = shift*self.shift_to_distance_um
-                    self.signal_defocus_um_display.emit(self.defocus_um)
-                    self.signal_error.emit(error)
-                    # emit defocus for tracking
-                    if self.PDAF_tracking_enable:
-                        # self.signal_defocus_um_tracking.emit(self.defocus_um)
-                        self.tracking_controller_in_plane.track_focus = True
-                        self.tracking_controller_in_plane.y_error = self.defocus_um/1000.0
-                    else:
-                        self.tracking_controller_in_plane.track_focus = False
+            self.image1 = self.image1[max((self.y-int(self.h/2)),0):min(self.image1.shape[0],(self.y+int(self.h/2))),max(0,(self.x-int(self.w/2))):min(self.image1.shape[1],(self.x+int(self.w/2)))]
+            self.image2 = self.image2[max((self.y+self.offset_y-int(self.h/2)),0):min(self.image2.shape[0],(self.y+self.offset_y+int(self.h/2))),max(0,(self.x+self.offset_x-int(self.w/2))):min(self.image2.shape[1],(self.x+self.offset_x+int(self.w/2)))] 
+            try:
+                # resize
+                if max(self.h,self.w) > 512:
+                    self.scale_factor = 512.0/max(self.h,self.w)
+                    # print('resize image ... ' + str(self.scale_factor))
+                    self.image1 = cv2.resize(self.image1,(int(self.image1.shape[1]*self.scale_factor),int(self.image1.shape[0]*self.scale_factor)))
+                    self.image2 = cv2.resize(self.image2,(int(self.image2.shape[1]*self.scale_factor),int(self.image2.shape[0]*self.scale_factor)))
+                    # self.image1 = cv2.resize(self.image1,None,self.scale_factor,self.scale_factor)
+                    # self.image2 = cv2.resize(self.image2,None,self.scale_factor,self.scale_factor)
+                else:
+                    self.scale_factor = 1.0
+                # send cropped images to display
+                self.signal_image1.emit(self.image1)
+                self.signal_image2.emit(self.image2)
+                # print(self.image1.shape)
+                # print((self.h,self.w))
+                # print('---')
+                if self.image1.shape[0] > 0.9*self.h*self.scale_factor and self.image1.shape[1] > 0.9*self.w*self.scale_factor and self.image1.shape == self.image2.shape and self.PDAF_calculation_enable:
+                    # calculate shift
+                    shift, error = self._compute_shift_from_image_pair()
+                    shift = shift/self.scale_factor
+                    # only output the defocus when calculation is reliable
+                    if error < 0.5:
+                        # self.signal_defocus_pixel_shift.emit(shift)
+                        self.defocus_um = shift*self.shift_to_distance_um
+                        self.signal_defocus_um_display.emit(self.defocus_um)
+                        self.signal_error.emit(error)
+                        # emit defocus for tracking
+                        if self.PDAF_tracking_enable:
+                            # self.signal_defocus_um_tracking.emit(self.defocus_um)
+                            self.tracking_controller_in_plane.track_focus = True
+                            self.tracking_controller_in_plane.y_error = self.defocus_um/1000.0
+                        else:
+                            self.tracking_controller_in_plane.track_focus = False
+            except:
+                pass
             # get ready for the next calculation
             self.image1_received = False
             self.image2_received = False
@@ -123,7 +143,10 @@ class PDAFController(QObject):
         # method 2: use skimage.registration.phase_cross_correlation
         shifts,error,phasediff = skimage.registration.phase_cross_correlation(self.image1,self.image2,upsample_factor=self.registration_upsample_factor,space='real')
         print('shift: ' + str(shifts) + ', error: ' + "{:.2f}".format(error) ) # for debugging
-        return shifts[1], error # shift[0] vs shift[1] depends on camera orientation
+        if PDAF_FLIPUD:
+            return shifts[1], error # shift[0] vs shift[1] depends on camera orientation
+        else:
+            return shifts[0], error # shift[0] vs shift[1] depends on camera orientation
 
     def set_x_offset(self,value):
         self.offset_x = value
