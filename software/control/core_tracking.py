@@ -576,11 +576,11 @@ class microcontroller_Receiver(QObject):
 
 				elif(MicrocontrollerDef.RUN_OPENLOOP == False):
 					# X stage position (mm)
-					self.x_pos = byte_operations.unsigned_to_signed(data[3:6],MicrocontrollerDef.N_BYTES_POS)/(Encoders.COUNTS_PER_MM_X) 
+					self.x_pos = X_ENCODER_SIGN*byte_operations.unsigned_to_signed(data[3:6],MicrocontrollerDef.N_BYTES_POS)/(Encoders.COUNTS_PER_MM_X) 
 					# Y stage position (mm)
-					self.y_pos = byte_operations.unsigned_to_signed(data[6:9],MicrocontrollerDef.N_BYTES_POS)/(Encoders.COUNTS_PER_MM_Y)
+					self.y_pos = Y_ENCODER_SIGN*byte_operations.unsigned_to_signed(data[6:9],MicrocontrollerDef.N_BYTES_POS)/(Encoders.COUNTS_PER_MM_Y)
 					# Theta stage position (encoder counts to radians)
-					self.theta_pos = 2*np.pi*byte_operations.unsigned_to_signed(data[9:12],MicrocontrollerDef.N_BYTES_POS)/(Encoders.COUNTS_PER_REV_THETA) 
+					self.theta_pos = THETA_ENCODER_SIGN*2*np.pi*byte_operations.unsigned_to_signed(data[9:12],MicrocontrollerDef.N_BYTES_POS)/(Encoders.COUNTS_PER_REV_THETA) 
 
 				self.RecData['FocusPhase'] = phase
 				self.RecData['X_stage'] = self.x_pos
