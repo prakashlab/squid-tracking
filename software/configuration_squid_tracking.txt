@@ -1,10 +1,6 @@
-CAMERAS = {'DF1':{'make':'Daheng','serial':'FW0200050063','px_format':(2560,2048),'color_format':'GRAY8','fps': 60,'is_color':False,'rotate image angle':90,'flip image':'Vertical'},\
-			'DF2':{'make':'Daheng','serial':'FW0200050068','px_format':(2560,2048),'color_format':'GRAY8','fps':60,'is_color':False,'rotate image angle':90,'flip image':'Vertical'}, \
-			'low-mag':{'make':'Daheng','serial':'FW0200050061','px_format':(2560,2048),'color_format':'GRAY8','fps':30,'is_color':False,'rotate image angle':0,'flip image':'Vertical'}}
+CAMERAS = {'DF1':{'make':'Daheng', 'serial':"FW0190110137", 'px_format':(1920, 1080), 'color_format':'GRAY8', 'fps':120,'rotate image angle':0,'flip image':'Horizantal', 'is_color':False}}
 
-CAMERAS = {'DF1':{'make':'Daheng','serial':"FU0200070043", 'px_format':(4000, 3000), 'color_format': None, 'fps': 30,'is_color':True,'rotate image angle':None,'flip image':'Both'},\
-	'high-speed':{'make':'Daheng','serial':"JL0200080103", 'px_format':(4000, 3000), 'color_format': None, 'fps': 30, 'is_color':False,'rotate image angle':None,'flip image':'Both'}}
-
+OBJECTIVES = {'4x':{'magnification':4, 'NA':0.13, 'PixelPermm':802}, '10x':{'magnification':10, 'NA':0.25, 'PixelPermm':2004}, '20x':{'magnification':20, 'NA':0.4, 'PixelPermm':4008}, '40x':{'magnification':40, 'NA':0.6,'PixelPermm':8016}}
 
 LIQUID_LENS_FOCUS_TRACKING = False
 TWO_CAMERA_PDAF = False

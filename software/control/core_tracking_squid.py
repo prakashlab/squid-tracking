@@ -527,8 +527,8 @@ class microcontroller_Receiver(QObject):
 		if(data is not None):
 
 			# Parse the data
-			self.x_pos = byte_operations.unsigned_to_signed(data[0:3],MicrocontrollerDef.N_BYTES_POS)/Motion.STEPS_PER_MM_XY 
-			self.y_pos = byte_operations.unsigned_to_signed(data[3:6],MicrocontrollerDef.N_BYTES_POS)/Motion.STEPS_PER_MM_XY
+			self.x_pos = byte_operations.unsigned_to_signed(data[0:3],MicrocontrollerDef.N_BYTES_POS)/Motion.STEPS_PER_MM_X 
+			self.y_pos = byte_operations.unsigned_to_signed(data[3:6],MicrocontrollerDef.N_BYTES_POS)/Motion.STEPS_PER_MM_Y
 			self.z_pos = byte_operations.unsigned_to_signed(data[6:9],MicrocontrollerDef.N_BYTES_POS)/Motion.STEPS_PER_MM_Z 
 
 			self.RecData['X_stage'] = self.x_pos
