@@ -1,10 +1,8 @@
 import os
+import glob
 
-# Squid-Tracking Mode
-TRACKING_CONFIG = 'XYZ'
-
-# Gravity Machine Tracking Mode
-# TRACKING_CONFIG = 'XYT'
+# TRACKING_CONFIG = 'XYZ'
+TRACKING_CONFIG = 'XYT'
 
 class TriggerMode:
     SOFTWARE = 'Software Trigger'
@@ -35,6 +33,7 @@ class AF:
     def __init__(self):
         pass
 
+# this one can be redefined in machine specific files
 class Chamber:
     # Chamber dimensions in mm
     WIDTH = 5
@@ -48,29 +47,10 @@ class Chamber:
 
 class Motion:
     # squid
-    STEPS_PER_MM_XY = 1600 # microsteps
+    STEPS_PER_MM_X = 1600 # microsteps
+    STEPS_PER_MM_Y = 1600 # microsteps
+
     STEPS_PER_MM_Z = 5333  # microsteps
-   
-    # Gravity Machine
-    STEPS_PER_REV_X = 200
-    MM_PER_REV_X = 1
-    STEPS_PER_MM_X = round(STEPS_PER_REV_X/MM_PER_REV_X)
-
-
-
-    STEPS_PER_REV_Y = 200
-    MM_PER_REV_Y = 1
-    STEPS_PER_MM_Y = round(STEPS_PER_REV_Y/MM_PER_REV_Y)
-
-    STEPS_PER_REV_Z = 200
-    MM_PER_REV_Z = 1
-    STEPS_PER_MM_Z = round(STEPS_PER_REV_Z/MM_PER_REV_Z)
-
-    STEPS_PER_REV_THETA_MOTOR = 200
-
-    GEAR_RATIO_THETA = 99+1044/float(2057) 
-    
-    STEPS_PER_REV_THETA_SHAFT = round(GEAR_RATIO_THETA*STEPS_PER_REV_THETA_MOTOR)
 
     MAX_MICROSTEPS = 16
 
@@ -81,10 +61,6 @@ class Encoders:
 
     COUNTS_PER_MM_X = 500 # 1um per count RLS miniature linear encoder
     COUNTS_PER_MM_Y = 500
-
-    COUNTS_PER_REV_THETA_MOTOR = 600
-
-    COUNTS_PER_REV_THETA = COUNTS_PER_REV_THETA_MOTOR*Motion.GEAR_RATIO_THETA
 
 
     def __init__(self):
@@ -131,7 +107,7 @@ class MicrocontrollerDef:
     MSG_LENGTH = 9
     CMD_LENGTH = 4
     N_BYTES_POS = 3
-    RUN_OPENLOOP = False # Determines whether stepper/encoders are used to calculate stage positions.
+    RUN_OPENLOOP = True # Determines whether stepper/encoders are used to calculate stage positions.
 
     def __init__(self):
         pass
@@ -144,6 +120,13 @@ class PID_parameters:
 
     PID_OUTPUT_MAX = MAX_DISTANCE*STEP_PER_MM_TYPICAL*Motion.MAX_MICROSTEPS
 
+
+class PDAF:
+    ROI_ratio_width_default = 2.5
+    ROI_ratio_height_default = 2.5
+    x_offset_default = 31
+    y_offset_default = -41
+    shift_to_distance_um_default = -5.0
 
 
 # class FocusTracking:
@@ -186,15 +169,39 @@ CROPPED_IMG_RATIO = 10
 
 FocusTracking = {'Cropped image ratio':{'default':10}}
 
-# Squid
-OBJECTIVES = {'4x':{'magnification':4, 'NA':0.13, 'PixelPermm':802}, '10x':{'magnification':10, 'NA':0.25, 'PixelPermm':2004}, '20x':{'magnification':20, 'NA':0.4, 'PixelPermm':4008}, '40x':{'magnification':40, 'NA':0.6,'PixelPermm':8016}}
+# Gravity machine (Image calibration 30Dec2020)
+OBJECTIVES = {'2x':{'magnification':2, 'NA':0.10, 'PixelPermm':217}, '4x':{'magnification':4, 'NA':0.13, 'PixelPermm':432}, '10x':{'magnification':10, 'NA':0.25, 'PixelPermm':1066}, '20x':{'magnification':20, 'NA':0.4, 'PixelPermm':4008}, '40x':{'magnification':40, 'NA':0.6,'PixelPermm':8016}}
 
-DEFAULT_OBJECTIVE = '10x'
-  
+DEFAULT_OBJECTIVE = '4x'
 
-# CAMERAS = {'DF1':{'make':'TIS','serial':"17910090", 'px_format':(1920,1080), 'color_format': 'GRAY8', 'fps': 120}, 'Low-mag':{'make':'Daheng','serial': 'FL0190060033', 'px_format':None, 'color_format': 'GRAY8', 'fps': 30}, 'high-speed':{'make':'Daheng','serial': 'KR0200080050', 'px_format':None, 'color_format': 'GRAY8', 'fps': 30}}
+##########################################################
+#### start of loading machine specific configurations ####
+##########################################################
+# # stage movement sign - it depends on camera orientation and stage configuration
+# STAGE_MOVEMENT_SIGN_X = 1
+# STAGE_MOVEMENT_SIGN_Y = 1
+# STAGE_MOVEMENT_SIGN_THETA = -1
 
-CAMERAS = {'DF1':{'make':'Daheng', 'serial':"08910102", 'px_format':(1920,1080), 'color_format': 'GRAY8', 'fps': 120}, 'DF-2':{'make':'Daheng','serial': 'FL0190060033', 'px_format':None, 'color_format': 'GRAY8', 'fps': 30}}
+# X_ENCODER_SIGN = 1
+# Y_ENCODER_SIGN = 1
+# THETA_ENCODER_SIGN = -1
+
+# LIQUID_LENS_FOCUS_TRACKING = False
+# TWO_CAMERA_PDAF = False
+# PDAF_FLIPUD = True
+
+# CAMERAS = {'DF1':{'make':'Daheng','serial':'FW0200050063','px_format':(2560,2048),'color_format':'GRAY8','fps': 60,'is_color':False,'rotate image angle':0,'flip image':'Horizental'},\
+#            'DF2':{'make':'Daheng','serial':'FW0200050068','px_format':(2560,2048),'color_format':'GRAY8','fps':60,'is_color':False,'rotate image angle':0,'flip image':'Horizental'}, \
+#            'low-mag':{'make':'Daheng','serial':'FW0200050061','px_format':(2560,2048),'color_format':'GRAY8','fps':30,'is_color':False,'rotate image angle':0,'flip image':'Horizental'}}
+
+config_files = glob.glob('.' + '/' + 'configuration*.txt')
+if config_files:
+    print('load machine-specific configuration')
+    exec(open(config_files[0]).read())
+
+########################################################
+#### end of loading machine specific configurations ####
+########################################################
 
 TRACKING = 'DF1'
 
@@ -224,7 +231,7 @@ if TRACKING_CONFIG == 'XYT':
     SEND_DATA = ['liquidLens_Freq', 'track_focus', 'track_obj_image' , 'X_order', 'Y_order', 'Theta_order', 'Zero_stage']
 
 
-    REC_DATA = ['X_stage', 'Y_stage', 'Theta_stage', 'track_obj_image_hrdware', 'track_obj_stage', 'homing_status']
+    REC_DATA = ['FocusPhase', 'X_stage', 'Y_stage', 'Theta_stage', 'track_obj_image_hrdware', 'track_obj_stage', 'homing_status']
 
 
     INITIAL_VALUES = {'Time':0, 'X_objStage':0, 'Y_objStage':0, 'Z_objStage':0, 'X_stage':0.0, 'Y_stage':0.0,
@@ -267,8 +274,6 @@ elif TRACKING_CONFIG == 'XYZ':
         'imaging channels': list(CAMERAS.keys()),  'Objective':DEFAULT_OBJECTIVE, 'basePath':'/', 'experimentID':'track'}
 
     PLOT_VARIABLES = {'X':'X_objStage','Y':'Y_objStage', 'Z':'Z_objStage', 'Phase':'FocusPhase'}
-
-    PLOT_COLORS = {'X':'r','Y':'g', 'Z':'b', 'Phase':'w'}
 
     PLOT_UNITS = {'X':'mm','Y':'mm', 'Z':'mm','Phase':'radians'}
 

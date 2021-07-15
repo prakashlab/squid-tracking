@@ -294,7 +294,7 @@ class StageCalibrationWidget(QFrame):
 		
 		self.zero_Y = QPushButton('Zero Y-stage')
 	
-		self.zero_Z = QPushButton('Zero Z-stage')
+		self.zero_Theta = QPushButton('Zero Theta-stage')
 	
 		
 		# Homing Button
@@ -305,7 +305,7 @@ class StageCalibrationWidget(QFrame):
 		stage_control.addWidget(self.homing_button,0,0)
 		stage_control.addWidget(self.zero_X,0,1)
 		stage_control.addWidget(self.zero_Y,1,1)
-		stage_control.addWidget(self.zero_Z,2,1)
+		stage_control.addWidget(self.zero_Theta,2,1)
 
 		self.setLayout(stage_control)
 
@@ -313,7 +313,7 @@ class StageCalibrationWidget(QFrame):
 		# Connections
 		self.zero_X.clicked.connect(self.zero_X_stage)
 		self.zero_Y.clicked.connect(self.zero_Y_stage)
-		self.zero_Z.clicked.connect(self.zero_Z_stage)
+		self.zero_Theta.clicked.connect(self.zero_Theta_stage)
 
 		self.homing_button.clicked.connect(self.homing_button_click)
 
@@ -325,7 +325,7 @@ class StageCalibrationWidget(QFrame):
 
 		self.microcontroller.send_stage_zero_command(1)
 
-	def zero_Z_stage(self):
+	def zero_Theta_stage(self):
 
 		self.microcontroller.send_stage_zero_command(3)
 
@@ -371,18 +371,18 @@ class NavigationWidget(QFrame):
         self.btn_moveY_backward = QPushButton('Backward')
         self.btn_moveY_backward.setDefault(False)
 
-        self.label_Zpos = QLabel()
-        self.label_Zpos.setNum(0)
-        self.label_Zpos.setFrameStyle(QFrame.Panel | QFrame.Sunken)
-        self.entry_dZ = QDoubleSpinBox()
-        self.entry_dZ.setMinimum(0) 
-        self.entry_dZ.setMaximum(2*np.pi) 
-        self.entry_dZ.setSingleStep(0.01)
-        self.entry_dZ.setValue(0)
-        self.btn_moveZ_forward = QPushButton('Forward')
-        self.btn_moveZ_forward.setDefault(False)
-        self.btn_moveZ_backward = QPushButton('Backward')
-        self.btn_moveZ_backward.setDefault(False)
+        self.label_Thetapos = QLabel()
+        self.label_Thetapos.setNum(0)
+        self.label_Thetapos.setFrameStyle(QFrame.Panel | QFrame.Sunken)
+        self.entry_dTheta = QDoubleSpinBox()
+        self.entry_dTheta.setMinimum(0) 
+        self.entry_dTheta.setMaximum(2*np.pi) 
+        self.entry_dTheta.setSingleStep(0.01)
+        self.entry_dTheta.setValue(0)
+        self.btn_moveTheta_forward = QPushButton('Forward')
+        self.btn_moveTheta_forward.setDefault(False)
+        self.btn_moveTheta_backward = QPushButton('Backward')
+        self.btn_moveTheta_backward.setDefault(False)
         
         grid_line0 = QGridLayout()
         grid_line0.addWidget(QLabel('X (mm)'), 0,0)
@@ -399,11 +399,11 @@ class NavigationWidget(QFrame):
         grid_line1.addWidget(self.btn_moveY_backward, 0,4)
 
         grid_line2 = QGridLayout()
-        grid_line2.addWidget(QLabel('Z (mm)'), 0,0)
-        grid_line2.addWidget(self.label_Zpos, 0,1)
-        grid_line2.addWidget(self.entry_dZ, 0,2)
-        grid_line2.addWidget(self.btn_moveZ_forward, 0,3)
-        grid_line2.addWidget(self.btn_moveZ_backward, 0,4)
+        grid_line2.addWidget(QLabel('Theta (radians)'), 0,0)
+        grid_line2.addWidget(self.label_Thetapos, 0,1)
+        grid_line2.addWidget(self.entry_dTheta, 0,2)
+        grid_line2.addWidget(self.btn_moveTheta_forward, 0,3)
+        grid_line2.addWidget(self.btn_moveTheta_backward, 0,4)
 
         self.grid = QGridLayout()
         self.grid.addLayout(grid_line0,0,0)
@@ -415,8 +415,8 @@ class NavigationWidget(QFrame):
         self.btn_moveX_backward.clicked.connect(self.move_x_backward)
         self.btn_moveY_forward.clicked.connect(self.move_y_forward)
         self.btn_moveY_backward.clicked.connect(self.move_y_backward)
-        self.btn_moveZ_forward.clicked.connect(self.move_z_forward)
-        self.btn_moveZ_backward.clicked.connect(self.move_z_backward)
+        self.btn_moveTheta_forward.clicked.connect(self.move_theta_forward)
+        self.btn_moveTheta_backward.clicked.connect(self.move_theta_backward)
         
     def move_x_forward(self):
         self.navigationController.move_x(self.entry_dX.value())
@@ -426,15 +426,15 @@ class NavigationWidget(QFrame):
         self.navigationController.move_y(self.entry_dY.value())
     def move_y_backward(self):
         self.navigationController.move_y(-self.entry_dY.value())
-    def move_z_forward(self):
-        self.navigationController.move_z(self.entry_dZ.value())
-    def move_z_backward(self):
-        self.navigationController.move_z(-self.entry_dZ.value())
+    def move_theta_forward(self):
+        self.navigationController.move_theta(self.entry_dTheta.value())
+    def move_theta_backward(self):
+        self.navigationController.move_theta(-self.entry_dTheta.value())
     
-    def update_display(self, X_stage, Y_stage, Z_stage):
+    def update_display(self, X_stage, Y_stage, Theta_stage):
     	self.label_Xpos.setText('{:.02f}'.format(round(X_stage,2)))
     	self.label_Ypos.setText('{:.02f}'.format(round(Y_stage,2)))
-    	self.label_Zpos.setText('{:.02f}'.format(round(Z_stage,2)))
+    	self.label_Thetapos.setText('{:.02f}'.format(round(Theta_stage,2)))
 
 
 class PID_Group_Widget(QFrame):
@@ -491,10 +491,10 @@ class PID_Group_Widget(QFrame):
 		self.PID_widget_y.spinboxI.valueChanged.connect(self.trackingController.pid_controller_y.update_I)
 		self.PID_widget_y.spinboxD.valueChanged.connect(self.trackingController.pid_controller_y.update_D)
 
-		# Z
-		self.PID_widget_z.spinboxP.valueChanged.connect(self.trackingController.pid_controller_z.update_P)
-		self.PID_widget_z.spinboxI.valueChanged.connect(self.trackingController.pid_controller_z.update_I)
-		self.PID_widget_z.spinboxD.valueChanged.connect(self.trackingController.pid_controller_z.update_D)
+		# Theta
+		self.PID_widget_z.spinboxP.valueChanged.connect(self.trackingController.pid_controller_theta.update_P)
+		self.PID_widget_z.spinboxI.valueChanged.connect(self.trackingController.pid_controller_theta.update_I)
+		self.PID_widget_z.spinboxD.valueChanged.connect(self.trackingController.pid_controller_theta.update_D)
 
 
 
@@ -615,9 +615,16 @@ class FocusTracking_Widget(QFrame):
 
 	def add_components(self):
 
+		# liquid lens scanning enable/disable
+		self.button_EnableLiquidLensScanning = QPushButton('Start Liquid Lens Scanning')
+		self.button_EnableLiquidLensScanning.setCheckable(True)
+		self.button_EnableLiquidLensScanning.setChecked(False)
+
+		# focus tracking enable/disable
 		self.button_FocusTracking = QPushButton('Start Focus Tracking')
 		self.button_FocusTracking.setCheckable(True)
 		self.button_FocusTracking.setChecked(False)
+		self.button_FocusTracking.setEnabled(False) # disable before fully implementing the functionality
 
 		# cropRatio
 		self.label_crop_ratio = QLabel('Cropping ratio')
@@ -634,6 +641,7 @@ class FocusTracking_Widget(QFrame):
 		slider_crop_ratio_layout.addWidget(self.spinbox_crop_ratio)
 		group_slider_crop_ratio=QWidget()
 		group_slider_crop_ratio.setLayout(slider_crop_ratio_layout)
+		group_slider_crop_ratio.setEnabled(False) # disable before fully implementing the functionality
 
 		# Liquid lens freq
 		self.label_lensFreq = QLabel('Liquid lens frequency (Hz)')
@@ -666,24 +674,33 @@ class FocusTracking_Widget(QFrame):
 		slider_lensAmpl_layout.addWidget(self.label_lensAmpl)
 		slider_lensAmpl_layout.addWidget(self.hslider_lensAmpl)
 		slider_lensAmpl_layout.addWidget(self.spinbox_lensAmpl)
+		tmp = QVBoxLayout()
+		tmp.addLayout(slider_lensAmpl_layout)
+		tmp.addWidget(QLabel('Note: Shown amplitude is for a 10x lens. Actual range is the value shown multiplied by 6.25'))
+		tmp.addWidget(QLabel('when using a 4x objective and divided by 4 when using a 20x objective'))
 		group_slider_lensAmpl=QWidget()
-		group_slider_lensAmpl.setLayout(slider_lensAmpl_layout)
+		# group_slider_lensAmpl.setLayout(slider_lensAmpl_layout)
+		group_slider_lensAmpl.setLayout(tmp)
 
 		self.groupbox_FocusTracking = QGroupBox('Focus Tracking')
 
 		# layout
-		groupbox_layout_FocusTracking = QGridLayout()
-		groupbox_layout_FocusTracking.addWidget(self.button_FocusTracking,0,0,1,1)
-		groupbox_layout_FocusTracking.addWidget(group_slider_crop_ratio,0,1,1,1)
-		groupbox_layout_FocusTracking.addWidget(group_slider_lensFreq,1,0,1,2)  
-		groupbox_layout_FocusTracking.addWidget(group_slider_lensAmpl,2,0,1,2)
+		groupbox_layout = QGridLayout()
+		groupbox_layout.addWidget(group_slider_lensFreq,1,0,1,2)  
+		groupbox_layout.addWidget(group_slider_lensAmpl,0,0,1,2)
+		groupbox_layout.addWidget(self.button_EnableLiquidLensScanning,2,0,1,2)
+		groupbox_layout.addWidget(group_slider_crop_ratio,3,0,1,1)
+		groupbox_layout.addWidget(self.button_FocusTracking,3,1,1,1)
+		groupbox_layout.addWidget(QLabel(''),4,0,1,1) # add empty space
+
 		# groupbox_layout_YTracking.addWidget(group_slider_lensGain) 
 		# self.groupbox_YTracking.setLayout(groupbox_layout_YTracking)
 
-		self.setLayout(groupbox_layout_FocusTracking)
+		self.setLayout(groupbox_layout)
 
 		# Connections
 		self.button_FocusTracking.clicked.connect(self.button_focusTracking_clicked)
+		self.button_EnableLiquidLensScanning.clicked.connect(self.button_EnableLiquidLensScanning_clicked)
 
 		self.hslider_crop_ratio.valueChanged.connect(self.spinbox_crop_ratio_setValue)
 		self.spinbox_crop_ratio.valueChanged.connect(self.hslider_crop_ratio_setValue)
@@ -695,22 +712,29 @@ class FocusTracking_Widget(QFrame):
 		self.spinbox_lensAmpl.valueChanged.connect(self.hslider_lensAmpl_setValue)
 
 
-
+	def button_EnableLiquidLensScanning_clicked(self):
+		if self.button_EnableLiquidLensScanning.isChecked():
+			# Set the internal state value
+			self.internal_state.data['track_focus'] = True 				# to do: add a seperate flag for liquid lens scanning, reuse the track_focus flag for now
+			self.microcontroller.send_focus_tracking_command(True)		# to do: add a seperate flag for liquid lens scanning, reuse the track_focus flag for now
+			# Start the liquid lens sweep
+			self.trackingController.tracker_focus.liquid_lens.start()	# to do: add a seperate flag for liquid lens scanning, reuse the track_focus flag for now
+			self.button_EnableLiquidLensScanning.setText("Stop Liquid Lens Scanning")
+		else:
+			# Set the internal state value
+			self.internal_state.data['track_focus'] = False 			# to do: add a seperate flag for liquid lens scanning, reuse the track_focus flag for now
+			self.microcontroller.send_focus_tracking_command(False)		# to do: add a seperate flag for liquid lens scanning, reuse the track_focus flag for now
+			self.trackingController.tracker_focus.liquid_lens.stop()	# to do: add a seperate flag for liquid lens scanning, reuse the track_focus flag for now
+			self.button_EnableLiquidLensScanning.setText("Start Liquid Lens Scanning")
 
 	def button_focusTracking_clicked(self):
-		
 		if self.button_FocusTracking.isChecked():
-			
 			# Set the internal state value
 			self.internal_state.data['track_focus'] = True
-
 			self.microcontroller.send_focus_tracking_command(True)
-
 			# Start the liquid lens sweep
 			self.trackingController.tracker_focus.liquid_lens.start()
 			self.button_FocusTracking.setText("Stop Focus Tracking")
-
-			
 		else:
 			# Set the internal state value
 			self.internal_state.data['track_focus'] = False
@@ -720,31 +744,23 @@ class FocusTracking_Widget(QFrame):
 			
 	def spinbox_crop_ratio_setValue(self, value):
 		newvalue=int(value)
-
 		self.spinbox_crop_ratio.setValue(newvalue)
-
 		self.trackingController.set_cropped_image_size(newvalue)
 
 	def hslider_crop_ratio_setValue(self, value):
 		newvalue=int(value)
-
 		self.hslider_crop_ratio.setValue(newvalue)
-
-
 
 	def spinbox_lensAmpl_setValue(self,value):
 		newvalue=float(value)/100.
 		self.spinbox_lensAmpl.setValue(newvalue)
 
-		
-
 		# Also send the amplitude change to the liquid lens
 		# @@@@@@ To Implement @@@@@@@
+		self.trackingController.tracker_focus.set_Amp(newvalue/2.0)
+		self.trackingController.tracker_focus.liquid_lens.set_Amp(newvalue/2.0)
 
-		self.trackingController.tracker_focus.set_Amp(newvalue/2)
-
-		self.trackingController.tracker_focus.liquid_lens.set_Amp(newvalue/2)
-
+		self.internal_state.data['liquidLens_Amp'] = newvalue
 
 		# self.object_tracking.liquid_lens_ampl=newvalue/2
 		# self.object_tracking.ytracker.set_ampl(newvalue/2)
@@ -772,11 +788,12 @@ class FocusTracking_Widget(QFrame):
 		self.spinbox_lensFreq.setValue(newvalue)
 
 		self.trackingController.tracker_focus.set_Freq(newvalue)
-
 		self.trackingController.tracker_focus.liquid_lens.set_Freq(newvalue)
 
 		# Send new frequency value to microcontroller
 		self.microcontroller.send_liquid_lens_freq(newvalue)
+
+		self.internal_state.data['liquidLens_Freq'] = newvalue
 
 		# Also send the amplitude change to the liquid lens
 		# @@@@@@ To Implement @@@@@@@
@@ -792,4 +809,138 @@ class FocusTracking_Widget(QFrame):
 		new_value = int(value*100)
 		self.hslider_lensFreq.setValue(new_value)
 
+
+class PDAFControllerWidget(QFrame):
+    def __init__(self, PDAFController, main=None, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.PDAFController = PDAFController
+        self.add_components()
+        self.setFrameStyle(QFrame.Panel | QFrame.Raised)
+
+    def add_components(self):
+ 
+        self.entry_x_offset = QSpinBox()
+        self.entry_x_offset.setMinimum(-1000) 
+        self.entry_x_offset.setMaximum(1000) 
+        self.entry_x_offset.setValue(PDAF.x_offset_default)
+
+        self.entry_y_offset = QSpinBox()
+        self.entry_y_offset.setMinimum(-1000) 
+        self.entry_y_offset.setMaximum(1000)
+        self.entry_y_offset.setValue(PDAF.y_offset_default)
+
+        self.entry_ROI_ratio_width = QDoubleSpinBox()
+        self.entry_ROI_ratio_width.setMinimum(0.5) 
+        self.entry_ROI_ratio_width.setMaximum(10) 
+        self.entry_ROI_ratio_width.setSingleStep(0.1)
+        self.entry_ROI_ratio_width.setValue(PDAF.ROI_ratio_width_default)
+
+        self.entry_ROI_ratio_height = QDoubleSpinBox()
+        self.entry_ROI_ratio_height.setMinimum(0.5) 
+        self.entry_ROI_ratio_height.setMaximum(10) 
+        self.entry_ROI_ratio_height.setSingleStep(0.1)
+        self.entry_ROI_ratio_height.setValue(PDAF.ROI_ratio_height_default)
+
+        self.entry_shift_to_distance_um = QDoubleSpinBox()
+        self.entry_shift_to_distance_um.setMinimum(-10) 
+        self.entry_shift_to_distance_um.setMaximum(10) 
+        self.entry_shift_to_distance_um.setSingleStep(0.1)
+        self.entry_shift_to_distance_um.setValue(PDAF.shift_to_distance_um_default)
+
+        self.entry_tracking_range_min_um = QDoubleSpinBox()
+        self.entry_tracking_range_min_um.setMinimum(-10000) 
+        self.entry_tracking_range_min_um.setMaximum(10000) 
+        self.entry_tracking_range_min_um.setSingleStep(0.1)
+        self.entry_tracking_range_min_um.setValue(-10000)
+
+        self.entry_tracking_range_max_um = QDoubleSpinBox()
+        self.entry_tracking_range_max_um.setMinimum(-10000) 
+        self.entry_tracking_range_max_um.setMaximum(10000) 
+        self.entry_tracking_range_max_um.setSingleStep(0.1)
+        self.entry_tracking_range_max_um.setValue(10000)
+
+        self.btn_enable_calculation = QPushButton('Enable Calculation')
+        self.btn_enable_calculation.setCheckable(True)
+        self.btn_enable_calculation.setChecked(False)
+        self.btn_enable_calculation.setDefault(False)
+        
+        self.btn_enable_tracking = QPushButton('Enable Focus Tracking')
+        self.btn_enable_tracking.setCheckable(True)
+        self.btn_enable_tracking.setChecked(False)
+        self.btn_enable_tracking.setDefault(False)
+
+        # self.label_Shift = QLabel()
+        # self.label_Shift.setFrameStyle(QFrame.Panel | QFrame.Sunken)
+        # self.label_Error = QLabel()
+        # self.label_Error.setFrameStyle(QFrame.Panel | QFrame.Sunken)
+        self.display_defocus_um = QLCDNumber()
+        self.display_defocus_um.setNumDigits(4)
+        self.display_error = QLCDNumber()
+        self.display_error.setNumDigits(4)
+        
+        grid_line0 = QGridLayout()
+        grid_line0.addWidget(QLabel('X Crop Offset'), 0,0)
+        grid_line0.addWidget(self.entry_x_offset, 0,1)
+        grid_line0.addWidget(QLabel('Y Crop Offset'), 0,2)
+        grid_line0.addWidget(self.entry_y_offset, 0,3)
+        grid_line0.addWidget(QLabel('ROI Width Scaling'), 1,0)
+        grid_line0.addWidget(self.entry_ROI_ratio_width, 1,1)
+        grid_line0.addWidget(QLabel('ROI Height Scaling'), 1,2)
+        grid_line0.addWidget(self.entry_ROI_ratio_height, 1,3)
+        grid_line0.addWidget(self.btn_enable_calculation, 2,0,1,2)
+        grid_line0.addWidget(self.btn_enable_tracking, 2,2,1,2)
+        grid_line0.addWidget(QLabel('Defocus (um)'), 3,0,1,1)
+        grid_line0.addWidget(self.display_defocus_um, 3,1,1,1)
+        grid_line0.addWidget(QLabel('Error'), 3,2,1,1)
+        grid_line0.addWidget(self.display_error, 3,3,1,1)
+
+        self.grid = QGridLayout()
+        self.grid.addLayout(grid_line0,0,0)
+
+        self.grid2 = QGridLayout()
+        self.grid2.addWidget(QLabel('tracking range min (um)'),0,0)
+        self.grid2.addWidget(self.entry_tracking_range_min_um,0,1)
+        self.grid2.addWidget(QLabel('tracking range max (um)'),0,2)
+        self.grid2.addWidget(self.entry_tracking_range_max_um,0,3)
+        
+        vbox = QVBoxLayout()
+        vbox.addLayout(self.grid)
+        vbox.addStretch()
+        vbox.addLayout(self.grid2)
+        self.setLayout(vbox)
+
+        # self.btn_enable_calculation.clicked.connect(self.PDAFController.enable_caculation)
+        # self.btn_enable_tracking.clicked.connect(self.PDAFController.enable_tracking)
+        self.entry_x_offset.valueChanged.connect(self.PDAFController.set_x_offset)
+        self.entry_y_offset.valueChanged.connect(self.PDAFController.set_y_offset)
+        self.entry_ROI_ratio_width.valueChanged.connect(self.PDAFController.set_ROI_ratio_width)
+        self.entry_ROI_ratio_height.valueChanged.connect(self.PDAFController.set_ROI_ratio_height)
+        self.entry_shift_to_distance_um.valueChanged.connect(self.PDAFController.set_ROI_ratio_height)
+
+        self.btn_enable_calculation.clicked.connect(self.enable_caculation)
+        self.btn_enable_tracking.clicked.connect(self.enable_tracking)
+
+        self.PDAFController.signal_defocus_um_display.connect(self.display_defocus_um.display)
+        self.PDAFController.signal_error.connect(self.display_error.display)
+
+        self.entry_tracking_range_min_um.valueChanged.connect(self.PDAFController.set_defocus_um_for_enable_tracking_min)
+        self.entry_tracking_range_max_um.valueChanged.connect(self.PDAFController.set_defocus_um_for_enable_tracking_max)
+
+    def enable_caculation(self,pressed):
+    	if pressed:
+    		self.PDAFController.enable_caculation(True)
+    	else:
+    		if self.btn_enable_tracking.isChecked():
+    			self.btn_enable_calculation.setChecked(True)
+    		else:
+    			self.PDAFController.enable_caculation(False)
+
+    def enable_tracking(self,pressed):
+    	if pressed:
+    		if self.btn_enable_calculation.isChecked() == False:
+    			self.btn_enable_calculation.setChecked(True)
+    			self.PDAFController.enable_caculation(True)
+    		self.PDAFController.enable_tracking(True)
+    	else:
+    		self.PDAFController.enable_tracking(False)
 

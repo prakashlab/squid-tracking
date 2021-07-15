@@ -115,14 +115,12 @@ class Tracker_Image(object):
 				self.isCentroidFound = True
 			else:
 				self.isCentroidFound, self.centroid_image, self.bbox = image_processing.find_centroid_basic_Rect(thresh_image)
+				self.bbox = image_processing.scale_square_bbox(self.bbox, Tracking.BBOX_SCALE_FACTOR, square = True)
 
 			if(self.bbox is not None):
-				self.bbox = image_processing.scale_square_bbox(self.bbox, Tracking.BBOX_SCALE_FACTOR, square = True)
 				print('Starting tracker with initial bbox: {}'.format(self.bbox))
 				self.init_tracker(image, self.centroid_image, self.bbox)
-
 				self.trackerActive = True
-
 				self.rect_pts = self.rectpts_from_bbox(self.bbox)
 
 		# Continue tracking an object using tracking
@@ -199,6 +197,8 @@ class Tracker_Image(object):
 		# Initialize Neural Net based Tracker
 		elif(self.tracker_type in self.NEURALNETTRACKERS.keys()):
 			# Initialize the tracker with this centroid position
+			print('Initializing with daSiamRPN tracker')
+
 			target_pos, target_sz = np.array([centroid[0], centroid[1]]), np.array([bbox[2], bbox[3]])
 
 			if(self.color==False):

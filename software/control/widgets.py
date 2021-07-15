@@ -552,6 +552,8 @@ class RecordingWidget(QGroupBox):
 			self.set_saving_dir(use_default_dir = True)
 
 		if pressed:
+			''' Start Acquisition
+			'''
 			self.internal_state.data['Acquisition'] = True
 			self.lineEdit_experimentID.setEnabled(False)
 			self.btn_setSavingDir.setEnabled(False)
@@ -563,8 +565,8 @@ class RecordingWidget(QGroupBox):
 			if(self.trackingDataSaver is not None and self.recordingOnly_flag==False):
 				
 				self.start_tracking_signal.emit()
-				
 				self.trackingDataSaver.start_new_experiment(self.lineEdit_experimentID.text())
+
 			else:
 				pass
 
@@ -575,8 +577,9 @@ class RecordingWidget(QGroupBox):
 					self.streamHandler[channel].start_recording()
 
 		else:
-			self.internal_state.data['Acquisition']= False
-			self.trackingDataSaver.stop_DataSaver()
+			''' Stop Acquisition
+			'''
+			self.internal_state.data['Acquisition'] = False
 			for channel in self.imaging_channels:
 				self.streamHandler[channel].stop_recording()
 				self.checkbox[channel].setEnabled(True)

@@ -146,8 +146,12 @@ class StreamHandler(QObject):
         
     def threshold_image(self, image_resized, color):
         if(color):
-            thresh_image = image_processing.threshold_image(image_resized,self.lower_HSV,self.upper_HSV)  #The threshold image as one channel
-
+            thresh_image = cv2.cvtColor(image_resized, cv2.COLOR_BGR2GRAY)
+            image_resized = np.array(thresh_image, dtype='uint8')
+            thresh_image = image_processing.threshold_image_gray(image_resized, self.lower_HSV[2], self.upper_HSV[2])
+            # thresh_image = image_processing.threshold_image(image_resized,self.lower_HSV,self.upper_HSV)  #The threshold image as one channel
+            if(self.invert_image_flag==True):
+                thresh_image = 1 - thresh_image
         else:
             # print(self.lower_HSV[2])
             # print(self.upper_HSV[2])
@@ -239,7 +243,8 @@ class StreamHandler(QObject):
             image_thresh = 255*np.array(self.threshold_image(image_resized, color = camera.is_color), dtype = 'uint8')
 
         else:
-            image_resized = np.copy(image)
+            # image_resized = np.copy(image)
+            image_resized = imutils.resize(image, round(self.image_width*self.working_resolution_scaling))
         
         # Deepak: For now tracking with every image from camera
         time_now = time.time() 
@@ -690,7 +695,7 @@ class ImageDisplayWindow(QMainWindow):
         width = self.roi_size[0]
         height = self.roi_size[1]
         xmin = max(0, self.roi_pos[0])
-        ymin = max(0, self.image_height - height - self.roi_pos[1])
+        ymin = max(0, self.roi_pos[1])
         # print('Bbox from ImageDisplay: {}'.format([xmin, ymin, width, height]))
 
         self.roi_bbox.emit(np.array([xmin, ymin, width, height]))

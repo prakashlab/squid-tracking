@@ -18,22 +18,21 @@ QApplication.setAttribute(Qt.AA_UseHighDpiPixmaps, True) #use highdpi icons
 from control._def import *
 # app specific libraries
 import control.widgets as widgets
-import control.widgets_tracking_squid as widgets_tracking
+import control.widgets_tracking as widgets_tracking
 import control.camera_TIS as camera_TIS
 import control.camera as camera_Daheng
 import control.core as core
-import control.core_tracking_squid as core_tracking
+import control.core_tracking as core_tracking
 import control.microcontroller as microcontroller
+import control.core_PDAF as core_PDAF
 
-SIMULATION = True
 
 class SquidTracking_GUI(QMainWindow):
 
-
-	def __init__(self, *args, **kwargs):
+	def __init__(self, simulation = False, *args, **kwargs):
 		super().__init__(*args, **kwargs)
 		
-		self.setWindowTitle('Squid Tracking v1.0.0')
+		self.setWindowTitle('Gravity Machine v2.0')
 
 		self.imaging_channels = CAMERAS.keys()
 
@@ -44,32 +43,29 @@ class SquidTracking_GUI(QMainWindow):
 		#------------------------------------------------------------------
 		self.imageDisplayWindow = {}
 		for key in self.imaging_channels:
-
 			if(CAMERAS[key]['make']=='TIS'):
 				self.imageDisplayWindow[key] = core.ImageDisplayWindow(key + ' Display', 
 					DrawCrossHairs = True) 
 			elif (CAMERAS[key]['make']=='Daheng'):
 				self.imageDisplayWindow[key] = core.ImageDisplayWindow(key + ' Display', 
 					DrawCrossHairs = True, rotate_image_angle=90) 
-
+		
+		if TWO_CAMERA_PDAF:
+			self.imageDisplayWindow['PDAF_image1'] = core.ImageDisplayWindow(key + ' Display', DrawCrossHairs = True) 
+			self.imageDisplayWindow['PDAF_image2'] = core.ImageDisplayWindow(key + ' Display', DrawCrossHairs = True) 
 		
 		self.imageDisplayWindow_ThresholdedImage = core.ImageDisplayWindow('Thresholded Image')
 		
-		# for key in self.imaging_channels:
-		# 	self.imageDisplayWindow[key].show()
-
-		# self.imageDisplayWindow_ThresholdedImage.show()
 		#------------------------------------------------------------------
 		# Load objects
 		#------------------------------------------------------------------
-
 		# cameras/image streams
 		self.camera = {}
-		if SIMULATION is True:
+		if simulation is True:
 			# Define a camera object for each unique image-stream.
 			self.camera = {key:camera_Daheng.Camera_Simulation() for key in self.imaging_channels}
 			# self.microcontroller = microcontroller.Microcontroller_Simulation()
-			self.microcontroller = microcontroller.Microcontroller()
+			self.microcontroller = microcontroller.Microcontroller_Simulation()
 
 		else:
 			# TIS Camera object
@@ -77,7 +73,7 @@ class SquidTracking_GUI(QMainWindow):
 
 				if(CAMERAS[key]['make']=='TIS'):
 					self.camera[key] = camera_TIS.Camera(serial=CAMERAS[key]['serial'], width = CAMERAS[key]['px_format'][0], 
-						height = CAMERAS[key]['px_format'][1], framerate = CAMERAS[key]['fps'])
+						height = CAMERAS[key]['px_format'][1], framerate = CAMERAS[key]['fps'], color = CAMERAS[key]['is_color'])
 				elif (CAMERAS[key]['make']=='Daheng'):
 					self.camera[key] = camera_Daheng.Camera(sn = CAMERAS[key]['serial'])
 
@@ -89,28 +85,33 @@ class SquidTracking_GUI(QMainWindow):
 		# Image stream handler
 		self.streamHandler = {}
 		for key in self.imaging_channels:
-			if(CAMERAS[key]['make']=='TIS'):
-				self.streamHandler[key] = core.StreamHandler(camera = self.camera[key], imaging_channel = key)
-			else:
-				self.streamHandler[key] = core.StreamHandler(camera = self.camera[key], imaging_channel = key, flip_image = 'Vertical')
-
+			self.streamHandler[key] = core.StreamHandler(camera = self.camera[key], crop_width = CAMERAS[key]['px_format'][0], crop_height= CAMERAS[key]['px_format'][1], imaging_channel = key, 
+                rotate_image_angle = CAMERAS[key]['rotate image angle'], flip_image = CAMERAS[key]['flip image'])
 
 		self.internal_state = core_tracking.InternalState()
+
 		#-----------------------------------------------------------------------------------------------
 		# Tracking-related objects
 		#-----------------------------------------------------------------------------------------------		
 		self.liveController = {key:core.LiveController(self.camera[key],self.microcontroller) for key in self.imaging_channels}
 		self.navigationController = core.NavigationController(self.microcontroller)
-		self.trackingController = core_tracking.TrackingController(self.microcontroller,self.internal_state)
+		self.trackingController = core_tracking.TrackingController(self.microcontroller,self.internal_state, color = CAMERAS[TRACKING]['is_color'])
 		self.trackingDataSaver = core_tracking.TrackingDataSaver(self.internal_state)
 		self.microcontroller_Rec = core_tracking.microcontroller_Receiver(self.microcontroller, self.internal_state) # Microcontroller Receiver object
+		# PDAF
+		if TWO_CAMERA_PDAF:
+			self.PDAFController = core_PDAF.PDAFController(self.trackingController)
+
 		#-----------------------------------------------------------------------------------------------
 		# Define an ImageSaver, and Image Display object for each image stream
 		#-----------------------------------------------------------------------------------------------
 		self.imageSaver = {}
 		
 		for key in self.imaging_channels:
-			self.imageSaver[key] = core_tracking.ImageSaver(self.internal_state, imaging_channel = key, rotate_image_angle = 180)
+			if CAMERAS[key]['is_color'] == False:
+				self.imageSaver[key] = core_tracking.ImageSaver(self.internal_state, imaging_channel = key, image_format = '.tif', rotate_image_angle = 180)
+			else:
+				self.imageSaver[key] = core_tracking.ImageSaver(self.internal_state, imaging_channel = key, image_format = '.bmp', rotate_image_angle = 180)
 
 
 		self.imageDisplay = {key: core.ImageDisplay() for key in self.imaging_channels}
@@ -132,9 +133,9 @@ class SquidTracking_GUI(QMainWindow):
 		self.PID_Group_Widget = widgets_tracking.PID_Group_Widget(self.trackingController)
 		self.FocusTracking_Widget = widgets_tracking.FocusTracking_Widget(self.trackingController, self.internal_state, self.microcontroller)
 		self.recordingControlWidget = widgets.RecordingWidget(self.streamHandler,self.imageSaver, self.internal_state, self.trackingDataSaver, self.imaging_channels)
-
-		# self.stageCalibrationWidget = widgets_tracking.StageCalibrationWidget(self.internal_state, self.microcontroller) 
-		
+		if TWO_CAMERA_PDAF:
+			self.PDAFControllerWidget = widgets_tracking.PDAFControllerWidget(self.PDAFController)
+		self.stageCalibrationWidget = widgets_tracking.StageCalibrationWidget(self.internal_state, self.microcontroller) 
 		self.plotWidget = widgets.dockAreaPlot(self.internal_state)
 
 		
@@ -151,8 +152,11 @@ class SquidTracking_GUI(QMainWindow):
 
 		self.SettingsTab = QTabWidget()
 		self.SettingsTab.addTab(self.PID_Group_Widget, 'PID')
+		self.SettingsTab.addTab(self.FocusTracking_Widget, 'Liquid Lens')
+		if TWO_CAMERA_PDAF:
+			self.SettingsTab.addTab(self.PDAFControllerWidget, 'PDAF')
 		self.SettingsTab.addTab(self.navigationWidget, 'Navigation')
-		# self.SettingsTab.addTab(self.stageCalibrationWidget, 'Calibration')
+		self.SettingsTab.addTab(self.stageCalibrationWidget, 'Calibration')
 		self.SettingsTab.addTab(self.plotWidget, 'Plots')
 
 		#------------------------------------------------------------------
@@ -193,10 +197,20 @@ class SquidTracking_GUI(QMainWindow):
 		# self.microcontroller_Rec.update_display.connect(self.navigationWidget.update_display)
 		self.trackingControlWidget.show_roi.connect(self.imageDisplayWindow[TRACKING].toggle_ROI_selector)
 		self.microcontroller_Rec.update_stage_position.connect(self.navigationWidget.update_display)
+		self.microcontroller_Rec.start_tracking_signal.connect(self.trackingControlWidget.handle_hardware_track_signal)
+		self.recordingControlWidget.start_tracking_signal.connect(self.trackingControlWidget.trigger_track_button)
 		# self.microcontroller_Rec.update_stage_position.connect(self.trackingController.update_stage_position)
 		# Pixel per mm update due to objective change
 		self.liveControlWidget.new_pixelpermm.connect(self.trackingController.units_converter.update_pixel_size)
 		self.microcontroller_Rec.update_plot.connect(self.plotWidget.update_plots)
+
+		# PDAF
+		if TWO_CAMERA_PDAF:
+			self.streamHandler['DF1'].image_to_display.connect(self.PDAFController.register_image_from_camera_1) 
+			self.streamHandler['DF2'].image_to_display.connect(self.PDAFController.register_image_from_camera_2) 
+			# for debugging:
+			self.PDAFController.signal_image1.connect(self.imageDisplayWindow['PDAF_image1'].display_image)
+			self.PDAFController.signal_image2.connect(self.imageDisplayWindow['PDAF_image2'].display_image)
 
 		# Dock area for displaying image-streams
 		self.image_window = QMainWindow()
@@ -227,6 +241,16 @@ class SquidTracking_GUI(QMainWindow):
 		thresholded_image_dock = dock.Dock('Thresholded', autoOrientation = False)
 		image_display_dockArea.addDock(thresholded_image_dock, 'right', image_window_docks[last_channel])
 		thresholded_image_dock.addWidget(self.imageDisplayWindow_ThresholdedImage.widget)
+
+		# PDAF debug
+		if TWO_CAMERA_PDAF:
+			PDAF_image1_dock = dock.Dock('PDAF_image1', autoOrientation = False)
+			image_display_dockArea.addDock(PDAF_image1_dock, 'bottom')
+			PDAF_image1_dock.addWidget(self.imageDisplayWindow['PDAF_image1'].widget)
+			PDAF_image2_dock = dock.Dock('PDAF_image2', autoOrientation = False)
+			image_display_dockArea.addDock(PDAF_image2_dock, 'right', PDAF_image1_dock)
+			PDAF_image2_dock.addWidget(self.imageDisplayWindow['PDAF_image2'].widget)
+
 		#-----------------------------------------------------
 		# Layout widgets
 		#-----------------------------------------------------
@@ -294,11 +318,15 @@ class SquidTracking_GUI(QMainWindow):
 			for key in self.imaging_channels:
 				self.liveController[key].stop_live()
 				self.camera[key].close()
-				self.imageSaver[key].stop_saving_images()
+				self.imageSaver[key].close()
 				self.imageDisplay[key].close()
 				self.imageDisplayWindow[key].close()
+
+			if TWO_CAMERA_PDAF:
+				self.imageDisplayWindow['PDAF_image1'].close()
+				self.imageDisplayWindow['PDAF_image2'].close()
 			
-			self.trackingDataSaver.stop_DataSaver()
+			self.trackingDataSaver.close()
 			
 			self.imageDisplayWindow_ThresholdedImage.close()
 

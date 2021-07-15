@@ -1,0 +1,25 @@
+CAMERAS = {'DF1':{'make':'Daheng','serial':'FW0200050063','px_format':(2560,2048),'color_format':'GRAY8','fps': 60,'is_color':False,'rotate image angle':90,'flip image':'Vertical'},\
+			'DF2':{'make':'Daheng','serial':'FW0200050068','px_format':(2560,2048),'color_format':'GRAY8','fps':60,'is_color':False,'rotate image angle':90,'flip image':'Vertical'}, \
+			'low-mag':{'make':'Daheng','serial':'FW0200050061','px_format':(2560,2048),'color_format':'GRAY8','fps':30,'is_color':False,'rotate image angle':0,'flip image':'Vertical'}}
+
+LIQUID_LENS_FOCUS_TRACKING = False
+TWO_CAMERA_PDAF = True
+PDAF_FLIPUD = True
+
+STAGE_MOVEMENT_SIGN_X = 1
+STAGE_MOVEMENT_SIGN_Y = 1
+STAGE_MOVEMENT_SIGN_THETA = -1
+
+X_ENCODER_SIGN = 1
+Y_ENCODER_SIGN = 1
+THETA_ENCODER_SIGN = -1
+
+class Chamber:
+    # Chamber dimensions in mm
+    WIDTH = 5
+    R_I = 85
+    R_O = 110
+    LENGTH = (R_O - R_I)
+    R_HOME = 101            # Gravity Machine Hardy (Monterey)
+
+print('machine-specific configurations loaded')
