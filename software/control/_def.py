@@ -1,8 +1,8 @@
 import os
 import glob
 
-# TRACKING_CONFIG = 'XYZ'
-TRACKING_CONFIG = 'XYT'
+TRACKING_CONFIG = 'XYZ'
+# TRACKING_CONFIG = 'XYT'
 
 class TriggerMode:
     SOFTWARE = 'Software Trigger'
@@ -276,6 +276,11 @@ elif TRACKING_CONFIG == 'XYZ':
     PLOT_VARIABLES = {'X':'X_objStage','Y':'Y_objStage', 'Z':'Z_objStage', 'Phase':'FocusPhase'}
 
     PLOT_UNITS = {'X':'mm','Y':'mm', 'Z':'mm','Phase':'radians'}
+
+    PLOT_COLORS = {'X':'r','Y':'g', 'Z':'b', 'Phase':'w'}
+
+    assert list(PLOT_VARIABLES.keys()) == list(PLOT_COLORS.keys())
+    assert list(PLOT_VARIABLES.keys()) == list(PLOT_UNITS.keys())
 
     DEFAULT_PLOTS = ['X', 'Y']
 

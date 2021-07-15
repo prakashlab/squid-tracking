@@ -16,7 +16,7 @@ import control.utils.image_processing as image_processing
 
 
 import control.utils.PID as PID
-from control.utils.units_converter import Units_Converter
+from control.utils.units_converter_squid import Units_Converter
 import control.utils.byte_operations as byte_operations
 
 import control.utils.CSV_Tool as CSV_Tool

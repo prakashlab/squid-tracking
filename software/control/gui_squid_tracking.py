@@ -22,9 +22,9 @@ import control.widgets_tracking as widgets_tracking
 import control.camera_TIS as camera_TIS
 import control.camera as camera_Daheng
 import control.core as core
-import control.core_tracking as core_tracking
+import control.core_tracking_squid as core_tracking
 import control.microcontroller as microcontroller
-import control.core_PDAF as core_PDAF
+# import control.core_PDAF as core_PDAF
 
 
 class SquidTracking_GUI(QMainWindow):
@@ -32,7 +32,7 @@ class SquidTracking_GUI(QMainWindow):
 	def __init__(self, simulation = False, *args, **kwargs):
 		super().__init__(*args, **kwargs)
 		
-		self.setWindowTitle('Gravity Machine v2.0')
+		self.setWindowTitle('Squid Tracking v2.0')
 
 		self.imaging_channels = CAMERAS.keys()
 
@@ -152,11 +152,11 @@ class SquidTracking_GUI(QMainWindow):
 
 		self.SettingsTab = QTabWidget()
 		self.SettingsTab.addTab(self.PID_Group_Widget, 'PID')
-		self.SettingsTab.addTab(self.FocusTracking_Widget, 'Liquid Lens')
+		# self.SettingsTab.addTab(self.FocusTracking_Widget, 'Liquid Lens')
 		if TWO_CAMERA_PDAF:
 			self.SettingsTab.addTab(self.PDAFControllerWidget, 'PDAF')
 		self.SettingsTab.addTab(self.navigationWidget, 'Navigation')
-		self.SettingsTab.addTab(self.stageCalibrationWidget, 'Calibration')
+		# self.SettingsTab.addTab(self.stageCalibrationWidget, 'Calibration')
 		self.SettingsTab.addTab(self.plotWidget, 'Plots')
 
 		#------------------------------------------------------------------
@@ -197,8 +197,6 @@ class SquidTracking_GUI(QMainWindow):
 		# self.microcontroller_Rec.update_display.connect(self.navigationWidget.update_display)
 		self.trackingControlWidget.show_roi.connect(self.imageDisplayWindow[TRACKING].toggle_ROI_selector)
 		self.microcontroller_Rec.update_stage_position.connect(self.navigationWidget.update_display)
-		self.microcontroller_Rec.start_tracking_signal.connect(self.trackingControlWidget.handle_hardware_track_signal)
-		self.recordingControlWidget.start_tracking_signal.connect(self.trackingControlWidget.trigger_track_button)
 		# self.microcontroller_Rec.update_stage_position.connect(self.trackingController.update_stage_position)
 		# Pixel per mm update due to objective change
 		self.liveControlWidget.new_pixelpermm.connect(self.trackingController.units_converter.update_pixel_size)

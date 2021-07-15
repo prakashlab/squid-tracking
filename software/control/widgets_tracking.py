@@ -294,7 +294,7 @@ class StageCalibrationWidget(QFrame):
 		
 		self.zero_Y = QPushButton('Zero Y-stage')
 	
-		self.zero_Theta = QPushButton('Zero Theta-stage')
+		self.zero_Z = QPushButton('Zero Z-stage')
 	
 		
 		# Homing Button
@@ -305,7 +305,7 @@ class StageCalibrationWidget(QFrame):
 		stage_control.addWidget(self.homing_button,0,0)
 		stage_control.addWidget(self.zero_X,0,1)
 		stage_control.addWidget(self.zero_Y,1,1)
-		stage_control.addWidget(self.zero_Theta,2,1)
+		stage_control.addWidget(self.zero_Z,2,1)
 
 		self.setLayout(stage_control)
 
@@ -313,7 +313,7 @@ class StageCalibrationWidget(QFrame):
 		# Connections
 		self.zero_X.clicked.connect(self.zero_X_stage)
 		self.zero_Y.clicked.connect(self.zero_Y_stage)
-		self.zero_Theta.clicked.connect(self.zero_Theta_stage)
+		self.zero_Z.clicked.connect(self.zero_Z_stage)
 
 		self.homing_button.clicked.connect(self.homing_button_click)
 
@@ -325,7 +325,7 @@ class StageCalibrationWidget(QFrame):
 
 		self.microcontroller.send_stage_zero_command(1)
 
-	def zero_Theta_stage(self):
+	def zero_Z_stage(self):
 
 		self.microcontroller.send_stage_zero_command(3)
 
@@ -492,9 +492,9 @@ class PID_Group_Widget(QFrame):
 		self.PID_widget_y.spinboxD.valueChanged.connect(self.trackingController.pid_controller_y.update_D)
 
 		# Theta
-		self.PID_widget_z.spinboxP.valueChanged.connect(self.trackingController.pid_controller_theta.update_P)
-		self.PID_widget_z.spinboxI.valueChanged.connect(self.trackingController.pid_controller_theta.update_I)
-		self.PID_widget_z.spinboxD.valueChanged.connect(self.trackingController.pid_controller_theta.update_D)
+		self.PID_widget_z.spinboxP.valueChanged.connect(self.trackingController.pid_controller_z.update_P)
+		self.PID_widget_z.spinboxI.valueChanged.connect(self.trackingController.pid_controller_z.update_I)
+		self.PID_widget_z.spinboxD.valueChanged.connect(self.trackingController.pid_controller_z.update_D)
 
 
 
