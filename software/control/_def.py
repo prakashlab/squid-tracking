@@ -52,7 +52,7 @@ class Motion:
 
     STEPS_PER_MM_Z = 5333  # microsteps
 
-    MAX_MICROSTEPS = 16
+    MAX_MICROSTEPS = 1
 
     def __init__(self):
         pass

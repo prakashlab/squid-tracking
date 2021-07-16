@@ -3,7 +3,7 @@
 #include <DueTimer.h>
 #include <AccelStepper.h>
 
-#define TESTING;  // For testing without all hardware connected (dev of firmware + software when only uController is available)
+//#define TES/TING;  // For testing without all hardware connected (dev of firmware + software when only uController is available)
 
 /***************************************************************************************************/
 /***************************************** Communications ******************************************/

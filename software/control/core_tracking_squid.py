@@ -877,7 +877,7 @@ class ImageSaver(QObject):
 
 				# Save the image
 				cv2.imwrite(saving_path,image)
-				print('Wrote image {} to disk'.format(image_file_name))
+				# print('Wrote image {} to disk'.format(image_file_name))
 				self.counter = self.counter + 1
 				self.queue.task_done()
 				self.image_lock.release()
@@ -944,11 +944,11 @@ class ImageSaver(QObject):
 	def set_recording_time_limit(self,time_limit):
 		self.recording_time_limit = time_limit
 
-	def stop_saving_images(self):
-		# self.queue.join()
-		self.stop_signal_received = True
- 
 
+	def close(self):
+		self.queue.join()
+		self.stop_signal_received = True
+		self.thread.join()
 
 
 
