@@ -3,7 +3,7 @@
 #include <DueTimer.h>
 #include <AccelStepper.h>
 
-//#define TES/TING;  // For testing without all hardware connected (dev of firmware + software when only uController is available)
+//#define TESTING;  // For testing without all hardware connected (dev of firmware + software when only uController is available)
 
 /***************************************************************************************************/
 /***************************************** Communications ******************************************/
@@ -142,6 +142,9 @@ void setup() {
 
   pinMode(13, OUTPUT);
   digitalWrite(13,LOW);
+
+  pinMode(31, OUTPUT);
+  digitalWrite(31,LOW);
   
   // enable pins
   pinMode(LED, OUTPUT);
