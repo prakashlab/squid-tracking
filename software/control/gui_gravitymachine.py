@@ -19,12 +19,16 @@ from control._def import *
 # app specific libraries
 import control.widgets as widgets
 import control.widgets_tracking as widgets_tracking
+import control.widgets_volumetric_imaging as widgets_volumetric_imaging
 import control.camera_TIS as camera_TIS
 import control.camera as camera_Daheng
 import control.core as core
 import control.core_tracking as core_tracking
+import control.core_volumetric_imaging as core_volumetric_imaging
 import control.microcontroller as microcontroller
 import control.core_PDAF as core_PDAF
+from control.optotune_lens import optotune_lens
+
 
 # SIMULATION = True
 
@@ -117,6 +121,23 @@ class GravityMachine_GUI(QMainWindow):
 
 		self.imageDisplay = {key: core.ImageDisplay() for key in self.imaging_channels}
 
+		# Volumetric Imaging
+		if VOLUMETRIC_IMAGING:
+			self.liquid_lens = optotune_lens()
+			if USE_SEPARATE_TRIGGER_CONTROLLER:
+				self.trigger_controller = self.microcontroller # to add a separate trigger controller as the current controller's "clock rate" is only 2 kHz
+			else:
+				self.trigger_controller = self.microcontroller
+			self.volumetricImagingStreamHandler = core_volumetric_imaging.VolumetricImagingStreamHandler()
+			self.VolumetricImagingImageSaver = core_volumetric_imaging.VolumetricImagingImageSaver(self.internal_state)
+			self.volumetricImagingController = core_volumetric_imaging.VolumetricImagingController(self.camera['volumetric imaging'],
+				self.trigger_controller,self.liquid_lens,self.volumetricImagingStreamHandler,self.VolumetricImagingImageSaver,self.internal_state)
+			self.streamHandler['volumetric imaging'] = self.volumetricImagingStreamHandler
+			self.imageSaver['volumetric imaging'].close()
+			self.imageSaver['volumetric imaging'] = self.VolumetricImagingImageSaver
+			self.focusMeasureDisplayWindow = widgets_volumetric_imaging.FocusMeasureDisplayWindow()
+			self.focusMeasureDisplayWindow.show()
+
 		# Open the camera
 		# camera start streaming
 		for channel in self.imaging_channels:
@@ -136,6 +157,8 @@ class GravityMachine_GUI(QMainWindow):
 		self.recordingControlWidget = widgets.RecordingWidget(self.streamHandler,self.imageSaver, self.internal_state, self.trackingDataSaver, self.imaging_channels)
 		if TWO_CAMERA_PDAF:
 			self.PDAFControllerWidget = widgets_tracking.PDAFControllerWidget(self.PDAFController)
+		if VOLUMETRIC_IMAGING:
+			self.volumetricImagingWidget = widgets_volumetric_imaging.VolumetricImagingWidget(self.volumetricImagingController)
 		self.stageCalibrationWidget = widgets_tracking.StageCalibrationWidget(self.internal_state, self.microcontroller) 
 		self.plotWidget = widgets.dockAreaPlot(self.internal_state)
 
@@ -156,6 +179,8 @@ class GravityMachine_GUI(QMainWindow):
 		self.SettingsTab.addTab(self.FocusTracking_Widget, 'Liquid Lens')
 		if TWO_CAMERA_PDAF:
 			self.SettingsTab.addTab(self.PDAFControllerWidget, 'PDAF')
+		if VOLUMETRIC_IMAGING:
+			self.SettingsTab.addTab(self.volumetricImagingWidget, 'Volumetric Imaging')
 		self.SettingsTab.addTab(self.navigationWidget, 'Navigation')
 		self.SettingsTab.addTab(self.stageCalibrationWidget, 'Calibration')
 		self.SettingsTab.addTab(self.plotWidget, 'Plots')
@@ -212,6 +237,9 @@ class GravityMachine_GUI(QMainWindow):
 			# for debugging:
 			self.PDAFController.signal_image1.connect(self.imageDisplayWindow['PDAF_image1'].display_image)
 			self.PDAFController.signal_image2.connect(self.imageDisplayWindow['PDAF_image2'].display_image)
+
+		if VOLUMETRIC_IMAGING:
+			self.volumetricImagingStreamHandler.signal_focus_measure_plot.connect(self.focusMeasureDisplayWindow.plotWidget.plot)
 
 		# Dock area for displaying image-streams
 		self.image_window = QMainWindow()
@@ -326,6 +354,9 @@ class GravityMachine_GUI(QMainWindow):
 			if TWO_CAMERA_PDAF:
 				self.imageDisplayWindow['PDAF_image1'].close()
 				self.imageDisplayWindow['PDAF_image2'].close()
+
+			if VOLUMETRIC_IMAGING:
+				self.focusMeasureDisplayWindow.close()
 			
 			self.trackingDataSaver.close()
 			
