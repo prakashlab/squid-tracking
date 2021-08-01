@@ -488,6 +488,8 @@ class RecordingWidget(QGroupBox):
 		box_layout.addWidget(QLabel('Time limit'), 0,3,1,1)
 
 		for row, channel in enumerate(self.imaging_channels):
+			if channel == 'volumetric imaging':
+				continue # skip volumetric imaging acquisition control in this widget as it's controlled separately
 			box_layout.addWidget(self.checkbox[channel], row+1, 0, 1, 1)
 			box_layout.addWidget(self.entry_saveFPS[channel], row+1, 1, 1, 1)
 			box_layout.addWidget(self.actual_saveFPS[channel], row+1, 2, 1, 1)
