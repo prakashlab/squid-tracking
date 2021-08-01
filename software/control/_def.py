@@ -197,6 +197,23 @@ OBJECTIVES = {'2x':{'magnification':2, 'NA':0.10, 'PixelPermm':217}, '4x':{'magn
 
 DEFAULT_OBJECTIVE = '4x'
 
+
+##################################################
+#### Default Configurations - to be overriden ####
+##################################################
+STAGE_MOVEMENT_SIGN_X = 1
+STAGE_MOVEMENT_SIGN_Y = 1
+STAGE_MOVEMENT_SIGN_THETA = 1
+X_ENCODER_SIGN = 1
+Y_ENCODER_SIGN = 1
+THETA_ENCODER_SIGN = 1
+TWO_CAMERA_PDAF = True
+VOLUMETRIC_IMAGING = True
+USE_SEPARATE_TRIGGER_CONTROLLER = False
+CAMERAS = {'DF1':{'make':'Daheng','serial':'FW0200050063','px_format':(2560,2048),'color_format':'GRAY8','fps': 60,'is_color':False,'rotate image angle':0,'flip image':'Horizental'},\
+           'DF2':{'make':'Daheng','serial':'FW0200050068','px_format':(2560,2048),'color_format':'GRAY8','fps':60,'is_color':False,'rotate image angle':0,'flip image':'Horizental'}, \
+           'volumetric imaging':{'make':'Daheng','serial':'FW0200050061','px_format':(600,600),'color_format':'GRAY8','fps':30,'is_color':False,'rotate image angle':0,'flip image':'Horizental'}}
+
 ##########################################################
 #### start of loading machine specific configurations ####
 ##########################################################
@@ -303,4 +320,12 @@ elif TRACKING_CONFIG == 'XYZ':
     DEFAULT_PLOTS = ['X', 'Y']
 
 assert INTERNAL_STATE_VARIABLES == list(INITIAL_VALUES.keys()), "Variable mismatch: One or more state variables may not be initialized"
+
+# MCU Command Set
+SET_NUMBER_OF_PLANES_PER_VOLUME = 10
+SET_NUMBER_OF_REQUESTED_VOLUMES = 11
+SET_FREQUENCY_HZ = 12
+SET_PHASE_DELAY = 13
+START_TRIGGER_GENERATION = 14
+STOP_TRIGGER_GENERATION = 15
 
