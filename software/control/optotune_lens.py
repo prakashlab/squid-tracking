@@ -2,6 +2,7 @@
 Serial communication protocol to control optotune liquid lens
 
 - by Deepak Krishnamurthy
+- updated by Hongquan Li July 2021
 
 '''
 import serial 	
@@ -32,6 +33,8 @@ class optotune_lens:
 		self.current_range_max = 250
 		self.op_range_min = -2
 		self.op_range_max = 3
+
+		self.current_mA = 0
 
 		# Auto-detect the lens-driver
 		for p in serial.tools.list_ports.comports():
@@ -126,7 +129,6 @@ class optotune_lens:
 		self.upper_curr = int((self.offset + self.amp)*self.currentScaleFactor)
 		self.lower_curr = int((self.offset - self.amp)*self.currentScaleFactor)
 
-	
 	def start(self):
 		print('Starting liquid lens sweep')
 		self.mode = "Sinusoid"
@@ -147,6 +149,26 @@ class optotune_lens:
 		# self.getCurrentLimits()
 		# self.sendProperty("UpperCurr",self.upper_curr)
 		# self.sendProperty("LowerCurr",self.lower_curr)
+
+	# new function - 2021
+	def start_scanning(self,current_mA_min,current_mA_max,frequency_Hz):
+		self.mode = "Sinusoid"
+		self.sendMode()
+		self.sendProperty("UpperCurr",current_mA_max/self.current_to_code_scalling_factor)
+		self.sendProperty("LowerCurr",current_mA_min/self.current_to_code_scalling_factor)
+		self.sendProperty("Freq",frequency_Hz)
+
+	# new function - 2021
+	def stop_scanning(self):
+		self.set_current_mA(0) # this function stops the scanning
+
+	# new function - 2021
+	def set_current_mA(self,value):
+		self.current_mA = value
+		current_code = self.current_mA/self.current_to_code_scalling_factor
+		self.mode = "DC"
+		self.sendMode()
+		self.sendCurrent(current_code)
 
 	def changeMode(self, mode):
 		self.mode = mode
