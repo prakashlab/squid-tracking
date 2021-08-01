@@ -217,7 +217,45 @@ class Microcontroller():
 
         self.serial.write(cmd)
 
+    def set_number_of_planes_per_volume(self,value):
+        cmd = bytearray(self.tx_buffer_length)
+        cmd[0] = SET_NUMBER_OF_PLANES_PER_VOLUME
+        cmd[1] = value >> 8
+        cmd[2] = value & 0xff
+        self.serial.write(cmd)
 
+    def set_number_of_requested_volumes(self,value):
+        cmd = bytearray(self.tx_buffer_length)
+        cmd[0] = SET_NUMBER_OF_REQUESTED_VOLUMES
+        cmd[1] = value >> 16
+        cmd[2] = (value >> 8) & 0xff
+        cmd[3] = value & 0xff
+        self.serial.write(cmd)
+
+    def set_frequency_Hz(self,value):
+        cmd = bytearray(self.tx_buffer_length)
+        cmd[0] = SET_FREQUENCY_HZ
+        cmd[1] = int(value*10) >> 8
+        cmd[2] = int(value*10) & 0xff
+        self.serial.write(cmd)
+
+    def set_phase_delay(self,value):
+        cmd = bytearray(self.tx_buffer_length)
+        cmd[0] = SET_PHASE_DELAY
+        value = int((value/90)*65535.0)
+        cmd[1] = int(value) >> 8
+        cmd[2] = int(value) & 0xff
+        self.serial.write(cmd)
+
+    def start_trigger_generation(self):
+        cmd = bytearray(self.tx_buffer_length)
+        cmd[0] = START_TRIGGER_GENERATION
+        self.serial.write(cmd)
+
+    def stop_trigger_generation(self):
+        cmd = bytearray(self.tx_buffer_length)
+        cmd[0] = STOP_TRIGGER_GENERATION
+        self.serial.write(cmd)
 
     def send_command(self,command):
         cmd = bytearray(self.tx_buffer_length)
@@ -350,6 +388,23 @@ class Microcontroller_Simulation():
     def read_received_packet_nowait(self):
         return None
 
+    def set_number_of_planes_per_volume(self,value):
+        pass
+
+    def set_number_of_requested_volumes(self,value):
+        pass
+
+    def set_frequency_Hz(self,value):
+        pass
+
+    def set_phase_delay(self,value):
+        pass
+
+    def start_trigger_generation(self):
+        pass
+
+    def stop_trigger_generation(self):
+        pass
 
 # from Gravity machine
 def split_int_2byte(number):
