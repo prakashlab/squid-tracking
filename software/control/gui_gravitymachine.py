@@ -26,6 +26,7 @@ import control.core as core
 import control.core_tracking as core_tracking
 import control.core_volumetric_imaging as core_volumetric_imaging
 import control.microcontroller as microcontroller
+import control.trigger_controller as trigger_controller
 import control.core_PDAF as core_PDAF
 from control.optotune_lens import optotune_lens
 
@@ -125,7 +126,10 @@ class GravityMachine_GUI(QMainWindow):
 		if VOLUMETRIC_IMAGING:
 			self.liquid_lens = optotune_lens()
 			if USE_SEPARATE_TRIGGER_CONTROLLER:
-				self.trigger_controller = self.microcontroller # to add a separate trigger controller as the current controller's "clock rate" is only 2 kHz
+				if simulation:
+					self.trigger_controller = trigger_controller.TriggerController_Simulation(TRIGGERCONTROLLER_SERIAL_NUMBER) 
+				else:
+					self.trigger_controller = trigger_controller.TriggerController(TRIGGERCONTROLLER_SERIAL_NUMBER) 
 			else:
 				self.trigger_controller = self.microcontroller
 			self.volumetricImagingStreamHandler = core_volumetric_imaging.VolumetricImagingStreamHandler()
@@ -358,6 +362,9 @@ class GravityMachine_GUI(QMainWindow):
 			if TWO_CAMERA_PDAF:
 				self.imageDisplayWindow['PDAF_image1'].close()
 				self.imageDisplayWindow['PDAF_image2'].close()
+
+			if USE_SEPARATE_TRIGGER_CONTROLLER:
+				self.trigger_controller.close()
 
 			if VOLUMETRIC_IMAGING:
 				self.focusMeasureDisplayWindow.close()

@@ -206,6 +206,7 @@ THETA_ENCODER_SIGN = 1
 TWO_CAMERA_PDAF = True
 VOLUMETRIC_IMAGING = True
 USE_SEPARATE_TRIGGER_CONTROLLER = False
+TRIGGERCONTROLLER_SERIAL_NUMBER = None
 CAMERAS = {'DF1':{'make':'Daheng','serial':'FW0200050063','px_format':(2560,2048),'color_format':'GRAY8','fps': 60,'is_color':False,'rotate image angle':0,'flip image':'Horizental'},\
            'DF2':{'make':'Daheng','serial':'FW0200050068','px_format':(2560,2048),'color_format':'GRAY8','fps':60,'is_color':False,'rotate image angle':0,'flip image':'Horizental'}, \
            'volumetric imaging':{'make':'Daheng','serial':'FW0200050061','px_format':(600,600),'color_format':'GRAY8','fps':30,'is_color':False,'rotate image angle':0,'flip image':'Horizental'}}
