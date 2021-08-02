@@ -144,7 +144,7 @@ class Camera(object):
 
     def set_hardware_triggered_acquisition(self):
         self.camera.TriggerMode.set(gx.GxSwitchEntry.ON)
-        self.camera.TriggerSource.set(gx.GxTriggerSourceEntry.LINE0)
+        self.camera.TriggerSource.set(gx.GxTriggerSourceEntry.LINE2)
 
     def send_trigger(self):
         # print("sending trigger to camera")
