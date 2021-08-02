@@ -235,8 +235,8 @@ class Microcontroller():
     def set_frequency_Hz(self,value):
         cmd = bytearray(self.tx_buffer_length)
         cmd[0] = SET_FREQUENCY_HZ
-        cmd[1] = int(value*10) >> 8
-        cmd[2] = int(value*10) & 0xff
+        cmd[1] = int(value*1000) >> 8
+        cmd[2] = int(value*1000) & 0xff
         self.serial.write(cmd)
 
     def set_phase_delay(self,value):
