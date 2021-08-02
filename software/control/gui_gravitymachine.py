@@ -137,6 +137,10 @@ class GravityMachine_GUI(QMainWindow):
 			self.imageSaver['volumetric imaging'] = self.VolumetricImagingImageSaver
 			self.focusMeasureDisplayWindow = widgets_volumetric_imaging.FocusMeasureDisplayWindow()
 			self.focusMeasureDisplayWindow.show()
+			# array display
+			self.imageArrayDisplayWindow = core_volumetric_imaging.ImageArrayDisplayWindow() 
+			self.imageArrayDisplayWindow.show()
+			self.volumetricImagingStreamHandler.packet_image_for_array_display.connect(self.imageArrayDisplayWindow.display_image)
 
 		# Open the camera
 		# camera start streaming
@@ -357,6 +361,7 @@ class GravityMachine_GUI(QMainWindow):
 
 			if VOLUMETRIC_IMAGING:
 				self.focusMeasureDisplayWindow.close()
+				self.imageArrayDisplayWindow.close()
 			
 			self.trackingDataSaver.close()
 			

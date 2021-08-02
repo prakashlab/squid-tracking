@@ -190,6 +190,7 @@ class VolumetricImagingStreamHandler(QObject):
 
         self.fps_display = 30
         self.timestamp_last_display = 0
+        self.timestamp_last_array_display = 0
 
         self.crop_width = crop_width
         self.crop_height = crop_height
@@ -279,6 +280,10 @@ class VolumetricImagingStreamHandler(QObject):
             self.timestamp_last_display = time_now
 
         # send image to array display
+        # time_now = time.time()
+        # if time_now-self.timestamp_last_array_display >= 1/5:
+            # self.packet_image_for_array_display.emit(image_cropped,self.plane_ID)
+            # self.timestamp_last_array_display = time_now
         self.packet_image_for_array_display.emit(image_cropped,self.plane_ID)
 
         '''
@@ -386,7 +391,6 @@ class VolumetricImagingImageSaver(QObject):
         self.thread.join()
 
 
-'''
 class ImageArrayDisplayWindow(QMainWindow):
 
     def __init__(self, window_title=''):
@@ -431,4 +435,3 @@ class ImageArrayDisplayWindow(QMainWindow):
         if i < 9:
             self.sub_windows[i].img.setImage(image,autoLevels=False)
             self.sub_windows[i].view.autoRange(padding=0)
-'''
