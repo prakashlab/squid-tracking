@@ -20,7 +20,7 @@ class Tracker_Focus():
     '''
     Liquid lens based tracker.
     '''
-    def __init__(self,parent=None):
+    def __init__(self,liquid_lens=None,parent=None):
         
         self.YdequeLen=50
         self.YfocusMeasure = deque(maxlen = self.YdequeLen)  #The length of the buffer must be ~fps_sampling/liquid_lens_freq
@@ -37,9 +37,12 @@ class Tracker_Focus():
         self.liquidLensAmp = liquidLens['Amp']['default']
         self.liquidLensFreq = liquidLens['Freq']['default']
 
-        # Initialize a liquid lens
-        self.liquid_lens = optotune_lens(freq = self.liquidLensFreq, amp = self.liquidLensAmp, offset = 0)
-
+        # move the below out for transparency
+        # # Initialize a liquid lens
+        # self.liquid_lens = optotune_lens(freq = self.liquidLensFreq, amp = self.liquidLensAmp, offset = 0)
+        self.liquid_lens = liquid_lens
+        self.liquid_lens.set_Freq(self.liquidLensFreq) # add these for backward-compatibility - can be removed in future updates
+        self.liquid_lens.set_Amp(self.liquidLensAmp) # add these for backward-compatibility - can be removed in future updates
 
         self.window_size = 25
         
