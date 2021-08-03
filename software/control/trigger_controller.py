@@ -19,7 +19,7 @@ class TriggerController():
         if not controller_ports:
             raise IOError("No Controller Found")
         self.serial = serial.Serial(controller_ports[0],2000000)
-        utils.print_message('Teensy connected')
+        print('Teensy connected')
 
     def close(self):
         self.serial.close()
@@ -58,11 +58,13 @@ class TriggerController():
         cmd = bytearray(self.tx_buffer_length)
         cmd[0] = START_TRIGGER_GENERATION
         self.serial.write(cmd)
+        print('start trigger generation')
 
     def stop_trigger_generation(self):
         cmd = bytearray(self.tx_buffer_length)
         cmd[0] = STOP_TRIGGER_GENERATION
         self.serial.write(cmd)
+        print('stop trigger generation')
 
     def read_received_packet(self):
         # wait to receive data
