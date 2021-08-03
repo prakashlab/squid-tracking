@@ -44,9 +44,9 @@ class VolumetricImagingController(QObject):
         
         self.current_mA_min = 0
         self.current_mA_max = 0
-        self.frequency_Hz = 0 # 1,2,5,10,20,25
+        self.frequency_Hz = 1 # 0.1,0.2,0.5,1,2,5,10,20,25
         self.phase_delay = 0 # 0-90 degree
-        self.number_of_planes_per_volume = 1
+        self.number_of_planes_per_volume = 10
         self.number_of_requested_volumes = 0 # 0 means infinite
         self.number_of_requested_frames = 0 # 0 means infinite
 
