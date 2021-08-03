@@ -87,6 +87,8 @@ class GravityMachine_GUI(QMainWindow):
 			# self.camera = {key:camera.Camera() for key in self.imaging_channels}
 			self.microcontroller = microcontroller.Microcontroller()
 		
+		# liquid lens - to be removed [added for backward compatibility]
+		self.liquid_lens = optotune_lens()
 
 		# Image stream handler
 		self.streamHandler = {}
@@ -101,7 +103,7 @@ class GravityMachine_GUI(QMainWindow):
 		#-----------------------------------------------------------------------------------------------		
 		self.liveController = {key:core.LiveController(self.camera[key],self.microcontroller) for key in self.imaging_channels}
 		self.navigationController = core.NavigationController(self.microcontroller)
-		self.trackingController = core_tracking.TrackingController(self.microcontroller,self.internal_state, color = CAMERAS[TRACKING]['is_color'])
+		self.trackingController = core_tracking.TrackingController(self.microcontroller,self.internal_state,self.liquid_lens,color = CAMERAS[TRACKING]['is_color'])
 		self.trackingDataSaver = core_tracking.TrackingDataSaver(self.internal_state)
 		self.microcontroller_Rec = core_tracking.microcontroller_Receiver(self.microcontroller, self.internal_state) # Microcontroller Receiver object
 		# PDAF
@@ -124,7 +126,7 @@ class GravityMachine_GUI(QMainWindow):
 
 		# Volumetric Imaging
 		if VOLUMETRIC_IMAGING:
-			self.liquid_lens = optotune_lens()
+			# self.liquid_lens = optotune_lens() # to uncomment once the previous "self.liquid_lens = optotune_lens()" is removed
 			if USE_SEPARATE_TRIGGER_CONTROLLER:
 				if simulation:
 					self.trigger_controller = trigger_controller.TriggerController_Simulation(TRIGGERCONTROLLER_SERIAL_NUMBER) 
