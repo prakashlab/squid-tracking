@@ -58,7 +58,7 @@ class TrackingController(QObject):
 	save_data_signal -> DataSaver
 
 	'''
-	def __init__(self, microcontroller, internal_state , focus_tracker = 'liq-lens', rotate_image_angle = 0, color = False):
+	def __init__(self, microcontroller, internal_state , liquid_lens = None, focus_tracker = 'liq-lens', rotate_image_angle = 0, color = False):
 		QObject.__init__(self)
 		self.microcontroller = microcontroller
 		self.internal_state = internal_state
@@ -98,7 +98,7 @@ class TrackingController(QObject):
 		# Create a tracking object that does the image-based tracking
 		self.tracker_image = tracking.Tracker_Image(color = color)
 		# Create a tracking object that does the focus-based tracking
-		self.tracker_focus = tracking_focus.Tracker_Focus()
+		self.tracker_focus = tracking_focus.Tracker_Focus(liquid_lens) ### outdated, to be removed
 
 		# PID controller for each axis
 		self.pid_controller_x = PID.PID()
@@ -134,7 +134,7 @@ class TrackingController(QObject):
 
 		# Subset of INTERNAL_STATE_MODEL that is updated by Tracking_Controller (self)
 		self.internal_state_vars = ['Time','X_image', 'Z_image', 'X_objStage', 'Y_objStage', 'Z_objStage']		
-		self.tracker_focus.cropped_imSize = int(self.image_width/CROPPED_IMG_RATIO)
+		self.tracker_focus.cropped_imSize = int(self.image_width/CROPPED_IMG_RATIO) ### outdated, to be removed
 
 		# For fps measurement
 		self.timestamp_last = 0
@@ -476,7 +476,7 @@ class TrackingController(QObject):
 	def set_cropped_image_size(self, new_ratio):
 
 
-		self.tracker_focus.cropped_imSize = int(self.image_width/new_ratio)
+		self.tracker_focus.cropped_imSize = int(self.image_width/new_ratio) ### outdated, to be removed
 
 		# @@@ Testing
 		# print('new cropped image size: {}'.format(self.tracker_focus.cropped_imSize))
