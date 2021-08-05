@@ -407,8 +407,6 @@ class LiveController(QObject):
             if self.trigger_mode == TriggerMode.SOFTWARE:
                 self._stop_software_triggerred_acquisition()
             if mode == TriggerMode.HARDWARE:
-                if self.trigger_mode == TriggerMode.SOFTWARE:
-                self._stop_software_triggerred_acquisition()
                 # Stop hardware triggered aquisition
                 self.microcontroller.send_hardware_trigger_command(0)
             self.camera.set_continuous_acquisition()
