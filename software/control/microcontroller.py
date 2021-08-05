@@ -406,6 +406,9 @@ class Microcontroller_Simulation():
     def stop_trigger_generation(self):
         pass
 
+    def send_hardware_trigger_command(self, trigger_state):
+        pass
+
 # from Gravity machine
 def split_int_2byte(number):
     return int(number)% 256,int(number) >> 8
