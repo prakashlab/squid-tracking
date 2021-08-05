@@ -398,17 +398,19 @@ class LiveController(QObject):
                 self._start_software_triggerred_acquisition()
         if mode == TriggerMode.HARDWARE:
             print('Setting camera to hardware trigger')
+            if self.trigger_mode == TriggerMode.SOFTWARE:
+                self._stop_software_triggerred_acquisition()
             self.camera.set_hardware_triggered_acquisition()
             # Send command to uController to start triggering camera
             self.microcontroller.send_hardware_trigger_command(1)
-
         if mode == TriggerMode.CONTINUOUS: 
             if self.trigger_mode == TriggerMode.SOFTWARE:
                 self._stop_software_triggerred_acquisition()
             if mode == TriggerMode.HARDWARE:
+                if self.trigger_mode == TriggerMode.SOFTWARE:
+                self._stop_software_triggerred_acquisition()
                 # Stop hardware triggered aquisition
                 self.microcontroller.send_hardware_trigger_command(0)
-                
             self.camera.set_continuous_acquisition()
         self.trigger_mode = mode
 
