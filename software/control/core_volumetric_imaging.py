@@ -100,6 +100,9 @@ class VolumetricImagingController(QObject):
         self.flag_volumetric_imaging_started= False
 
     def slot_volumetric_imaging_completed(self):
+        self.flag_volumetric_imaging_started = False
+        self.camera.set_continuous_acquisition()
+        self.liquid_lens.set_current_mA(self.current_mA_static)
         self.signal_volumetric_imaging_stopped.emit()
 
     def set_liquid_lens_scanning_current_min(self,value):
