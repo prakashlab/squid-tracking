@@ -46,7 +46,7 @@ class VolumetricImagingController(QObject):
         self.current_mA_max = 0
         self.frequency_Hz = 1 # 0.1,0.2,0.5,1,2,5,10,20,25
         self.phase_delay = 0 # 0-90 degree
-        self.number_of_planes_per_volume = 10
+        self.number_of_planes_per_volume = VOLUMETRIC_IMAGING_NUMBER_OF_PLANES_PER_VOLUME_DEFAULT
         self.number_of_requested_volumes = 0 # 0 means infinite
         self.number_of_requested_frames = 0 # 0 means infinite
 
@@ -183,7 +183,7 @@ class VolumetricImagingStreamHandler(QObject):
         self.frame_ID = None
         self.plane_ID = None
         
-        self.number_of_planes_per_volume = 1
+        self.number_of_planes_per_volume = VOLUMETRIC_IMAGING_NUMBER_OF_PLANES_PER_VOLUME_DEFAULT
         self.number_of_requested_frames = None
 
         self.flag_calculate_focus_measure = False
