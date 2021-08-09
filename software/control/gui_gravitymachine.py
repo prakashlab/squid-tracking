@@ -85,7 +85,7 @@ class GravityMachine_GUI(QMainWindow):
 
 			# DaHheng camera object
 			# self.camera = {key:camera.Camera() for key in self.imaging_channels}
-			self.microcontroller = microcontroller.Microcontroller()
+			self.microcontroller = microcontroller.Microcontroller_Simulation() # temporary
 		
 		# liquid lens - to be removed [added for backward compatibility]
 		self.liquid_lens = optotune_lens()
@@ -248,8 +248,16 @@ class GravityMachine_GUI(QMainWindow):
 			self.PDAFController.signal_image1.connect(self.imageDisplayWindow['PDAF_image1'].display_image)
 			self.PDAFController.signal_image2.connect(self.imageDisplayWindow['PDAF_image2'].display_image)
 
+		# Volumetric imaging
 		if VOLUMETRIC_IMAGING:
 			self.volumetricImagingStreamHandler.signal_focus_measure_plot.connect(self.focusMeasureDisplayWindow.plotWidget.plot)
+			# trigger mode
+			if simulation:
+				# in simulation mode, do not change camera trigger mode (for now) or no new image would be delivered, as the trigger timer is in the livecontroller
+				# to do: add a tigger timer in the simulation camera object for simulating hardware trigger
+				pass
+			else:
+				self.volumetricImagingController.signal_trigger_mode.connect(self.cameraSettingsWidget['volumetric imaging'].set_trigger_mode)
 
 		# Dock area for displaying image-streams
 		self.image_window = QMainWindow()

@@ -32,6 +32,7 @@ import tifffile as tif
 class VolumetricImagingController(QObject):
 
     signal_volumetric_imaging_stopped = Signal()
+    signal_trigger_mode = Signal(str)
 
     def __init__(self,camera,trigger_controller,liquid_lens,volumetricImagingStreamHandler,volumetricImagingImageSaver,internal_state):
         QObject.__init__(self)
@@ -61,11 +62,13 @@ class VolumetricImagingController(QObject):
     def start_volumetric_imaging(self):
         # set camera to hardware trigger if liquid lens scanning frequency is non-zero
         if self.frequency_Hz > 0:
-            self.camera.set_hardware_triggered_acquisition()
+            # self.camera.set_hardware_triggered_acquisition()
             # to do: emit a signal to update the widget
+            self.signal_trigger_mode.emit(TriggerMode.HARDWARE)
         else:
-            self.camera.set_continuous_acquisition()
+            # self.camera.set_continuous_acquisition()
             # to do: emit a signal to update the widget
+            self.signal_trigger_mode.emit(TriggerMode.CONTINUOUS)
         
         # calculate number of requested frames
         self.number_of_requested_frames = self.number_of_planes_per_volume * self.number_of_requested_volumes
@@ -95,13 +98,15 @@ class VolumetricImagingController(QObject):
         self.volumetricImagingStreamHandler.stop_recording()
         self.volumetricImagingStreamHandler.reset()
         self.trigger_controller.stop_trigger_generation()
-        self.camera.set_continuous_acquisition()
+        # self.camera.set_continuous_acquisition()
+        self.signal_trigger_mode.emit(TriggerMode.CONTINUOUS)
         self.liquid_lens.set_current_mA(self.current_mA_static)
         self.flag_volumetric_imaging_started= False
 
     def slot_volumetric_imaging_completed(self):
         self.flag_volumetric_imaging_started = False
-        self.camera.set_continuous_acquisition()
+        # self.camera.set_continuous_acquisition()
+        self.signal_trigger_mode.emit(TriggerMode.CONTINUOUS)
         self.liquid_lens.set_current_mA(self.current_mA_static)
         self.signal_volumetric_imaging_stopped.emit()
 

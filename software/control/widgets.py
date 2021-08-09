@@ -141,6 +141,9 @@ class CameraSettingsWidget(QFrame):
 	def update_trigger_mode(self):
 		self.liveController.set_trigger_mode(self.dropdown_triggerMode.currentText())
 
+	def set_trigger_mode(self,trigger_mode):
+		self.dropdown_triggerMode.setCurrentText(trigger_mode)
+
 	# Slot connected to signal from streamHandler.
 	def update_stream_fps(self, value):
 		self.actual_streamFPS.display(value)
