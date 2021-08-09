@@ -160,6 +160,9 @@ class VolumetricImagingController(QObject):
     def enable_focus_measure_calculation(self,enabled):
         self.volumetricImagingStreamHandler.flag_calculate_focus_measure = enabled
 
+    def enable_focus_tracking(self,enabled):
+        self.volumetricImagingStreamHandler.flag_focus_tracking = enabled
+
     def close(self):
         pass
 
@@ -174,13 +177,14 @@ class VolumetricImagingStreamHandler(QObject):
     signal_new_frame_received = Signal()
     signal_volumetric_imaging_completed = Signal() 
     signal_focus_measure_plot = Signal(np.ndarray,np.ndarray)
+    signal_defocus = Signal(float)
 
     # not used - for compatability with standard stream handler
     signal_fps = Signal(int)
     signal_fps_display = Signal(float)
     signal_fps_save = Signal(str, float)
 
-    def __init__(self,crop_width=Acquisition.CROP_WIDTH,crop_height=Acquisition.CROP_HEIGHT,display_resolution_scaling=1):
+    def __init__(self,tracking_controller,crop_width=Acquisition.CROP_WIDTH,crop_height=Acquisition.CROP_HEIGHT,display_resolution_scaling=1):
         QObject.__init__(self)
 
         self.flag_volumetric_imaging_started = False
@@ -195,6 +199,7 @@ class VolumetricImagingStreamHandler(QObject):
         self.number_of_requested_frames = None
 
         self.flag_calculate_focus_measure = False
+        self.flag_focus_tracking = False
 
         self.fps_display = 30
         self.timestamp_last_display = 0
@@ -210,6 +215,9 @@ class VolumetricImagingStreamHandler(QObject):
         self.timestamp_last = 0
         self.counter = 0
         self.fps_real = 0
+
+        # for focus tracking
+        self.tracking_controller = tracking_controller
 
     def set_display_fps(self,fps):
         self.fps_display = fps
@@ -241,8 +249,8 @@ class VolumetricImagingStreamHandler(QObject):
         if self.flag_volumetric_imaging_started and self.flag_first_image:
             self.flag_first_image = False
             self.frame_ID_offset = camera.frame_ID
-            self.focus_measure_num_points = int(np.ceil(self.number_of_planes_per_volume/2))
-            self.focus_measure_index = np.linspace(0,1,self.focus_measure_num_points)
+            self.focus_measure_num_points = min(int(np.ceil(self.number_of_planes_per_volume/2))+1,self.number_of_planes_per_volume)
+            self.focus_measure_index = np.linspace(-1,1,self.focus_measure_num_points)
             self.focus_measure = np.zeros(self.focus_measure_num_points)
             self.image_stack = np.empty([self.number_of_planes_per_volume,image_height,image_width]).astype(np.uint8)
 
@@ -256,14 +264,25 @@ class VolumetricImagingStreamHandler(QObject):
 
         print(self.frame_ID)
 
-        self.flag_calculate_focus_measure = True # @@@ to remove
         # calculate focus measure when volumetric imaging is enabled
         if self.flag_calculate_focus_measure and self.frame_ID_offset is not None:
             if self.plane_ID < self.focus_measure_num_points: 
                 # calculate focus measure
                 self.focus_measure[self.plane_ID] = image_processing.calculate_focus_measure(image_cropped)
-                if self.plane_ID == self.focus_measure_num_points-1:
-                    self.signal_focus_measure_plot.emit(self.focus_measure_index,self.focus_measure)
+            if self.plane_ID == self.focus_measure_num_points-1:
+                self.signal_focus_measure_plot.emit(self.focus_measure_index,self.focus_measure)
+                # calculate defocus
+                self.defocus = np.sum(np.multiply(self.focus_measure_index,self.focus_measure))/np.sum(self.focus_measure)
+                self.signal_defocus.emit(self.defocus)
+                print('defocus: ' + str(self.defocus) + ' sum of focus measure: ' + str(np.sum(self.focus_measure)) )
+                # focus tracking
+                if self.flag_focus_tracking:
+                    pass
+                    # self.tracking_controller.track_focus = True
+                    # self.tracking_controller.y_error = self.defocus*1/1000.0 
+                    # to do: add an adjustable scaling factor - this scaling factor depends on the liquid lens scan amplitude and objective being used
+                else:
+                    self.tracking_controller.track_focus = False
 
         # check if camera has registered requested number of frames
         if self.flag_volumetric_imaging_started and self.number_of_requested_frames!=0 and self.frame_ID>=(self.number_of_requested_frames-1):

@@ -134,7 +134,7 @@ class GravityMachine_GUI(QMainWindow):
 					self.trigger_controller = trigger_controller.TriggerController(TRIGGERCONTROLLER_SERIAL_NUMBER) 
 			else:
 				self.trigger_controller = self.microcontroller
-			self.volumetricImagingStreamHandler = core_volumetric_imaging.VolumetricImagingStreamHandler()
+			self.volumetricImagingStreamHandler = core_volumetric_imaging.VolumetricImagingStreamHandler(self.trackingController)
 			self.VolumetricImagingImageSaver = core_volumetric_imaging.VolumetricImagingImageSaver(self.internal_state)
 			self.volumetricImagingController = core_volumetric_imaging.VolumetricImagingController(self.camera['volumetric imaging'],
 				self.trigger_controller,self.liquid_lens,self.volumetricImagingStreamHandler,self.VolumetricImagingImageSaver,self.internal_state)
@@ -258,6 +258,7 @@ class GravityMachine_GUI(QMainWindow):
 				pass
 			else:
 				self.volumetricImagingController.signal_trigger_mode.connect(self.cameraSettingsWidget['volumetric imaging'].set_trigger_mode)
+			self.volumetricImagingStreamHandler.signal_defocus.connect(self.volumetricImagingWidget.display_defocus.display)
 
 		# Dock area for displaying image-streams
 		self.image_window = QMainWindow()

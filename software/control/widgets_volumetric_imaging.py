@@ -119,6 +119,7 @@ class VolumetricImagingWidget(QFrame):
         self.btn_toggle_focus_tracking.setCheckable(True)
         self.btn_toggle_focus_tracking.setChecked(False)
         self.btn_toggle_focus_tracking.setDefault(False)
+        self.btn_toggle_focus_tracking.clicked.connect(self.enable_focus_tracking)
         grid1.addWidget(self.btn_toggle_focus_tracking,7,2,1,2)
 
         self.display_defocus = QLCDNumber()
@@ -132,11 +133,6 @@ class VolumetricImagingWidget(QFrame):
         self.entry_focus_offset.setValue(0)
         grid1.addWidget(QLabel('Focus Offset'),8,2,1,1)
         grid1.addWidget(self.entry_focus_offset,8,3,1,1)
-
-        self.display_defocus_um = QLCDNumber()
-        self.display_defocus_um.setNumDigits(4)
-        self.display_error = QLCDNumber()
-        self.display_error.setNumDigits(4)
 
         grid2 = QGridLayout()
         # self.grid2.addWidget(QLabel('tracking range min (um)'),0,0)
@@ -231,23 +227,16 @@ class VolumetricImagingWidget(QFrame):
             self.btn_toggle_volumetric_imaging.setChecked(False)
             self.enable_volumetric_imaging_settings()
 
-    def enable_caculation(self,pressed):
-    	if pressed:
-    		self.PDAFController.enable_caculation(True)
-    	else:
-    		if self.btn_enable_tracking.isChecked():
-    			self.btn_enable_calculation.setChecked(True)
-    		else:
-    			self.PDAFController.enable_caculation(False)
-
-    def enable_tracking(self,pressed):
-    	if pressed:
-    		if self.btn_enable_calculation.isChecked() == False:
-    			self.btn_enable_calculation.setChecked(True)
-    			self.PDAFController.enable_caculation(True)
-    		self.PDAFController.enable_tracking(True)
-    	else:
-    		self.PDAFController.enable_tracking(False)
+    def enable_focus_tracking(self,pressed):
+        if pressed:
+            self.btn_toggle_focus_measure_calculation.setEnabled(False)
+            if self.btn_toggle_focus_measure_calculation.isChecked() == False:
+                self.btn_toggle_focus_measure_calculation.setChecked(True)
+                self.volumetricImagingController.enable_focus_measure_calculation(True)
+            self.volumetricImagingController.enable_focus_tracking(True)
+        else:
+            self.volumetricImagingController.enable_focus_tracking(False)
+            self.btn_toggle_focus_measure_calculation.setEnabled(True)
 
     def disable_volumetric_imaging_settings(self):
         self.hslider_current_min.setEnabled(False)
