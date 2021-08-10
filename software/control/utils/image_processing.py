@@ -44,8 +44,6 @@ def threshold_image_gray(image_gray, LOWER, UPPER):
     
     return imgMask
 
-
-
 def bgr2gray(image_BGR):
     return cv2.cvtColor(image_BGR,cv2.COLOR_BGR2GRAY)
 
@@ -66,7 +64,9 @@ def crop_image(image,crop_width,crop_height):
     roi_top = int(max(image_height/2 - crop_height/2,0))
     roi_bottom = int(min(image_height/2 + crop_height/2,image_height))
     image_cropped = image[roi_top:roi_bottom,roi_left:roi_right]
-    return image_cropped
+    image_cropped_height = image_cropped.shape[0]
+    image_cropped_width = image_cropped.shape[1]
+    return image_cropped, image_cropped_width, image_cropped_height
 
 
 def get_bbox(cnt):
@@ -194,7 +194,7 @@ def scale_square_bbox(bbox, scale_factor, square = True):
         min_dim = min(width, height)
         width, height = min_dim, min_dim
 
-    new_width, new_height = scale_factor*width, scale_factor*height
+    new_width, new_height = int(scale_factor*width), int(scale_factor*height)
 
     new_xmin = xmin - (new_width - width)/2
     new_ymin = ymin - (new_height - height)/2
@@ -214,7 +214,7 @@ def get_image_height_width(image):
 
 def get_image_top_center_width(image):
     ImShape=image.shape
-    ImH,ImW=ImShape[0],ImShape[1]
+    ImH,ImWs=ImShape[0],ImShape[1]
     return np.array([ImW*0.5,0.25*ImH]),ImW
 
 

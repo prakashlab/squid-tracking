@@ -104,8 +104,12 @@ class Camera(object):
 
     def start_streaming(self):
         try:
+            print("Starting image stream")
             self.pipeline.set_state(Gst.State.PLAYING)
+            print("Set state for image stream")
             self.pipeline.get_state(Gst.CLOCK_TIME_NONE)
+            print("Successfully got state for image stream")
+
             self.is_streaming = True
         except GLib.Error as error:
             print("Error starting pipeline: {0}".format(err))#error?

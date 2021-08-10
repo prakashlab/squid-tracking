@@ -26,6 +26,8 @@ class CameraSettingsWidget(QFrame):
 		super().__init__(*args, **kwargs)
 		self.camera = camera
 		self.liveController = liveController
+		self.fps_trigger = FPS['trigger_software']['default']
+
 		# add components to self.grid
 		self.add_components()        
 		# set frame style
@@ -65,6 +67,24 @@ class CameraSettingsWidget(QFrame):
 
 		self.btn_Preset = QPushButton("Preset")
 		self.btn_Preset.setDefault(False)
+
+		# Trigger Mode
+		self.triggerMode = None
+		self.dropdown_triggerMode = QComboBox()
+		self.dropdown_triggerMode.addItems([TriggerMode.SOFTWARE,TriggerMode.HARDWARE,TriggerMode.CONTINUOUS])
+		self.dropdown_triggerMode.setCurrentText(TriggerMode.SOFTWARE)
+
+		# Trigger FPS
+		self.entry_triggerFPS = QDoubleSpinBox()
+		self.entry_triggerFPS.setMinimum(FPS['trigger_software']['min']) 
+		self.entry_triggerFPS.setMaximum(FPS['trigger_software']['max']) 
+		self.entry_triggerFPS.setSingleStep(1)
+		self.entry_triggerFPS.setValue(self.fps_trigger)
+
+		# Trigger FPS actual
+		self.actual_streamFPS = QLCDNumber()
+		self.actual_streamFPS.setNumDigits(4)
+		self.actual_streamFPS.display(0.0)
    
 
 		# connection
@@ -74,23 +94,41 @@ class CameraSettingsWidget(QFrame):
 		self.entry_analogGain.valueChanged.connect(self.camera.set_analog_gain)
 		self.entry_exposureTime_Preset.valueChanged.connect(self.liveController.set_exposure_time_bfdf_preset)
 		self.entry_analogGain_Preset.valueChanged.connect(self.liveController.set_analog_gain_bfdf_preset)
-		
-		# layout
+		self.entry_triggerFPS.valueChanged.connect(self.liveController.set_trigger_fps)
+		self.dropdown_triggerMode.currentIndexChanged.connect(self.update_trigger_mode)
+
+
+		# Sub-blocks layout
 		grid_ctrl = QGridLayout()
 		grid_ctrl.addWidget(QLabel('Exposure Time (ms)'), 0,0)
 		grid_ctrl.addWidget(self.entry_exposureTime, 0,1)
-		grid_ctrl.addWidget(QLabel('Analog Gain'), 1,0)
-		grid_ctrl.addWidget(self.entry_analogGain, 1,1)
+		grid_ctrl.addWidget(QLabel('Analog Gain'), 0,2)
+		grid_ctrl.addWidget(self.entry_analogGain, 0,3)
 
 		grid_ctrl_preset = QGridLayout()
-		grid_ctrl_preset.addWidget(self.entry_exposureTime_Preset, 0,0)
-		grid_ctrl_preset.addWidget(self.entry_analogGain_Preset, 0,1)
-		grid_ctrl_preset.addWidget(self.btn_Preset, 0,2)
+		grid_ctrl_preset.addWidget(self.entry_exposureTime_Preset, 0,1)
+		grid_ctrl_preset.addWidget(self.entry_analogGain_Preset, 0,2)
+		grid_ctrl_preset.addWidget(self.btn_Preset, 0,0)
 	  
+		trigger_fps_group = QGroupBox('Trigger FPS')
+		trigger_fps_layout = QGridLayout()
+		
+		trigger_fps_layout.addWidget(QLabel('Set'),0,0)
+		trigger_fps_layout.addWidget(self.entry_triggerFPS, 0,1)
+		trigger_fps_layout.addWidget(QLabel('Actual'),0,2)
+		trigger_fps_layout.addWidget(self.actual_streamFPS, 0,3)
+		trigger_fps_group.setLayout(trigger_fps_layout)
 
+		triggerMode_layout = QHBoxLayout()
+		triggerMode_layout.addWidget(QLabel('Trigger mode'))
+		triggerMode_layout.addWidget(self.dropdown_triggerMode)
+
+		# Overall layout
 		self.grid = QGridLayout()
 		self.grid.addLayout(grid_ctrl,0,0)
 		self.grid.addLayout(grid_ctrl_preset,1,0)
+		self.grid.addLayout(triggerMode_layout, 2, 0)
+		self.grid.addWidget(trigger_fps_group,3,0)
 
 		self.setLayout(self.grid)
 
@@ -100,8 +138,15 @@ class CameraSettingsWidget(QFrame):
 		self.entry_analogGain.setValue(self.entry_analogGain_Preset.value())
 		self.entry_analogGain.repaint()
 
+	def update_trigger_mode(self):
+		self.liveController.set_trigger_mode(self.dropdown_triggerMode.currentText())
 
-class LiveControlWidget(QGroupBox):
+	# Slot connected to signal from streamHandler.
+	def update_stream_fps(self, value):
+		self.actual_streamFPS.display(value)
+
+
+class LiveControlWidget(QFrame):
 	'''
 	Widget controls salient microscopy parameters such as:
 		- Live Button
@@ -109,13 +154,12 @@ class LiveControlWidget(QGroupBox):
 		- Objective
 		- Display resolution slider
 	'''
-	objective_signal = Signal(str) # Pixel size based on calibration image
+	new_pixelpermm = Signal(int) # Pixel size based on calibration image
 	resolution_scaling_signal = Signal(int)
 	show_window = Signal(bool)
 
 	def __init__(self, streamHandler, liveController, internalState, main=None, *args, **kwargs):
 		super().__init__(*args, **kwargs)
-		self.setTitle('Live Controller')
 		self.liveController = liveController
 		self.streamHandler = streamHandler
 		self.internal_state = internalState
@@ -123,29 +167,54 @@ class LiveControlWidget(QGroupBox):
 
 
 		self.objective = DEFAULT_OBJECTIVE
+
+		self.fps_display = FPS['display']['default']
+
+		self.streamHandler.set_display_fps(self.fps_display)
 		
 		self.add_components()
 		self.update_pixel_size()
+		# self.setTitle('Live Controller')
 
-		# self.setFrameStyle(QFrame.Panel | QFrame.Raised)
+		self.setFrameStyle(QFrame.Panel | QFrame.Raised)
 
 	def add_components(self):
 
+		# Live button (0,0)
 		self.btn_live = QPushButton("Live")
 		self.btn_live.setCheckable(True)
 		self.btn_live.setChecked(False)
 		self.btn_live.setDefault(False)
 
-		self.checkbox = {}
-		for channel in self.imaging_channels:
-			self.checkbox[channel] = QCheckBox(channel)
-
-		# 0,1 : choose tracking objective
+		# Microscope objective (0, 1)
 		self.dropdown_objectiveSelection = QComboBox()
 		self.dropdown_objectiveSelection.addItems(list(OBJECTIVES.keys()))
 		self.dropdown_objectiveSelection.setCurrentText(DEFAULT_OBJECTIVE)
 
-		# Display resolution slider
+		# Checkboxes for enabling image streams (0,2)
+		self.checkbox = {}
+		for channel in self.imaging_channels:
+			self.checkbox[channel] = QCheckBox(channel)
+
+		# Display FPS (1,0)
+		# Entry display fps 
+		self.entry_displayFPS = QDoubleSpinBox()
+		self.entry_displayFPS.setMinimum(FPS['display']['min']) 
+		self.entry_displayFPS.setMaximum(FPS['display']['max']) 
+		self.entry_displayFPS.setSingleStep(1)
+		self.entry_displayFPS.setValue(FPS['display']['default'])
+
+		 # Display fps actual
+		self.actual_displayFPS = QLCDNumber()
+		self.actual_displayFPS.setNumDigits(4)
+		self.actual_displayFPS.display(0.0)
+
+		# Trigger FPS actual
+		self.actual_streamFPS = QLCDNumber()
+		self.actual_streamFPS.setNumDigits(4)
+		self.actual_streamFPS.display(0.0)
+
+		# Display resolution slider (2,0)
 		self.slider_resolutionScaling = QSlider(Qt.Horizontal)
 		self.slider_resolutionScaling.setTickPosition(QSlider.TicksBelow)
 		self.slider_resolutionScaling.setMinimum(10)
@@ -157,48 +226,75 @@ class LiveControlWidget(QGroupBox):
 		self.display_workingResolution.setNumDigits(6)
 		self.display_workingResolution.display(0.0)
 
-		# @@@ To implement: Multi-image channel support.
-		# Each image channel can be checked ON or OFF so that we can switch between multiple imaging modalities
-		# This will be a checkbox, where the tracking stream is checked by default.
-
-
-
 		# connections
-
 		self.slider_resolutionScaling.valueChanged.connect(self.streamHandler.set_working_resolution_scaling)
 		self.slider_resolutionScaling.valueChanged.connect(self.update_image_properties_tracking)
-		# self.dropdown_modeSelection.currentIndexChanged.connect(self.update_microscope_mode)
 		self.dropdown_objectiveSelection.currentIndexChanged.connect(self.update_pixel_size)
 		self.btn_live.clicked.connect(self.toggle_live)
 
 		for channel in self.imaging_channels:
 			self.checkbox[channel].clicked.connect(self.update_active_channels)
 
+		self.entry_displayFPS.valueChanged.connect(self.streamHandler.set_display_fps)
 
-		# Layout
+		# sub blocks Layout
 
 		# checkbox layout
-		checkbox_group = QGroupBox('Imaging channels')
 		checkbox_layout = QGridLayout()
 		for column, channel in enumerate(self.imaging_channels):
 			checkbox_layout.addWidget(self.checkbox[channel],0,column)
-		# checkbox_group.setLayout(checkbox_layout)
 
 		objective_layout = QHBoxLayout()
 		objective_layout.addWidget(QLabel('Objective'))
 		objective_layout.addWidget(self.dropdown_objectiveSelection)
 	  
-		working_resolution_group = QGroupBox('Working resolution')
-		working_resolution_layout = QHBoxLayout()
-		working_resolution_layout.addWidget(self.slider_resolutionScaling)
-		working_resolution_layout.addWidget(self.display_workingResolution)
+		working_resolution_group = QGroupBox('Display resolution')
+		working_resolution_layout = QGridLayout()
+		working_resolution_layout.addWidget(self.slider_resolutionScaling, 0,0)
+		working_resolution_layout.addWidget(self.display_workingResolution, 0,1)
 		working_resolution_group.setLayout(working_resolution_layout)
 
+
+		stream_fps_group = QGroupBox('Tracking FPS')
+		stream_fps_layout = QHBoxLayout()
+		stream_fps_layout.addWidget(self.actual_streamFPS)
+		stream_fps_group.setLayout(stream_fps_layout)
+
+		display_fps_group = QGroupBox('Display FPS')
+		display_fps_layout = QGridLayout()
+		
+		display_fps_layout.addWidget(QLabel('Set'),0,0)
+		display_fps_layout.addWidget(self.entry_displayFPS, 0,1)
+		display_fps_layout.addWidget(QLabel('Actual'),0,2)
+		display_fps_layout.addWidget(self.actual_displayFPS, 0,3)
+
+		display_fps_group.setLayout(display_fps_layout)
+
+
+	
+		
+		# Overall Layout
+
+		top_box_layout = QHBoxLayout()
+		top_box_layout.addWidget(self.btn_live)
+		top_box_layout.addLayout(objective_layout)
+		top_box_layout.addLayout(checkbox_layout)
+
+		middle_box_layout = QHBoxLayout()
+		middle_box_layout.addWidget(stream_fps_group)
+		middle_box_layout.addWidget(display_fps_group)
+
+		# self.grid = QGridLayout()
+		# self.grid.addWidget(self.btn_live,0,0)
+		# self.grid.addLayout(objective_layout,0,1)
+		# self.grid.addWidget(display_fps_group, 1, 0)
+		# self.grid.addWidget(working_resolution_group,2,0,1,1)
+		# self.grid.addLayout(checkbox_layout,3,0,1,1)
+		
 		self.grid = QGridLayout()
-		self.grid.addWidget(self.btn_live,0,0)
-		self.grid.addLayout(objective_layout,0,1)
-		self.grid.addLayout(checkbox_layout,1,0)
-		self.grid.addWidget(working_resolution_group,1,1)
+		self.grid.addLayout(top_box_layout,0,0)
+		self.grid.addLayout(middle_box_layout,1,0)
+		self.grid.addWidget(working_resolution_group)
 
 		self.setLayout(self.grid)
 
@@ -212,7 +308,9 @@ class LiveControlWidget(QGroupBox):
 		self.objective = self.dropdown_objectiveSelection.currentText()
 		self.internal_state.data['Objective'] = self.objective
 		print('Updated internal state objective {}'.format(self.internal_state.data['Objective'] ))
-		self.objective_signal.emit(self.objective)
+		
+		#@@@ Need to connect this signal to a slot!@@@
+		self.new_pixelpermm.emit(OBJECTIVES[self.objective]['PixelPermm'])
 		
 	def toggle_live(self,pressed):
 		if pressed:
@@ -222,9 +320,7 @@ class LiveControlWidget(QGroupBox):
 					if(type(self.liveController) is dict):
 						self.liveController[channel].start_live()
 					else:
-						self.liveController.start_live()
-
-					
+						self.liveController.start_live()					
 		else:
 			for channel in self.imaging_channels:
 				if(type(self.liveController) is dict):
@@ -251,118 +347,44 @@ class LiveControlWidget(QGroupBox):
 
 
 
-class StreamControlWidget(QFrame):
-	'''
-	Widget controls image/video-stream parameters:
-		- Trigger mode (Hardware, Software, Continuous acquisition)
-		- Trigger FPS (Set and Actual). Set value only matters during Software trigger. 
-		- Display fps (Set and Actual).
-	'''
-
-	def __init__(self, streamHandler, liveController, camera, main=None, *args, **kwargs):
-		super().__init__(*args, **kwargs)
-		self.liveController = liveController
-		self.streamHandler = streamHandler
-		self.camera = camera
-
-		self.fps_display = FPS['display']['default']
-		self.fps_trigger = FPS['trigger_software']['default']
-
-		self.streamHandler.set_display_fps(self.fps_display)
-		self.liveController.set_trigger_fps(self.fps_trigger)
-		
-		self.add_components()
-
-	def add_components(self):
-
-		# Widgets
-
-		# Trigger Mode
-		self.triggerMode = None
-		self.dropdown_triggerMode = QComboBox()
-		self.dropdown_triggerMode.addItems([TriggerMode.SOFTWARE,TriggerMode.HARDWARE,TriggerMode.CONTINUOUS])
-		self.dropdown_triggerMode.setCurrentText(TriggerMode.SOFTWARE)
-
-		# Trigger FPS
-		self.entry_triggerFPS = QDoubleSpinBox()
-		self.entry_triggerFPS.setMinimum(FPS['trigger_software']['min']) 
-		self.entry_triggerFPS.setMaximum(FPS['trigger_software']['max']) 
-		self.entry_triggerFPS.setSingleStep(1)
-		self.entry_triggerFPS.setValue(self.fps_trigger)
-
-		# Trigger FPS actual
-		self.actual_streamFPS = QLCDNumber()
-		self.actual_streamFPS.setNumDigits(4)
-		self.actual_streamFPS.display(0.0)
-
-		# Entry display fps
-		self.entry_displayFPS = QDoubleSpinBox()
-		self.entry_displayFPS.setMinimum(FPS['display']['min']) 
-		self.entry_displayFPS.setMaximum(FPS['display']['max']) 
-		self.entry_displayFPS.setSingleStep(1)
-		self.entry_displayFPS.setValue(FPS['display']['default'])
-
-		 # Display fps actual
-		self.actual_displayFPS = QLCDNumber()
-		self.actual_displayFPS.setNumDigits(4)
-		self.actual_displayFPS.display(0.0)
-
-
-		# Layout
-		triggerMode_layout = QHBoxLayout()
-		triggerMode_layout.addWidget(QLabel('Trigger mode'))
-		triggerMode_layout.addWidget(self.dropdown_triggerMode)
-
-
-		trigger_fps_group = QGroupBox('Trigger FPS')
-		trigger_fps_layout = QGridLayout()
-		
-		trigger_fps_layout.addWidget(QLabel('Set'),0,0)
-		trigger_fps_layout.addWidget(self.entry_triggerFPS, 0,1)
-		trigger_fps_layout.addWidget(QLabel('Actual'),0,2)
-		trigger_fps_layout.addWidget(self.actual_streamFPS, 0,3)
-		trigger_fps_group.setLayout(trigger_fps_layout)
-
-		display_fps_group = QGroupBox('Display FPS')
-		display_fps_layout = QGridLayout()
-		
-		display_fps_layout.addWidget(QLabel('Set'),0,0)
-		display_fps_layout.addWidget(self.entry_displayFPS, 0,1)
-		display_fps_layout.addWidget(QLabel('Actual'),0,2)
-		display_fps_layout.addWidget(self.actual_displayFPS, 0,3)
-		display_fps_group.setLayout(display_fps_layout)
-
-		# Overall layout
-		self.grid = QGridLayout()
-		# self.grid.addLayout(microscope_mode_layout,0,0)
-		self.grid.addLayout(triggerMode_layout,0,0)
-		self.grid.addWidget(trigger_fps_group,1,0)
-		self.grid.addWidget(display_fps_group,2,0)
-		self.setLayout(self.grid)
-
-		# Connections
-		self.dropdown_triggerMode.currentIndexChanged.connect(self.update_trigger_mode)
-		self.entry_displayFPS.valueChanged.connect(self.streamHandler.set_display_fps)
-		self.entry_triggerFPS.valueChanged.connect(self.liveController.set_trigger_fps)
-
-	 
-
-	 # Slot connected to signal from streamHandler.
+	# Slot connected to signal from streamHandler.
 	def update_display_fps(self, value):
 		self.actual_displayFPS.display(value)
-
 
 	# Slot connected to signal from streamHandler.
 	def update_stream_fps(self, value):
 		self.actual_streamFPS.display(value)
 
-	def update_trigger_mode(self):
-		self.liveController.set_trigger_mode(self.dropdown_triggerMode.currentText())
 
-	  
+# @@@ This widget has been merged with live control and camera settings widget
+# class StreamControlWidget(QFrame):
+# 	'''
+# 	Widget controls image/video-stream parameters:
+# 		- Trigger mode (Hardware, Software, Continuous acquisition)
+# 		- Trigger FPS (Set and Actual). Set value only matters during Software trigger. 
+# 		- Display fps (Set and Actual).
+# 	'''
 
-class RecordingWidget(QFrame):
-	def __init__(self, streamHandler, imageSaver, internal_state, trackingControllerWidget, trackingDataSaver = None, imaging_channels = TRACKING, main=None, *args, **kwargs):
+# 	def __init__(self, streamHandler, liveController, camera, main=None, *args, **kwargs):
+# 		super().__init__(*args, **kwargs)
+# 		self.liveController = liveController
+# 		self.streamHandler = streamHandler
+# 		self.camera = camera
+
+# 		self.liveController.set_trigger_fps(self.fps_trigger)
+
+		
+# 		self.add_components()
+
+# 	def add_components(self):
+
+# 		pass  
+
+class RecordingWidget(QGroupBox):
+
+	start_tracking_signal = Signal()
+
+	def __init__(self, streamHandler, imageSaver, internal_state, trackingDataSaver = None, imaging_channels = TRACKING, main=None, *args, **kwargs):
 		super().__init__(*args, **kwargs)
 		
 		# In general imageSaver, streamHandler are dicts corresponding to each image_channel
@@ -370,7 +392,6 @@ class RecordingWidget(QFrame):
 		self.streamHandler = streamHandler
 		self.internal_state = internal_state 
 		self.trackingDataSaver = trackingDataSaver
-		self.trackingControllerWidget = trackingControllerWidget
 		self.imaging_channels = imaging_channels
 
 		self.tracking_flag = False
@@ -379,7 +400,9 @@ class RecordingWidget(QFrame):
 		self.save_dir_base = DEFAULT_SAVE_FOLDER
 		self.base_path_is_set = False
 		self.add_components()
-		self.setFrameStyle(QFrame.Panel | QFrame.Raised)
+
+		self.setTitle('Acquisition')
+		# self.setFrameStyle(QFrame.Panel | QFrame.Raised)
 
 	def add_components(self):
 		self.btn_setSavingDir = QPushButton('Browse')
@@ -430,10 +453,12 @@ class RecordingWidget(QFrame):
 		self.radioButton_tracking.setChecked(True)
 		self.radioButton_recording = QRadioButton("Record")
 
-		self.btn_record = QPushButton("Record")
+		self.btn_record = QPushButton("Start Acquisition")
 		self.btn_record.setCheckable(True)
 		self.btn_record.setChecked(False)
 		self.btn_record.setDefault(False)
+		self.btn_record.setIcon(QIcon('icon/record.png'))
+
 
 		grid_line1 = QGridLayout()
 		grid_line1.addWidget(QLabel('Saving Path'))
@@ -445,14 +470,11 @@ class RecordingWidget(QFrame):
 		grid_line2.addWidget(self.lineEdit_experimentID,0,1)
 
 
-		self.tracking_recording_group = QGroupBox()
 
 		tracking_recording_layout = QHBoxLayout()
-		tracking_recording_layout.addWidget(self.btn_record)
 		tracking_recording_layout.addWidget(self.radioButton_tracking)
 		tracking_recording_layout.addWidget(self.radioButton_recording)
-
-		self.tracking_recording_group.setLayout(tracking_recording_layout)
+		tracking_recording_layout.addWidget(self.btn_record)
 
 
 		
@@ -478,9 +500,8 @@ class RecordingWidget(QFrame):
 	   
 		self.grid.addLayout(grid_line1,1,0,1,1)
 		self.grid.addLayout(grid_line2,2,0,1,1)
-
 		# self.grid.addWidget(self.btn_record,3,0,1,1)
-		self.grid.addWidget(self.tracking_recording_group,3,0,1,1)
+		self.grid.addLayout(tracking_recording_layout,3,0,1,1)
 		
 
 		self.setLayout(self.grid)
@@ -531,6 +552,8 @@ class RecordingWidget(QFrame):
 			self.set_saving_dir(use_default_dir = True)
 
 		if pressed:
+			''' Start Acquisition
+			'''
 			self.internal_state.data['Acquisition'] = True
 			self.lineEdit_experimentID.setEnabled(False)
 			self.btn_setSavingDir.setEnabled(False)
@@ -540,8 +563,10 @@ class RecordingWidget(QFrame):
 
 			
 			if(self.trackingDataSaver is not None and self.recordingOnly_flag==False):
-				self.trackingControllerWidget.btn_track.setChecked(True)
+				
+				self.start_tracking_signal.emit()
 				self.trackingDataSaver.start_new_experiment(self.lineEdit_experimentID.text())
+
 			else:
 				pass
 
@@ -552,8 +577,9 @@ class RecordingWidget(QFrame):
 					self.streamHandler[channel].start_recording()
 
 		else:
-			self.internal_state.data['Acquisition']= False
-			
+			''' Stop Acquisition
+			'''
+			self.internal_state.data['Acquisition'] = False
 			for channel in self.imaging_channels:
 				self.streamHandler[channel].stop_recording()
 				self.checkbox[channel].setEnabled(True)
@@ -609,22 +635,25 @@ class dockAreaPlot(dock.DockArea):
 		# Layout of the plots
 		
 		self.addDock(self.docks['X'])
-		self.addDock(self.docks['Z'],'right',self.docks['X'])
+		self.addDock(self.docks['Y'],'above',self.docks['X'])
 
-		prev_key = 'Z'
+		prev_key = 'Y'
 		for key in PLOT_VARIABLES:
 			if key not in DEFAULT_PLOTS:
-
 				self.addDock(self.docks[key],'above',self.docks[prev_key])
 				prev_key = key
+
+		self.initialise_plot_area()
 
 	def initialise_plot_area(self):
 
 		for key in self.plots.keys():
-			self.plot[key].initialise_plot()
+			self.plots[key].initialise_plot()
 
+	def update_plots(self):
+		for key in self.plots.keys():
 
-
+			self.plots[key].update_plot()
 
 
 class PlotWidget(pg.GraphicsLayoutWidget):
@@ -640,8 +669,8 @@ class PlotWidget(pg.GraphicsLayoutWidget):
 		self.Abs=[]
 		self.Ord=[]
 		self.plot1=self.addPlot(title=title)
-		self.curve=self.plot1.plot(self.Abs,self.Ord)
-
+		self.curve=self.plot1.plot(self.Abs,self.Ord, pen=pg.mkPen(PLOT_COLORS[self.title], width=3))
+		self.curve.setClipToView(True)
 		self.plot1.enableAutoRange('xy', True)
 		self.plot1.showGrid(x=True, y=True)
 		
@@ -654,10 +683,7 @@ class PlotWidget(pg.GraphicsLayoutWidget):
 		data[1] = self.internal_state.data[self.key]
 		
 		self.Abscissa.append(data[0])
-
 		self.Ordinate.append(data[1])
-
-		self.label = PLOT_UNITS[self.title]
 			
 		self.Abs=list(self.Abscissa)
 		self.Ord=list(self.Ordinate)
@@ -669,6 +695,8 @@ class PlotWidget(pg.GraphicsLayoutWidget):
 		self.Ordinate=deque(maxlen=20)
 		self.Abs=[]
 		self.Ord=[]
+		self.label = PLOT_UNITS[self.title]
+
 		self.curve.setData(self.Abs,self.Ord)
 
 # class NavigationWidget(QFrame):

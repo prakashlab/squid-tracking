@@ -49,51 +49,52 @@ class Microcontroller():
 
     def move_x(self,delta):
         direction = int((np.sign(delta)+1)/2)
-        n_microsteps = abs(delta*Motion.STEPS_PER_MM_XY)
+        n_microsteps = abs(delta*Motion.STEPS_PER_MM_X*Motion.MAX_MICROSTEPS)
         if n_microsteps > 65535:
             n_microsteps = 65535
         cmd = bytearray(self.tx_buffer_length)
         cmd[0] = 0
         cmd[1] = direction
-        cmd[2] = int(n_microsteps) >> 8
-        cmd[3] = int(n_microsteps) & 0xff
+        cmd[2] = round(n_microsteps) >> 8
+        cmd[3] = round(n_microsteps) & 0xff
         self.serial.write(cmd)
-        time.sleep(WaitTime.BASE + WaitTime.X*abs(delta))
-        print('Moving  x stage')
-        print('Command sent to uController: {} {}'.format(np.sign(delta),n_microsteps))
+        # time.sleep(WaitTime.BASE + WaitTime.X*abs(delta))
+        print('Moving  X stage')
+        print('X command sent to uController: {} {}'.format(np.sign(delta),n_microsteps))
 
     def move_y(self,delta):
         direction = int((np.sign(delta)+1)/2)
-        n_microsteps = abs(delta*Motion.STEPS_PER_MM_XY)
+        n_microsteps = abs(delta*Motion.STEPS_PER_MM_Y*Motion.MAX_MICROSTEPS)
         if n_microsteps > 65535:
             n_microsteps = 65535
         cmd = bytearray(self.tx_buffer_length)
         cmd[0] = 1
         cmd[1] = direction
-        cmd[2] = int(n_microsteps) >> 8
-        cmd[3] = int(n_microsteps) & 0xff
+        cmd[2] = round(n_microsteps) >> 8
+        cmd[3] = round(n_microsteps) & 0xff
         self.serial.write(cmd)
-        time.sleep(WaitTime.BASE + WaitTime.Y*abs(delta))
-        print('Moving  y stage')
-        print('Command sent to uController: {} {}'.format(np.sign(delta),n_microsteps))
+        # time.sleep(WaitTime.BASE + WaitTime.Y*abs(delta))
+        print('Moving  Y stage')
+        print('Y command sent to uController: {} {}'.format(np.sign(delta),n_microsteps))
 
     def move_z(self,delta):
         direction = int((np.sign(delta)+1)/2)
-        n_microsteps = abs(delta*Motion.STEPS_PER_MM_Z)
+        n_microsteps = abs(delta*Motion.STEPS_PER_MM_Z*Motion.MAX_MICROSTEPS)
         if n_microsteps > 65535:
             n_microsteps = 65535
         cmd = bytearray(self.tx_buffer_length)
         cmd[0] = 2
         cmd[1] = 1-direction
-        cmd[2] = int(n_microsteps) >> 8
-        cmd[3] = int(n_microsteps) & 0xff
+        cmd[2] = round(n_microsteps) >> 8
+        cmd[3] = round(n_microsteps) & 0xff
         self.serial.write(cmd)
-        time.sleep(WaitTime.BASE + WaitTime.Z*abs(delta))
-        print('Command sent to uController: {} {}'.format(np.sign(delta),n_microsteps))
+        # time.sleep(WaitTime.BASE + WaitTime.Z*abs(delta))
+        print('Moving  Z stage')
+        print('Z command sent to uController: {} {}'.format(np.sign(delta),n_microsteps))
 
     def move_x_nonblocking(self,delta):
         direction = int((np.sign(delta)+1)/2)
-        n_microsteps = abs(delta)
+        n_microsteps = abs(delta*Motion.MAX_MICROSTEPS)
         if n_microsteps > 65535:
             n_microsteps = 65535
         cmd = bytearray(self.tx_buffer_length)
@@ -102,11 +103,11 @@ class Microcontroller():
         cmd[2] = int(n_microsteps) >> 8
         cmd[3] = int(n_microsteps) & 0xff
         self.serial.write(cmd)
-        # print('Command sent to uController: {}'.format(n_microsteps))
+        # print('x non-blocking command sent to uController: {}'.format(n_microsteps))
 
     def move_y_nonblocking(self,delta):
         direction = int((np.sign(delta)+1)/2)
-        n_microsteps = abs(delta)
+        n_microsteps = abs(delta*Motion.MAX_MICROSTEPS)
         if n_microsteps > 65535:
             n_microsteps = 65535
         cmd = bytearray(self.tx_buffer_length)
@@ -115,7 +116,7 @@ class Microcontroller():
         cmd[2] = int(n_microsteps) >> 8
         cmd[3] = int(n_microsteps) & 0xff
         self.serial.write(cmd)
-        # print('Command sent to uController: {}'.format(n_microsteps))
+        # print('y non-blocking command sent to uController: {}'.format(n_microsteps))
 
     def move_z_nonblocking(self,delta):
         direction = int((np.sign(delta)+1)/2)
@@ -128,6 +129,68 @@ class Microcontroller():
         cmd[2] = int(n_microsteps) >> 8
         cmd[3] = int(n_microsteps) & 0xff
         self.serial.write(cmd)
+
+    # Convert below functions to be compatible with squid/octopi serial interface.
+    def send_tracking_command(self, tracking_flag):
+        cmd = bytearray(self.tx_buffer_length)
+        cmd[0] = 4
+        cmd[1] = tracking_flag
+
+        self.serial.write(cmd)
+
+    def send_homing_command(self):
+        cmd = bytearray(self.tx_buffer_length)
+        cmd[0] = 5
+        cmd[1] = 1
+
+        self.serial.write(cmd)
+
+    def send_stage_zero_command(self, stage):
+        cmd = bytearray(self.tx_buffer_length)
+        cmd[0] = 6
+        cmd[1] = stage
+
+        self.serial.write(cmd)
+
+    def send_focus_tracking_command(self, focus_tracking_flag):
+        cmd = bytearray(self.tx_buffer_length)
+        cmd[0] = 7
+        cmd[1] = focus_tracking_flag
+
+        self.serial.write(cmd)
+
+    def send_liquid_lens_freq(self, freq):
+        cmd = bytearray(self.tx_buffer_length)
+        cmd[0] = 8
+        cmd[1] = 0
+        cmd[2], cmd[3] = split_int_2byte(round(freq*100)) 
+
+        self.serial.write(cmd)
+
+    def send_liquid_lens_amp(self, amp):
+        cmd = bytearray(self.tx_buffer_length)
+        cmd[0] = 8
+        cmd[1] = 1
+        cmd[2], cmd[3] = split_int_2byte(round(amp*100)) 
+
+        self.serial.write(cmd)
+
+    def send_liquid_lens_offset(self, offset):
+        cmd = bytearray(self.tx_buffer_length)
+        cmd[0] = 8
+        cmd[1] = 2
+        cmd[2], cmd[3] = split_int_2byte(round(offset*100)) 
+
+        self.serial.write(cmd)
+
+    def send_hardware_trigger_command(self, trigger_state):
+        cmd = bytearray(self.tx_buffer_length)
+        cmd[0] = 9
+        cmd[1] = trigger_state
+
+        self.serial.write(cmd)
+
+
 
     def send_command(self,command):
         cmd = bytearray(self.tx_buffer_length)
