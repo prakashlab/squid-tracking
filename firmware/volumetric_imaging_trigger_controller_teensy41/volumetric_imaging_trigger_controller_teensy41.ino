@@ -124,49 +124,42 @@ void loop()
     }
   }
 
-    // volumetric imaging
+  // volumetric imaging
   current_time_us = micros();
-  if(remote_focus_liquid_lens_trigger_received)
+  
+  // send the camera trigger for plane 0
+  if(remote_focus_liquid_lens_trigger_received && remote_focus_volume_started == false && current_time_us-remote_focus_timestamp_liquid_lens_trigger_rising_edge>=remote_focus_delay_us_due_to_phase_lag)
   {
-    // send the camera trigger for plane 0
-    if(remote_focus_volume_started == false && current_time_us-remote_focus_timestamp_liquid_lens_trigger_rising_edge>=remote_focus_delay_us_due_to_phase_lag)
-    {
-      digitalWrite(pin_camera_trigger,HIGH);
-      digitalWrite(pin_led,HIGH);
-      remote_focus_camera_trigger_pin_state = HIGH;
-      remote_focus_volume_started = true;
-      current_time_us = micros();
-      remote_focus_timestamp_last_trigger_rising_edge = current_time_us;
-      remote_focus_timestamp_last_volume_start_rising_edge = current_time_us;
-      remote_focus_current_plane_number = 1;
-      // check if requested number of planes have been started
-      if(remote_focus_current_plane_number >= remote_focus_number_of_planes_per_volume)
-      {
-        remote_focus_liquid_lens_trigger_received = false; // to stop trigger for the current volume
-        remote_focus_volume_started = false; // get ready for the next volume
-      }
-      remote_focus_current_volume_number = remote_focus_current_volume_number + 1;
-    }
+    remote_focus_liquid_lens_trigger_received = false;
+    digitalWrite(pin_camera_trigger,HIGH);
+    digitalWrite(pin_led,HIGH);
+    remote_focus_camera_trigger_pin_state = HIGH;
+    remote_focus_volume_started = true;
+    current_time_us = micros();
+    remote_focus_timestamp_last_trigger_rising_edge = current_time_us;
+    remote_focus_timestamp_last_volume_start_rising_edge = current_time_us;
+    remote_focus_current_plane_number = 1;
+    // check if requested number of planes have been started
+    if(remote_focus_current_plane_number >= remote_focus_number_of_planes_per_volume)
+      remote_focus_volume_started = false; // get ready for the next volume
+    remote_focus_current_volume_number = remote_focus_current_volume_number + 1;
+  }
 
-    // check if requested number of volumes have been started
-    if(remote_focus_number_of_volumes_requested > 0 && remote_focus_current_volume_number >= remote_focus_number_of_volumes_requested)
-      remote_focus_trigger_enabled = false; // this will prevent remote_focus_liquid_lens_trigger_received from being set to true - stop the acquisitiion
+  // check if requested number of volumes have been started
+  if(remote_focus_number_of_volumes_requested > 0 && remote_focus_current_volume_number >= remote_focus_number_of_volumes_requested)
+    remote_focus_trigger_enabled = false; // this will prevent remote_focus_liquid_lens_trigger_received from being set to true - stop the acquisitiion
 
-    // send remaining triggers for the current volume - if any
-    if(remote_focus_volume_started && current_time_us - remote_focus_timestamp_last_trigger_rising_edge >= remote_focus_trigger_interval_us && remote_focus_camera_trigger_pin_state == LOW)
-    {
-      digitalWrite(pin_camera_trigger,HIGH);
-      digitalWrite(pin_led,HIGH);
-      remote_focus_camera_trigger_pin_state = HIGH;
-      current_time_us = micros();
-      remote_focus_timestamp_last_trigger_rising_edge = current_time_us;
-      remote_focus_current_plane_number = remote_focus_current_plane_number + 1;
-      if(remote_focus_current_plane_number >= remote_focus_number_of_planes_per_volume)
-      {
-        remote_focus_liquid_lens_trigger_received = false; // to stop trigger for the current volume
-        remote_focus_volume_started = false; // get ready for the next volume
-      }
-    }
+  // send remaining triggers for the current volume - if any
+  if(remote_focus_volume_started && current_time_us - remote_focus_timestamp_last_trigger_rising_edge >= remote_focus_trigger_interval_us && remote_focus_camera_trigger_pin_state == LOW)
+  {
+    digitalWrite(pin_camera_trigger,HIGH);
+    digitalWrite(pin_led,HIGH);
+    remote_focus_camera_trigger_pin_state = HIGH;
+    current_time_us = micros();
+    remote_focus_timestamp_last_trigger_rising_edge = current_time_us;
+    remote_focus_current_plane_number = remote_focus_current_plane_number + 1;
+    if(remote_focus_current_plane_number >= remote_focus_number_of_planes_per_volume)
+      remote_focus_volume_started = false; // get ready for the next volume
   }
   
   // turn the trigger pin to LOW
