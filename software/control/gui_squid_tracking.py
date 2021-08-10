@@ -19,7 +19,6 @@ from control._def import *
 # app specific libraries
 import control.widgets as widgets
 import control.widgets_tracking as widgets_tracking
-import control.camera_TIS as camera_TIS
 import control.camera as camera_Daheng
 import control.core as core
 import control.core_tracking_squid as core_tracking

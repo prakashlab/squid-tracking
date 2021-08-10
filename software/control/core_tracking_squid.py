@@ -268,9 +268,9 @@ class TrackingController(QObject):
 				X_order, Y_order, Z_order = self.get_motion_commands(x_error,y_error,z_error)
 				# print('Motion order: {}, {}, {} mm'.format(X_order, Y_order, Z_order))
 				# New serial interface (send data directly to micro-controller object)
-				self.microcontroller.move_x_nonblocking(X_order)
-				self.microcontroller.move_y_nonblocking(Y_order)
-				self.microcontroller.move_z_nonblocking(Z_order)  
+				self.microcontroller.move_x_nonblocking(STAGE_MOVEMENT_SIGN_X*X_order)
+				self.microcontroller.move_y_nonblocking(STAGE_MOVEMENT_SIGN_Y*Y_order)
+				self.microcontroller.move_z_nonblocking(STAGE_MOVEMENT_SIGN_Z*Z_order)  
 		
 
 			# Update the Internal State Model
