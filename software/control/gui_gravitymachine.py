@@ -70,22 +70,17 @@ class GravityMachine_GUI(QMainWindow):
 		if simulation is True:
 			# Define a camera object for each unique image-stream.
 			self.camera = {key:camera_Daheng.Camera_Simulation() for key in self.imaging_channels}
-			# self.microcontroller = microcontroller.Microcontroller_Simulation()
 			self.microcontroller = microcontroller.Microcontroller_Simulation()
 
 		else:
 			# TIS Camera object
 			for key in self.imaging_channels:
-
 				if(CAMERAS[key]['make']=='TIS'):
 					self.camera[key] = camera_TIS.Camera(serial=CAMERAS[key]['serial'], width = CAMERAS[key]['px_format'][0], 
 						height = CAMERAS[key]['px_format'][1], framerate = CAMERAS[key]['fps'], color = CAMERAS[key]['is_color'])
 				elif (CAMERAS[key]['make']=='Daheng'):
 					self.camera[key] = camera_Daheng.Camera(sn = CAMERAS[key]['serial'])
-
-			# DaHheng camera object
-			# self.camera = {key:camera.Camera() for key in self.imaging_channels}
-			self.microcontroller = microcontroller.Microcontroller_Simulation() # temporary
+			self.microcontroller = microcontroller.Microcontroller()
 		
 		# liquid lens - to be removed [added for backward compatibility]
 		self.liquid_lens = optotune_lens()
@@ -134,7 +129,7 @@ class GravityMachine_GUI(QMainWindow):
 					self.trigger_controller = trigger_controller.TriggerController(TRIGGERCONTROLLER_SERIAL_NUMBER) 
 			else:
 				self.trigger_controller = self.microcontroller
-			self.volumetricImagingStreamHandler = core_volumetric_imaging.VolumetricImagingStreamHandler(self.trackingController)
+			self.volumetricImagingStreamHandler = core_volumetric_imaging.VolumetricImagingStreamHandler(self.trackingController, imaging_channel = 'volumetric imaging', rotate_image_angle = CAMERAS['volumetric imaging']['rotate image angle'], flip_image = CAMERAS['volumetric imaging']['flip image'])
 			self.VolumetricImagingImageSaver = core_volumetric_imaging.VolumetricImagingImageSaver(self.internal_state)
 			self.volumetricImagingController = core_volumetric_imaging.VolumetricImagingController(self.camera['volumetric imaging'],
 				self.trigger_controller,self.liquid_lens,self.volumetricImagingStreamHandler,self.VolumetricImagingImageSaver,self.internal_state)

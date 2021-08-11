@@ -184,8 +184,12 @@ class VolumetricImagingStreamHandler(QObject):
     signal_fps_display = Signal(float)
     signal_fps_save = Signal(str, float)
 
-    def __init__(self,tracking_controller,crop_width=Acquisition.CROP_WIDTH,crop_height=Acquisition.CROP_HEIGHT,display_resolution_scaling=1):
+    def __init__(self, tracking_controller, crop_width=Acquisition.CROP_WIDTH, crop_height=Acquisition.CROP_HEIGHT, display_resolution_scaling=1, imaging_channel = 'volumetric imaging', rotate_image_angle = 0, flip_image = None):
         QObject.__init__(self)
+
+        self.rotate_image_angle = rotate_image_angle
+        self.flip_image = flip_image
+        self.imaging_channel = imaging_channel
 
         self.flag_volumetric_imaging_started = False
         self.flag_save_images = False
@@ -244,6 +248,20 @@ class VolumetricImagingStreamHandler(QObject):
         # crop image
         image_cropped,image_width,image_height = utils.image_processing.crop_image(camera.current_frame,self.crop_width,self.crop_height)
         image_cropped = np.squeeze(image_cropped)
+
+        # flip image
+        if(self.rotate_image_angle != 0):
+            if(self.rotate_image_angle == 90):
+                image = cv2.rotate(image,cv2.ROTATE_90_CLOCKWISE)
+            elif(self.rotate_image_angle == -90):
+                image = cv2.rotate(image,cv2.ROTATE_90_COUNTERCLOCKWISE)
+        if(self.flip_image is not None):
+            if(self.flip_image == 'Vertical'):
+                image = cv2.flip(image, 0)
+            elif(self.flip_image == 'Horizontal'):
+                image = cv2.flip(image, 1)
+            elif(self.flip_image == 'Both'):
+                image = cv2.flip(image, -1)
 
         # set flag and frame number offset for volumetric imaging
         if self.flag_volumetric_imaging_started and self.flag_first_image:
