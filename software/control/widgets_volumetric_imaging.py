@@ -239,10 +239,11 @@ class VolumetricImagingWidget(QFrame):
             self.btn_toggle_focus_measure_calculation.setEnabled(True)
 
     def disable_volumetric_imaging_settings(self):
-        self.hslider_current_min.setEnabled(False)
-        self.entry_current_min.setEnabled(False)
-        self.hslider_current_max.setEnabled(False)
-        self.entry_current_max.setEnabled(False)
+        ## disable current limit settings
+        # self.hslider_current_min.setEnabled(False)
+        # self.entry_current_min.setEnabled(False)
+        # self.hslider_current_max.setEnabled(False)
+        # self.entry_current_max.setEnabled(False)
         self.dropdown_frequency.setEnabled(False)
         self.entry_number_of_planes_per_volume.setEnabled(False)
         self.entry_number_of_requested_volumes.setEnabled(False)
@@ -256,10 +257,11 @@ class VolumetricImagingWidget(QFrame):
         self.entry_current_DC.setEnabled(False)
 
     def enable_volumetric_imaging_settings(self):
-        self.hslider_current_min.setEnabled(True)
-        self.entry_current_min.setEnabled(True)
-        self.hslider_current_max.setEnabled(True)
-        self.entry_current_max.setEnabled(True)
+        ## enable current limit settings
+        # self.hslider_current_min.setEnabled(True)
+        # self.entry_current_min.setEnabled(True)
+        # self.hslider_current_max.setEnabled(True)
+        # self.entry_current_max.setEnabled(True)
         self.dropdown_frequency.setEnabled(True)
         self.entry_number_of_planes_per_volume.setEnabled(True)
         self.entry_number_of_requested_volumes.setEnabled(True)
