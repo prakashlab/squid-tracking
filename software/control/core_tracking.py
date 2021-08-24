@@ -788,7 +788,12 @@ class TrackingDataSaver(QObject):
 		self.track_counter = 0
 		self.start_new_track()
 
-		
+	def update_experiment_ID(self,experiment_ID):
+		# temporary solution for the volumetric recording to use the experiment ID entered in the GUI
+		self.experiment_ID = experiment_ID + '_' + datetime.now().strftime('%Y-%m-%d %H-%M-%-S')
+		self.internal_state.data['experiment_ID'] = self.experiment_ID
+		print('[update the experiment ID to ' + self.experiment_ID + ']')
+
 	def start_new_track(self):
 		'''
 		Function is called when the track button is pressed. If 'Acquisition' button is also pressed

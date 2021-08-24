@@ -520,8 +520,7 @@ class RecordingWidget(QGroupBox):
 
 		self.radioButton_recording.clicked.connect(self.set_tracking_recording_flag)
 		self.radioButton_tracking.clicked.connect(self.set_tracking_recording_flag)
-
-
+		self.lineEdit_experimentID.textEdited.connect(self.trackingDataSaver.update_experiment_ID)
 
 		for channel in self.imaging_channels:
 			self.entry_saveFPS[channel].valueChanged.connect(self.streamHandler[channel].set_save_fps)

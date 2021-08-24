@@ -280,7 +280,7 @@ class VolumetricImagingStreamHandler(QObject):
         else:
             self.frame_ID = camera.frame_ID
 
-        print(self.frame_ID)
+        # print(self.frame_ID)
 
         # calculate focus measure when volumetric imaging is enabled
         if self.flag_calculate_focus_measure and self.frame_ID_offset is not None:
@@ -370,7 +370,7 @@ class VolumetricImagingImageSaver(QObject):
         self.base_path = './'
         self.experiment_ID = ''
         self.max_num_image_per_folder = 1000
-        self.queue = Queue(10) # max 10 items in the queue
+        self.queue = Queue(200) # max 200 items in the queue
         self.image_lock = Lock()
         self.stop_signal_received = False
         self.thread = Thread(target=self.process_queue)
@@ -384,22 +384,26 @@ class VolumetricImagingImageSaver(QObject):
             if self.stop_signal_received:
                 return
             # process the queue
-            try:
-                [image,frame_ID] = self.queue.get(timeout=0.1)
-                self.image_lock.acquire(True)
-                folder_ID = int(self.counter/self.max_num_image_per_folder)
-                file_ID = int(self.counter%self.max_num_image_per_folder)
-                # create a new folder
-                if file_ID == 0:
-                    os.mkdir(os.path.join(self.base_path,self.experiment_ID,str(folder_ID)))
-                saving_path = os.path.join(self.base_path,self.experiment_ID,str(folder_ID),str(file_ID) + '_' + str(frame_ID) + '.tif')
-                tif.imwrite(saving_path, image, imagej=True)
-                # cv2.imwrite(saving_path,image)
-                self.counter = self.counter + 1
-                self.queue.task_done()
-                self.image_lock.release()
-            except:
-                pass
+            if self.queue.empty() == False:
+                try:
+                    [image,frame_ID] = self.queue.get(timeout=0.1)
+                    self.image_lock.acquire(True)
+                    folder_ID = int(self.counter/self.max_num_image_per_folder)
+                    file_ID = int(self.counter%self.max_num_image_per_folder)
+                    # create a new folder
+                    if file_ID == 0:
+                        os.mkdir(os.path.join(self.base_path,self.experiment_ID,str(folder_ID)))
+                    saving_path = os.path.join(self.base_path,self.experiment_ID,str(folder_ID),str(file_ID) + '_' + str(frame_ID) + '.tif')
+                    tif.imwrite(saving_path, image, imagej=True)
+                    # cv2.imwrite(saving_path,image)
+                    self.counter = self.counter + 1
+                    self.queue.task_done()
+                    self.image_lock.release()
+                except:
+                    print('error occurred during processing image saving')
+                    pass
+            else:
+                time.sleep(0.001)
                             
     def enqueue(self,image,frame_ID):
         try:
@@ -414,14 +418,15 @@ class VolumetricImagingImageSaver(QObject):
     def start_a_new_folder(self,experiment_ID=''):
         # generate unique experiment ID
         if 'experiment_ID' in self.internal_state.data.keys():
-            self.experiment_ID = self.internal_state.data['experiment_ID'] + '_3D'
+            self.experiment_ID = self.internal_state.data['experiment_ID'] + '_3D[' + datetime.now().strftime('%Y-%m-%d %H-%M-%-S.%f') + ']' 
         else:
-            self.experiment_ID = experiment_ID + '_' + datetime.now().strftime('%Y-%m-%d %H-%M-%-S.%f') + '_3D'
             self.internal_state.data['experiment_ID'] = self.experiment_ID
+            self.experiment_ID = experiment_ID + '_' + datetime.now().strftime('%Y-%m-%d %H-%M-%-S.%f') + '_3D'
         # create a new folder
         try:
             os.mkdir(os.path.join(self.base_path,self.experiment_ID))
         except:
+            print('making a new folder failed')
             pass
         # reset the counter
         self.counter = 0
