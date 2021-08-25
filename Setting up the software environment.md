@@ -33,7 +33,7 @@ cmake -DBUILD_ARAVIS=OFF ..
 make
 sudo make install
 ```
-If you're using Daheng cameras, follow instructions in the `drivers and libraries/daheng camera` folder. If the repo is cloned to the home directory, you can use the following.
+If you're using Daheng cameras, follow instructions in the `drivers and libraries/daheng camera` folder. If the repo is cloned to the home directory, you can use the following (assuming you have cloned this repo to the home folder and the user name is `prakashlab` - replace it with your username).
 ```
 cd '/home/prakashlab/gravitymachine-research/software/drivers and libraries/daheng camera/Galaxy_Linux-x86_Gige-U3_32bits-64bits_1.2.1911.9122'
 ./Galaxy_camera.run
