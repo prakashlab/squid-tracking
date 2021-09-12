@@ -11,7 +11,6 @@ from qtpy.QtGui import *
 
 from control._def import *
 import control.tracking as tracking
-import control.FocusTracking_LiquidLens as tracking_focus
 import control.utils.image_processing as image_processing
 
 
@@ -97,8 +96,6 @@ class TrackingController(QObject):
 
 		# Create a tracking object that does the image-based tracking
 		self.tracker_image = tracking.Tracker_Image(color = color)
-		# Create a tracking object that does the focus-based tracking
-		self.tracker_focus = tracking_focus.Tracker_Focus(liquid_lens) ### outdated, to be removed
 
 		# PID controller for each axis
 		self.pid_controller_x = PID.PID()
@@ -134,7 +131,6 @@ class TrackingController(QObject):
 
 		# Subset of INTERNAL_STATE_MODEL that is updated by Tracking_Controller (self)
 		self.internal_state_vars = ['Time','X_image', 'Z_image', 'X_objStage', 'Y_objStage', 'Z_objStage']		
-		self.tracker_focus.cropped_imSize = int(self.image_width/CROPPED_IMG_RATIO) ### outdated, to be removed
 
 		# For fps measurement
 		self.timestamp_last = 0
@@ -243,11 +239,6 @@ class TrackingController(QObject):
 				# Is the object position necessary for this? Alternatively we can pass the centroid
 				# and handle this downstream
 				if(self.track_focus):
-					# # Update the focus phase
-					# self.tracker_focus.update_data(FocusPhase) # may be removed in the future as we use either PDAF or liquid lens w/ a separate imaging channel
-					# # y-error in mm
-					# y_error = self.tracker_focus.get_focus_error(image, self.centroid)
-					# y_error = 0 # @@@ Disable focus tracking @@@
 					pass
 					'''
 					y_error will be set by the y focus tracking controller, 
@@ -474,12 +465,7 @@ class TrackingController(QObject):
 		# print('current search area : {}'.format(self.tracker_image.searchArea))
 
 	def set_cropped_image_size(self, new_ratio):
-
-
-		self.tracker_focus.cropped_imSize = int(self.image_width/new_ratio) ### outdated, to be removed
-
-		# @@@ Testing
-		# print('new cropped image size: {}'.format(self.tracker_focus.cropped_imSize))
+		pass
 
 	def get_latest_attr_value(self, key):
 
