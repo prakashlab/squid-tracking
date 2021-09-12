@@ -151,7 +151,7 @@ if TRACKING_CONFIG == 'XYT':
         'Z_image', 'track_focus', 'track_obj_stage']
     # MOTION_COMMANDS = ['X_order', 'Y_order', 'Theta_order']
     # SEND_DATA = ['liquidLens_Freq', 'track_focus', 'track_obj_image' , 'X_order', 'Y_order', 'Theta_order', 'Zero_stage']
-    REC_DATA = ['FocusPhase', 'X_stage', 'Y_stage', 'Theta_stage', 'track_obj_image_hrdware', 'track_obj_stage', 'homing_status']
+    READINGS_FROM_MCU = ['FocusPhase', 'X_stage', 'Y_stage', 'Theta_stage', 'track_obj_image_hrdware', 'track_obj_stage', 'homing_status']
     INITIAL_VALUES = {'Time':0, 'X_objStage':0, 'Y_objStage':0, 'Z_objStage':0, 'X_stage':0.0, 'Y_stage':0.0,
         'Theta_stage':0.0, 'X_image':0, 'Z_image':0, 'track_obj_image':False, 'track_obj_image_hrdware':False, 'track_focus':False, 
         'track_obj_stage':False, 'Acquisition':False, 'homing_status': 'not-complete', 'Zero_stage':0, 'optical_path': None, 
@@ -173,7 +173,7 @@ elif TRACKING_CONFIG == 'XYZ':
         'Y_image', 'track_focus', 'track_obj_stage']
     # MOTION_COMMANDS = ['X_order', 'Y_order', 'Z_order']
     # SEND_DATA = ['liquidLens_Freq', 'track_focus' , 'track_obj_image' , 'X_order', 'Y_order', 'Z_order', 'Zero_stage']
-    REC_DATA = ['X_stage', 'Y_stage', 'Z_stage']
+    READINGS_FROM_MCU = ['X_stage', 'Y_stage', 'Z_stage']
     INITIAL_VALUES = {'Time':0, 'X_objStage':0, 'Y_objStage':0, 'Z_objStage':0, 'X_stage':0, 'Y_stage':0,
         'Z_stage':0, 'X_image':0, 'Y_image':0, 'track_obj_image':False, 'track_obj_image_hrdware':False, 'track_focus':False, 
         'track_obj_stage':False, 'Acquisition':False, 'homing_status': 'not-complete', 'Zero_stage':0, 'optical_path': None, 

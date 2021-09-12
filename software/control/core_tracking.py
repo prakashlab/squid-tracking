@@ -524,7 +524,7 @@ class microcontroller_Receiver(QObject):
 		self.microcontroller = microcontroller
 		self.internal_state = internal_state
 		self.units_converter = Units_Converter()
-		self.RecData = {key:[] for key in REC_DATA}
+		self.readings_from_MCU = {key:[] for key in READINGS_FROM_MCU}
 
 		# Define a timer to read the Arduino at regular intervals
 		self.timer_read_uController = QTimer()
@@ -567,16 +567,16 @@ class microcontroller_Receiver(QObject):
 					# Theta stage position (encoder counts to radians)
 					self.theta_pos = THETA_ENCODER_SIGN*2*np.pi*byte_operations.unsigned_to_signed(data[9:12],MicrocontrollerDef.N_BYTES_POS)/(Encoders.COUNTS_PER_REV_THETA) 
 
-				self.RecData['FocusPhase'] = phase
-				self.RecData['X_stage'] = self.x_pos
-				self.RecData['Y_stage'] = self.y_pos
-				self.RecData['Theta_stage'] = self.theta_pos
+				self.readings_from_MCU['FocusPhase'] = phase
+				self.readings_from_MCU['X_stage'] = self.x_pos
+				self.readings_from_MCU['Y_stage'] = self.y_pos
+				self.readings_from_MCU['Theta_stage'] = self.theta_pos
 
 				self.update_stage_position.emit(self.x_pos, self.y_pos, self.theta_pos)
 
-				for key in REC_DATA:
+				for key in READINGS_FROM_MCU:
 					if(key in INTERNAL_STATE_VARIABLES):
-						self.internal_state.data[key] = self.RecData[key]
+						self.internal_state.data[key] = self.readings_from_MCU[key]
 
 			elif(data[0] == ord('F')):
 				# print('Flag recvd')
