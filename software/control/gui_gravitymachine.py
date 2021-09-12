@@ -81,9 +81,6 @@ class GravityMachine_GUI(QMainWindow):
 				elif (CAMERAS[key]['make']=='Daheng'):
 					self.camera[key] = camera_Daheng.Camera(sn = CAMERAS[key]['serial'])
 			self.microcontroller = microcontroller.Microcontroller()
-		
-		# liquid lens - to be removed [added for backward compatibility]
-		self.liquid_lens = optotune_lens()
 
 		# Image stream handler
 		self.streamHandler = {}
@@ -98,7 +95,7 @@ class GravityMachine_GUI(QMainWindow):
 		#-----------------------------------------------------------------------------------------------		
 		self.liveController = {key:core.LiveController(self.camera[key],self.microcontroller) for key in self.imaging_channels}
 		self.navigationController = core.NavigationController(self.microcontroller)
-		self.trackingController = core_tracking.TrackingController(self.microcontroller,self.internal_state,self.liquid_lens,color = CAMERAS[TRACKING]['is_color'])
+		self.trackingController = core_tracking.TrackingController(self.microcontroller,self.internal_state,color = CAMERAS[TRACKING]['is_color'])
 		self.trackingDataSaver = core_tracking.TrackingDataSaver(self.internal_state)
 		self.microcontroller_Rec = core_tracking.microcontroller_Receiver(self.microcontroller, self.internal_state) # Microcontroller Receiver object
 		# PDAF
@@ -121,7 +118,7 @@ class GravityMachine_GUI(QMainWindow):
 
 		# Volumetric Imaging
 		if VOLUMETRIC_IMAGING:
-			# self.liquid_lens = optotune_lens() # to uncomment once the previous "self.liquid_lens = optotune_lens()" is removed
+			self.liquid_lens = optotune_lens()
 			if USE_SEPARATE_TRIGGER_CONTROLLER:
 				if simulation:
 					self.trigger_controller = trigger_controller.TriggerController_Simulation(TRIGGERCONTROLLER_SERIAL_NUMBER) 
@@ -158,7 +155,6 @@ class GravityMachine_GUI(QMainWindow):
 		self.navigationWidget = widgets_tracking.NavigationWidget(self.navigationController, self.internal_state)
 		self.trackingControlWidget = widgets_tracking.TrackingControllerWidget(self.streamHandler[TRACKING], self.trackingController, self.trackingDataSaver, self.internal_state, self.imageDisplayWindow[TRACKING], self.microcontroller)
 		self.PID_Group_Widget = widgets_tracking.PID_Group_Widget(self.trackingController)
-		self.FocusTracking_Widget = widgets_tracking.FocusTracking_Widget(self.trackingController, self.internal_state, self.microcontroller)
 		self.recordingControlWidget = widgets.RecordingWidget(self.streamHandler,self.imageSaver, self.internal_state, self.trackingDataSaver, self.imaging_channels)
 		if TWO_CAMERA_PDAF:
 			self.PDAFControllerWidget = widgets_tracking.PDAFControllerWidget(self.PDAFController)
@@ -181,7 +177,6 @@ class GravityMachine_GUI(QMainWindow):
 
 		self.SettingsTab = QTabWidget()
 		self.SettingsTab.addTab(self.PID_Group_Widget, 'PID')
-		self.SettingsTab.addTab(self.FocusTracking_Widget, 'Liquid Lens')
 		if TWO_CAMERA_PDAF:
 			self.SettingsTab.addTab(self.PDAFControllerWidget, 'PDAF')
 		if VOLUMETRIC_IMAGING:
