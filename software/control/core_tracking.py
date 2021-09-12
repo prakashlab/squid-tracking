@@ -12,12 +12,9 @@ from qtpy.QtGui import *
 from control._def import *
 import control.tracking as tracking
 import control.utils.image_processing as image_processing
-
-
 import control.utils.PID as PID
 from control.utils.units_converter import Units_Converter
 import control.utils.byte_operations as byte_operations
-
 import control.utils.CSV_Tool as CSV_Tool
 
 from queue import Queue
@@ -40,12 +37,8 @@ class TrackingController(QObject):
 	tracking_setPoint = Signal(np.ndarray)
 	set_trackBusy = Signal(int)
 	clear_trackBusy = Signal(int)
-
-
 	save_data_signal = Signal()
-
 	get_roi_bbox = Signal()
-
 	signal_tracking_fps = Signal(int)
 
 	''' 
@@ -61,8 +54,6 @@ class TrackingController(QObject):
 		QObject.__init__(self)
 		self.microcontroller = microcontroller
 		self.internal_state = internal_state
-
-
 		self.units_converter = Units_Converter()
 
 		# Set the reference image width based on the camera sensor size used for calibration
@@ -100,7 +91,6 @@ class TrackingController(QObject):
 		self.pid_controller_x = PID.PID()
 		self.pid_controller_y = PID.PID()
 		self.pid_controller_theta = PID.PID()
-
 		self.resetPID = True
 
 		self.stage_auto = False
@@ -146,7 +136,6 @@ class TrackingController(QObject):
 		# print('In Tracking controller new frame')
 
 		tracking_triggered = self.internal_state.data['track_obj_image_hrdware']
-
 		self.stage_auto = self.internal_state.data['track_obj_stage']
 
 		# If image tracking is triggered using hardware button
@@ -159,7 +148,6 @@ class TrackingController(QObject):
 		# 	# This Toggles the state of the Track Button.
 		# 	self.start_tracking_signal.emit()
 		# 	self.internal_state.data['track_obj_image_hrdware'] = False
-
 			
 		# self.tracking_triggered_prev = tracking_triggered
 
@@ -168,10 +156,7 @@ class TrackingController(QObject):
 			value changing due to a hardware button press
 		'''
 		if self.internal_state.data['track_obj_image'] == True:
-
-			
 			self.update_elapsed_time()
-
 			# print('In track function')
 			# initialize the tracker when a new track is started
 			if self.tracking_frame_counter == 0 or self.objectFound == False:
@@ -181,17 +166,12 @@ class TrackingController(QObject):
 				initialize the tracker
 				'''
 				self.start_flag = True
-
 				# initialize the PID controller
 				self.resetPID = True
-
 				# Get initial parameters of the tracking image stream that are immutable (eg. color vs GS)
 				self.set_image_type()
-
 				self.update_image_center_width()
-
 			else:
-
 				self.start_flag = False
 				self.resetPID = False
 				
@@ -261,7 +241,6 @@ class TrackingController(QObject):
 				X_order, Y_order, Theta_order = self.get_motion_commands(x_error,self.y_error,z_error)
 
 				# New serial interface (send data directly to micro-controller object)
-
 				self.microcontroller.move_x_nonblocking(X_order*STAGE_MOVEMENT_SIGN_X)
 				if LIQUID_LENS_FOCUS_TRACKING == False:
 					self.microcontroller.move_y_nonblocking(Y_order*STAGE_MOVEMENT_SIGN_Y)
@@ -295,15 +274,10 @@ class TrackingController(QObject):
 
 		# @@@ Testing
 		print('Initializing track...')
-		
 		self.tracking_frame_counter = 0
-
 		self.start_flag = True
-
 		self.objectFound = False
-
 		self.tracking_triggered_prev = False
-
 		self.tracker_image.reset()
 
 		#Time
@@ -327,11 +301,9 @@ class TrackingController(QObject):
 		self.Z_objStage = deque(maxlen=self.dequeLen)
 
 	def update_elapsed_time(self):
-
 		self.Time.append(time.time() - self.begining_Time)
 
 	def update_stage_position(self,X,Y,Theta):
-
 		self.X_stage.append(X)
 		self.Y_stage.append(Y)
 		self.Theta_stage.append(Theta)
@@ -342,11 +314,8 @@ class TrackingController(QObject):
 		self.Z_image.append(self.units_converter.px_to_mm(self.centroid[1] - self.image_center[1], self.image_width))
 
 	def update_obj_position(self):
-
 		self.X_objStage.append(self.X_stage[-1] + self.X_image[-1])
-
 		self.Y_objStage.append(self.Y_stage[-1])
-
 		if(len(self.Time)>1):
 			self.Z_objStage.append(self.Z_objStage[-1]+(self.Z_image[-1]-self.Z_image[-2]) + self.units_converter.rad_to_mm(self.Theta_stage[-1]-self.Theta_stage[-2],self.X_objStage[-1]))
 		else:
@@ -390,7 +359,6 @@ class TrackingController(QObject):
 		# Convert from mm to steps (these are rounded to the nearest integer).
 		x_error_steps = int(Motion.STEPS_PER_MM_X*x_error)
 		y_error_steps = int(Motion.STEPS_PER_MM_Y*y_error)
-
 		theta_error_steps = int(self.units_converter.Z_mm_to_step(z_error, self.X_stage[-1]))
 
 		if self.resetPID:
@@ -412,7 +380,6 @@ class TrackingController(QObject):
 
 			Theta_order = self.pid_controller_theta.update(theta_error_steps,self.Time[-1])
 			Theta_order = round(Theta_order,2)
-
 
 		return X_order, Y_order, Theta_order
 
@@ -455,7 +422,6 @@ class TrackingController(QObject):
 		# print('Updated image offset to :{}'.format(self.image_offset))
 
 	def update_roi_bbox(self):
-
 		self.get_roi_bbox.emit()
 
 	def set_searchArea(self):
@@ -467,47 +433,34 @@ class TrackingController(QObject):
 		pass
 
 	def get_latest_attr_value(self, key):
-
 		temp = getattr(self, key)
 		return temp[-1]
 
 	def update_internal_state(self):
-
 		for key in self.internal_state_vars:
-
 			if(key in INTERNAL_STATE_VARIABLES):
 				self.internal_state.data[key] = self.get_latest_attr_value(key)
 			else:
 				raise NameError('Key not found in Internal State')
 
-
 	def send_focus_tracking(self, focus_tracking_flag):
 		self.microcontroller.send_focus_tracking_command(focus_tracking_flag)
-
 
 class InternalState():
 	'''
 	This holds an up-to date internal state of GUI variables as well as Data from microcontroller
-
 	'''
 	def __init__(self):
-
 		self.data = {key:[] for key in INTERNAL_STATE_VARIABLES}
-
 		self.initialise_internalState()
 
 	def initialise_internalState(self):
 		# This assigns the default values for the internal state.
-
 		for key in INTERNAL_STATE_VARIABLES:
-
 			self.data[key] = INITIAL_VALUES[key]
-
 		print(self.data)
-
 		
 class microcontroller_Receiver(QObject):
-
 	'''
 	Receives data from microcontroller and updates the Internal state variables to the latest value
 	Connection Map:
@@ -542,7 +495,6 @@ class microcontroller_Receiver(QObject):
 		self.theta_pos = 0
 
 	def getData_microcontroller(self):
-
 		data = self.microcontroller.read_received_packet_nowait()
 
 		if(data is not None):
@@ -580,7 +532,6 @@ class microcontroller_Receiver(QObject):
 
 			elif(data[0] == ord('F')):
 				# print('Flag recvd')
-
 				if(data[1] == ord('S')):
 					# print('Automated stage tracking flag recvd: {}'.format(data[2]))
 					self.internal_state.data['track_obj_stage'] = data[2]
@@ -611,16 +562,12 @@ class microcontroller_Receiver(QObject):
 				elif(data[1] == ord('C')):
 					pass
 					# print('Camera trigger flag changed: {}'.format(data[2]))
-
 			# Send update plot signal
 			self.update_plot.emit()
-
 		else:
 			pass
 
-
 	def stop(self):
-
 		self.stop_signal_received = True
 
 
@@ -628,35 +575,23 @@ class TrackingDataSaver(QObject):
 
 	''' 
 	Signals and Slots
-
 	Slots:
-
 	enqueue: Adds dataline to queue
-
 	stop_datasaver: Signal from "Acquisition panel".
-
 	set_base_path: Set from "Acquisition panel".
-
 	start_new_experiment: Triggered by "Acquisition panel".
-
 	start_new_track: Triggered by "Track button".
-
 	set_image_name: Signal from ImageSaver object.
-
 	update_imaging_channels: Signal from "Microscope Mode Widget". 
 	Only changes when no track is being acquired.
-
 	'''
 	signal_start_saving_image = Signal()
 
 	def __init__(self, internal_state):
 		QObject.__init__(self)
-
 		self.internal_state = internal_state
-
 		self.base_path = './'
 		self.experiment_ID = ''
-
 		self.queueLen = 10
 		self.queue = Queue(self.queueLen) # max 10 items in the queue
 		self.saveDataNames = SAVE_DATA
@@ -667,10 +602,8 @@ class TrackingDataSaver(QObject):
 		self.DataToQueue = {key:[] for key in self.saveDataNames + self.internal_state.data['imaging channels']}
 
 		# self.DataToSave_dict = {key:[] for key in self.saveDataNames + self.internal_state.data['imaging channels']}
-
 		self.DataToSave_dict = None
 		self.DataToSave = []
-
 		self.current_image_name = {key:[] for key in self.internal_state.data['imaging channels']}
 
 		# CSV register
@@ -678,28 +611,21 @@ class TrackingDataSaver(QObject):
 
 		# Use a counter 
 		self.counter = 0
-
 		self.stop_signal_received = False
-		
 		self.thread = Thread(target=self.process_queue)
 		self.thread.start()
-
 		self.exp_folder_created = False
 
 	def process_queue(self):
 		while True:
-
 			# stop the thread if stop signal is received
 			if self.stop_signal_received:
 				# print('Datasaver stopped... returning')
 				return
 			# process the queue
 			try:
-
 				self.DataToSave_dict = self.queue.get(timeout=0.1)
-
 				self.DataToSave = [self.DataToSave_dict[key] for key in self.DataToSave_dict.keys()]
-
 				# print(self.DataToSave)
 				# Register the data to a CSV file
 				self.csv_register.write_line([self.DataToSave])
@@ -712,7 +638,6 @@ class TrackingDataSaver(QObject):
 				pass
 
 	def enqueue(self):
-
 		# Get the most recent internal state values
 		for key in self.saveDataNames:
 			self.DataToQueue[key] = self.internal_state.data[key]
@@ -722,7 +647,6 @@ class TrackingDataSaver(QObject):
 			self.DataToQueue[key] = self.current_image_name[key]
 			# Reset the current image name
 			self.current_image_name[key] = ''
-
 		try:
 			self.queue.put_nowait(self.DataToQueue)
 			# print('Placing data in save queue')
@@ -765,9 +689,7 @@ class TrackingDataSaver(QObject):
 				self.exp_folder_created = True
 			except:
 				pass
-
-
-			 # Create and store metadata file
+			# Create and store metadata file
 			self.create_metadata_file()
 		# reset the counter
 		self.track_counter = 0
@@ -792,43 +714,31 @@ class TrackingDataSaver(QObject):
 		self.csv_register.close()
 
 		if(self.internal_state.data['Acquisition']==True and self.exp_folder_created):
-
-
 			file_name = os.path.join(self.base_path, self.experiment_ID, 'track{:03d}.csv'.format(self.track_counter))
-
 			print(file_name)
 			#Update the track counter
 			self.track_counter += 1
-			
 			# If the file doesnt exist then create it
 			if not os.path.exists(file_name):                                 #if it is the first time start_tracking is True while start_saving is true we initiate the new file
 				self.csv_register.file_directory= file_name
 				self.csv_register.start_write()
 				print('Created new file {}'.format(file_name))
-
 				# Set the stop_signal flag so data saving can begin. 
 				if(self.stop_signal_received == True):
 					self.stop_signal_received = False
 					print('Starting data saver again...')
-				
 		else:
 			pass
 
-
 	def create_metadata_file(self):
 		config_file = os.path.join(self.base_path, self.experiment_ID, 'metadata.csv')
-
 		df = pd.DataFrame({'Objective':[self.internal_state.data['Objective']], 
 					'PixelPermm':[OBJECTIVES[self.internal_state.data['Objective']]['PixelPermm']],'Local time':[datetime.now().strftime('%Y-%m-%d, %H:%M:%S.%f')]})
-		
 		df.to_csv(config_file)
-
 
 	# Function sets the image names for all the imaging channels    
 	def setImageName(self, image_channel, image_name):
-
 		self.current_image_name[image_channel] = image_name
-		
 
 	def update_imaging_channels(self):
 		'''
@@ -836,34 +746,24 @@ class TrackingDataSaver(QObject):
 		This can only be called when an Acquisition is not in progress.
 		'''
 		imaging_channels = self.internal_state.data['imaging channels']
-
 		if(self.internal_state.data['Acquisition'] == False):
 			self.saveDataNames_imageChannels = self.saveDataNames + [channel for channel in imaging_channels]
-
 			# Update the headers of the CSV register
 			self.csv_register = CSV_Tool.CSV_Register(header = [self.saveDataNames_imageChannels])
-
 		else:
 			print('Cannot change imaging channels when Acquisition is in progress!')
 
-
 class ImageSaver(QObject):
-
 	stop_recording = Signal()
-
 	# Image Name Signal (str, str): Imaging Channel, Image Name
 	imageName = Signal(str, str)
-
 	'''
 	Connections
 	imageName -> DataSaver
-
 	'''
 	def __init__(self, internal_state, imaging_channel = None, image_format='.tif', rotate_image_angle = 0, flip_image = None):
 		QObject.__init__(self)
-
 		self.internal_state = internal_state
-
 		# imaging-channel that is using this ImageSaver object
 		self.imaging_channel = imaging_channel
 
@@ -881,7 +781,6 @@ class ImageSaver(QObject):
 		 # Start a thread for saving images
 		self.thread.start()
 		print('Started image saver thread')
-		
 
 		self.counter = 0
 		self.folder_counter = 0
@@ -890,14 +789,12 @@ class ImageSaver(QObject):
 
 	def process_queue(self):
 		while True:
-			
 			# stop the thread if stop signal is received
 			if self.stop_signal_received:
 				return
 			# process the queue
 			try:
 				# print('Processing save image queue...')
-
 				[image,frame_ID,timestamp] = self.queue.get(timeout=0.1)
 				self.image_lock.acquire(True)
 				folder_ID = int(self.counter/self.max_num_image_per_folder)
@@ -909,7 +806,6 @@ class ImageSaver(QObject):
 					os.mkdir(folder_images)
 				
 				image_file_name = '{:07d}'.format(file_ID) + self.image_format
-
 				saving_path = os.path.join(folder_images, image_file_name)
 				
 				# Emit the image name so DataSaver can save it along with the stage positions
@@ -917,10 +813,8 @@ class ImageSaver(QObject):
 				
 				# Image rotations
 				if(self.rotate_image_angle != 0):
-				
-				# ROTATE_90_CLOCKWISE
-				# ROTATE_90_COUNTERCLOCKWISE
-				
+					# ROTATE_90_CLOCKWISE
+					# ROTATE_90_COUNTERCLOCKWISE
 					if(self.rotate_image_angle == 90):
 						image = cv2.rotate(image,cv2.ROTATE_90_CLOCKWISE)
 					elif(self.rotate_image_angle == -90):
@@ -929,11 +823,9 @@ class ImageSaver(QObject):
 						image = cv2.rotate(image, cv2.ROTATE_180)
 
 				if(self.flip_image is not None):
-				
-				# flipcode = 0: flip vertically
-				# flipcode > 0: flip horizontally
-				# flipcode < 0: flip vertically and horizontally
-				
+					# flipcode = 0: flip vertically
+					# flipcode > 0: flip horizontally
+					# flipcode < 0: flip vertically and horizontally
 					if(self.flip_image == 'Vertical'):
 						image = cv2.flip(image, 0)
 					elif(self.flip_image == 'Horizontal'):
@@ -961,8 +853,6 @@ class ImageSaver(QObject):
 			# when using self.queue.put(str_), program can be slowed down despite multithreading because of the block and the GIL
 		except:
 			print('imageSaver queue is full, image discarded')
-
-		
 	
 	def set_base_path(self,path = None):
 		'''
@@ -976,29 +866,19 @@ class ImageSaver(QObject):
 		else:
 			self.base_path = self.internal_state.data['base_path']
 
-
 	def start_saving_images(self, experiment_ID = None):
-		
-
 		self.counter = 0
 		self.folder_counter = 0
 		self.recording_start_time = 0
 		self.recording_time_limit = -1
-		
 
 		# Creates the folders for storing images
-
 		if(experiment_ID is not None):
 			# generate unique experiment ID
 			self.experiment_ID = experiment_ID + '_' + datetime.now().strftime('%Y-%m-%d %H-%M-%-S')
-			
-
-			self.internal_state.data['experiment_ID'] = self.experiment_ID
-		
-			
+			self.internal_state.data['experiment_ID'] = self.experiment_ID			
 		else:
 			self.experiment_ID = self.internal_state.data['experiment_ID'] 
-
 
 		print(self.base_path)
 		print(self.experiment_ID)
@@ -1010,22 +890,8 @@ class ImageSaver(QObject):
 	def set_recording_time_limit(self,time_limit):
 		self.recording_time_limit = time_limit
 
-
 	def close(self):
 		self.queue.join()
 		self.stop_signal_received = True
 		self.thread.join()
  
-
-
-
-
-
-
-
-			
-
-		   
-
-
-
