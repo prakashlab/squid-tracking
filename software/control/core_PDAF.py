@@ -44,6 +44,8 @@ class PDAFController(QObject):
         self.image2_received = False
         self.locked = False
         self.tracking_controller_in_plane = tracking_controller_in_plane
+        self.internal_state = self.tracking_controller_in_plane.internal_state # to do: add this directly to the input
+        self.microcontroller = self.tracking_controller_in_plane.microcontroller # to do: add this directly to the input
         
         self.offset_x = PDAF.x_offset_default
         self.offset_y = PDAF.y_offset_default
@@ -110,6 +112,9 @@ class PDAFController(QObject):
                     # calculate shift
                     shift, error = self._compute_shift_from_image_pair()
                     shift = shift/self.scale_factor
+                    # save result
+                    self.internal_state.data['PDAF_shift'] = shift
+                    self.internal_state.data['PDAF_error'] = error 
                     # only output the defocus when calculation is reliable
                     if error < 0.5:
                         # self.signal_defocus_pixel_shift.emit(shift)
@@ -174,12 +179,14 @@ class PDAFController(QObject):
         self.PDAF_tracking_enable = enabled
         print('PDAF tracking: ' + str(enabled))
         if enabled:
-            self.tracking_controller_in_plane.internal_state.data['track_focus'] = True
-            self.tracking_controller_in_plane.microcontroller.send_focus_tracking_command(True)
+            self.internal_state.data['track_focus'] = True
+            self.internal_state.data['track_focus_PDAF'] = True
+            self.microcontroller.send_focus_tracking_command(True)
             # note that self.tracking_controller_in_plane.track_focus is set to True in the calculate_defocus section - only when error is smaller than a set threshold
         else:
-            self.tracking_controller_in_plane.internal_state.data['track_focus'] = False
-            self.tracking_controller_in_plane.microcontroller.send_focus_tracking_command(False)
+            self.internal_state.data['track_focus'] = False
+            self.internal_state.data['track_focus_PDAF'] = False
+            self.microcontroller.send_focus_tracking_command(False)
             self.tracking_controller_in_plane.track_focus = False
 
     def set_defocus_um_for_enable_tracking_min(self,value):

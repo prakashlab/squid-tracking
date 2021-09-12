@@ -182,6 +182,15 @@ elif TRACKING_CONFIG == 'XYZ':
     PLOT_UNITS = {'X':'mm','Y':'mm', 'Z':'mm','Phase':'radians'}
     DEFAULT_PLOTS = ['X', 'Y']
 
+if TWO_CAMERA_PDAF:
+    INTERNAL_STATE_VARIABLES.extend(['track_focus_PDAF','PDAF_shift','PDAF_error'])
+    SAVE_DATA.extend(['track_focus_PDAF','PDAF_shift','PDAF_error'])
+    INITIAL_VALUES.update({'track_focus_PDAF':False,'PDAF_shift':float('nan'),'PDAF_error':float('nan')})
+
+if VOLUMETRIC_IMAGING:
+    # to add variables to save
+    pass
+
 assert INTERNAL_STATE_VARIABLES == list(INITIAL_VALUES.keys()), "Variable mismatch: One or more state variables may not be initialized"
 
 # MCU Command Set
