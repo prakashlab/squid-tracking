@@ -24,10 +24,12 @@ import control.camera_TIS as camera_TIS
 import control.camera as camera_Daheng
 import control.core as core
 import control.core_tracking as core_tracking
-import control.core_volumetric_imaging as core_volumetric_imaging
+if VOLUMETRIC_IMAGING:
+	import control.core_volumetric_imaging as core_volumetric_imaging
 import control.microcontroller as microcontroller
 import control.trigger_controller as trigger_controller
-import control.core_PDAF as core_PDAF
+if TWO_CAMERA_PDAF:
+	import control.core_PDAF as core_PDAF
 from control.optotune_lens import optotune_lens
 
 
