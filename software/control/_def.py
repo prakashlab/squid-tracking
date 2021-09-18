@@ -142,45 +142,52 @@ FPS = {'display':{'min':1, 'max':30, 'default':15},
         'save':{'min':1, 'max':100, 'default':10}}
 
 if TRACKING_CONFIG == 'XYT':
-    INTERNAL_STATE_VARIABLES = ['Time', 'X_objStage', 'Y_objStage', 'Z_objStage', 'X_stage', 'Y_stage',
-        'Theta_stage', 'X_image', 'Z_image', 'track_obj_image','track_obj_image_hrdware', 'track_focus', 'track_obj_stage', 
+    INTERNAL_STATE_VARIABLES = ['Time', 'X', 'Y', 'Z', 'X_stage', 'Y_stage',
+        'Theta_stage', 'X_image', 'Z_image', 'image_tracking_enabled','enable_image_tracking_from_hardware_button', 'track_focus', 'stage_tracking_enabled', 
         'Acquisition', 'homing_status',  'Zero_stage', 'optical_path', 
         'imaging channels', 'Objective', 'basePath', 'experimentID']
     # Based on the number of imaging channels, there will also be 1 or more image names saved.
-    SAVE_DATA = ['Time', 'X_objStage', 'Y_objStage', 'Z_objStage', 'Theta_stage', 'X_image', 
-        'Z_image', 'track_focus', 'track_obj_stage']
+    SAVE_DATA = ['Time', 'X', 'Y', 'Z', 'Theta_stage', 'X_image', 
+        'Z_image', 'track_focus', 'stage_tracking_enabled']
     # MOTION_COMMANDS = ['X_order', 'Y_order', 'Theta_order']
-    # SEND_DATA = ['liquidLens_Freq', 'track_focus', 'track_obj_image' , 'X_order', 'Y_order', 'Theta_order', 'Zero_stage']
-    READINGS_FROM_MCU = ['FocusPhase', 'X_stage', 'Y_stage', 'Theta_stage', 'track_obj_image_hrdware', 'track_obj_stage', 'homing_status']
-    INITIAL_VALUES = {'Time':0, 'X_objStage':0, 'Y_objStage':0, 'Z_objStage':0, 'X_stage':0.0, 'Y_stage':0.0,
-        'Theta_stage':0.0, 'X_image':0, 'Z_image':0, 'track_obj_image':False, 'track_obj_image_hrdware':False, 'track_focus':False, 
-        'track_obj_stage':False, 'Acquisition':False, 'homing_status': 'not-complete', 'Zero_stage':0, 'optical_path': None, 
+    # SEND_DATA = ['liquidLens_Freq', 'track_focus', 'image_tracking_enabled' , 'X_order', 'Y_order', 'Theta_order', 'Zero_stage']
+    READINGS_FROM_MCU = ['FocusPhase', 'X_stage', 'Y_stage', 'Theta_stage', 'enable_image_tracking_from_hardware_button', 'stage_tracking_enabled', 'homing_status']
+    INITIAL_VALUES = {'Time':0, 'X':0, 'Y':0, 'Z':0, 'X_stage':0.0, 'Y_stage':0.0,
+        'Theta_stage':0.0, 'X_image':0, 'Z_image':0, 'image_tracking_enabled':False, 'enable_image_tracking_from_hardware_button':False, 'track_focus':False, 
+        'stage_tracking_enabled':False, 'Acquisition':False, 'homing_status': 'not-complete', 'Zero_stage':0, 'optical_path': None, 
         'imaging channels': list(CAMERAS.keys()),  'Objective':DEFAULT_OBJECTIVE, 'basePath':'/', 'experimentID':'track'}
-    PLOT_VARIABLES = {'X':'X_objStage','Y':'Y_objStage', 'Z':'Z_objStage', 'Theta':'Theta_stage', 'Phase':'FocusPhase'}
+    PLOT_VARIABLES = {'X':'X','Y':'Y', 'Z':'Z', 'Theta':'Theta_stage', 'Phase':'FocusPhase'}
     PLOT_COLORS = {'X':'r','Y':'g', 'Z':'b', 'Theta':'c', 'Phase':'w'}
     PLOT_UNITS = {'X':'mm','Y':'mm', 'Z':'mm', 'Theta':'radians','Phase':'radians'}
     assert list(PLOT_VARIABLES.keys()) == list(PLOT_COLORS.keys())
     assert list(PLOT_VARIABLES.keys()) == list(PLOT_UNITS.keys())
     DEFAULT_PLOTS = ['X', 'Z']
-
 elif TRACKING_CONFIG == 'XYZ':
-    INTERNAL_STATE_VARIABLES = ['Time', 'X_objStage', 'Y_objStage', 'Z_objStage', 'X_stage', 'Y_stage',
-        'Z_stage', 'X_image', 'Y_image', 'track_obj_image','track_obj_image_hrdware', 'track_focus', 'track_obj_stage', 
+    INTERNAL_STATE_VARIABLES = ['Time', 'X', 'Y', 'Z', 'X_stage', 'Y_stage',
+        'Z_stage', 'X_image', 'Y_image', 'image_tracking_enabled','enable_image_tracking_from_hardware_button', 'track_focus', 'stage_tracking_enabled', 
         'Acquisition', 'homing_status',  'Zero_stage', 'optical_path', 
         'imaging channels', 'Objective', 'basePath', 'experimentID']
     # Based on the number of imaging channels, there will also be 1 or more image names saved.
     SAVE_DATA = ['Time', 'X_stage', 'Y_stage', 'Z_stage', 'X_image', 
-        'Y_image', 'track_focus', 'track_obj_stage']
+        'Y_image', 'track_focus', 'stage_tracking_enabled']
     # MOTION_COMMANDS = ['X_order', 'Y_order', 'Z_order']
-    # SEND_DATA = ['liquidLens_Freq', 'track_focus' , 'track_obj_image' , 'X_order', 'Y_order', 'Z_order', 'Zero_stage']
+    # SEND_DATA = ['liquidLens_Freq', 'track_focus' , 'image_tracking_enabled' , 'X_order', 'Y_order', 'Z_order', 'Zero_stage']
     READINGS_FROM_MCU = ['X_stage', 'Y_stage', 'Z_stage']
-    INITIAL_VALUES = {'Time':0, 'X_objStage':0, 'Y_objStage':0, 'Z_objStage':0, 'X_stage':0, 'Y_stage':0,
-        'Z_stage':0, 'X_image':0, 'Y_image':0, 'track_obj_image':False, 'track_obj_image_hrdware':False, 'track_focus':False, 
-        'track_obj_stage':False, 'Acquisition':False, 'homing_status': 'not-complete', 'Zero_stage':0, 'optical_path': None, 
+    INITIAL_VALUES = {'Time':0, 'X':0, 'Y':0, 'Z':0, 'X_stage':0, 'Y_stage':0,
+        'Z_stage':0, 'X_image':0, 'Y_image':0, 'image_tracking_enabled':False, 'enable_image_tracking_from_hardware_button':False, 'track_focus':False, 
+        'stage_tracking_enabled':False, 'Acquisition':False, 'homing_status': 'not-complete', 'Zero_stage':0, 'optical_path': None, 
         'imaging channels': list(CAMERAS.keys()),  'Objective':DEFAULT_OBJECTIVE, 'basePath':'/', 'experimentID':'track'}
-    PLOT_VARIABLES = {'X':'X_objStage','Y':'Y_objStage', 'Z':'Z_objStage', 'Phase':'FocusPhase'}
+    PLOT_VARIABLES = {'X':'X','Y':'Y', 'Z':'Z', 'Phase':'FocusPhase'}
     PLOT_UNITS = {'X':'mm','Y':'mm', 'Z':'mm','Phase':'radians'}
     DEFAULT_PLOTS = ['X', 'Y']
+# changes 9/12/2021
+# X_objStage -> X
+# Y_objStage -> Y
+# Z_objStage -> Z
+# track_obj_stage -> stage_tracking_enabled
+# track_obj_image -> image_tracking_enabled
+# track_obj_image_hrdware -> enable_image_tracking_from_hardware_button
+
 
 if TWO_CAMERA_PDAF:
     INTERNAL_STATE_VARIABLES.extend(['track_focus_PDAF','PDAF_shift','PDAF_error'])

@@ -67,7 +67,7 @@ class TrackingController(QObject):
 		# Focus Tracker type
 		self.track_focus = False
 		# For testing
-		self.track_obj_image = False
+		self.image_tracking_enabled = False
 		self.start_flag = True
 		self.objectFound = False
 		self.tracking_triggered_prev = False
@@ -114,12 +114,13 @@ class TrackingController(QObject):
 		self.Y_stage = deque(maxlen=self.dequeLen)
 		self.Theta_stage = deque(maxlen=self.dequeLen)
 
-		self.X_objStage = deque(maxlen=self.dequeLen)
-		self.Y_objStage = deque(maxlen=self.dequeLen)
-		self.Z_objStage = deque(maxlen=self.dequeLen)
+		# X, Y, Z represents the physical locations of the object - stage position + object offset in the image 
+		self.X = deque(maxlen=self.dequeLen)
+		self.Y = deque(maxlen=self.dequeLen)
+		self.Z = deque(maxlen=self.dequeLen)
 
 		# Subset of INTERNAL_STATE_MODEL that is updated by Tracking_Controller (self)
-		self.internal_state_vars = ['Time','X_image', 'Z_image', 'X_objStage', 'Y_objStage', 'Z_objStage']		
+		self.internal_state_vars = ['Time','X_image', 'Z_image', 'X', 'Y', 'Z']		
 
 		# For fps measurement
 		self.timestamp_last = 0
@@ -129,14 +130,11 @@ class TrackingController(QObject):
 
 	# Triggered by signal from StreamHandler
 	def on_new_frame(self,image, thresh_image = None):
-		
-		self.image = image
-
 		# @@@testing
 		# print('In Tracking controller new frame')
-
-		tracking_triggered = self.internal_state.data['track_obj_image_hrdware']
-		self.stage_auto = self.internal_state.data['track_obj_stage']
+		self.image = image
+		tracking_triggered = self.internal_state.data['enable_image_tracking_from_hardware_button']
+		self.stage_auto = self.internal_state.data['stage_tracking_enabled']
 
 		# If image tracking is triggered using hardware button
 		# Need to distinguish between Hardware button and Software button-based triggers
@@ -147,7 +145,7 @@ class TrackingController(QObject):
 		# 	'''
 		# 	# This Toggles the state of the Track Button.
 		# 	self.start_tracking_signal.emit()
-		# 	self.internal_state.data['track_obj_image_hrdware'] = False
+		# 	self.internal_state.data['enable_image_tracking_from_hardware_button'] = False
 			
 		# self.tracking_triggered_prev = tracking_triggered
 
@@ -155,7 +153,7 @@ class TrackingController(QObject):
 			Note that this needs to be a local copy since on the internal_state 
 			value changing due to a hardware button press
 		'''
-		if self.internal_state.data['track_obj_image'] == True:
+		if self.internal_state.data['image_tracking_enabled'] == True:
 			self.update_elapsed_time()
 			# print('In track function')
 			# initialize the tracker when a new track is started
@@ -269,9 +267,8 @@ class TrackingController(QObject):
 			# print('real camera fps is ' + str(self.fps_real))
 			self.signal_tracking_fps.emit(self.fps_real)
 			
-	# Triggered when you hit track_obj_image
+	# Triggered when you hit image_tracking_enabled
 	def initialise_track(self):
-
 		# @@@ Testing
 		print('Initializing track...')
 		self.tracking_frame_counter = 0
@@ -296,17 +293,17 @@ class TrackingController(QObject):
 			self.Y_stage.append(0)
 			self.Theta_stage.append(0)
 
-		self.X_objStage = deque(maxlen=self.dequeLen)
-		self.Y_objStage = deque(maxlen=self.dequeLen)
-		self.Z_objStage = deque(maxlen=self.dequeLen)
+		self.X = deque(maxlen=self.dequeLen)
+		self.Y = deque(maxlen=self.dequeLen)
+		self.Z = deque(maxlen=self.dequeLen)
 
 	def update_elapsed_time(self):
 		self.Time.append(time.time() - self.begining_Time)
 
-	def update_stage_position(self,X,Y,Theta):
-		self.X_stage.append(X)
-		self.Y_stage.append(Y)
-		self.Theta_stage.append(Theta)
+	def update_stage_position(self,x,y,theta):
+		self.X_stage.append(x)
+		self.Y_stage.append(y)
+		self.Theta_stage.append(theta)
 
 	def update_image_position(self):
 		# Object position relative to image center (in mm)
@@ -314,15 +311,15 @@ class TrackingController(QObject):
 		self.Z_image.append(self.units_converter.px_to_mm(self.centroid[1] - self.image_center[1], self.image_width))
 
 	def update_obj_position(self):
-		self.X_objStage.append(self.X_stage[-1] + self.X_image[-1])
-		self.Y_objStage.append(self.Y_stage[-1])
+		self.X.append(self.X_stage[-1] + self.X_image[-1])
+		self.Y.append(self.Y_stage[-1])
 		if(len(self.Time)>1):
-			self.Z_objStage.append(self.Z_objStage[-1]+(self.Z_image[-1]-self.Z_image[-2]) + self.units_converter.rad_to_mm(self.Theta_stage[-1]-self.Theta_stage[-2],self.X_objStage[-1]))
+			self.Z.append(self.Z[-1]+(self.Z_image[-1]-self.Z_image[-2]) + self.units_converter.rad_to_mm(self.Theta_stage[-1]-self.Theta_stage[-2],self.X[-1]))
 		else:
-			self.Z_objStage.append(0)
+			self.Z.append(0)
 
 		# @@@ testing 
-		# print('Virtual depth :{} mm'.format(round(self.Z_objStage[-1], 2)))
+		# print('Virtual depth :{} mm'.format(round(self.Z[-1], 2)))
 	
 	# def get_motion_commands_xyz(self, x_error, y_error, z_error):
 	# 	# Convert from mm to steps (these are rounded to the nearest integer).
@@ -406,7 +403,6 @@ class TrackingController(QObject):
 			self.update_tracking_setpoint()
 			
 	def update_tracking_setpoint(self):
-
 		if(self.image_center is not None):
 			self.image_setPoint = self.image_center + self.image_offset
 		else:
@@ -425,7 +421,6 @@ class TrackingController(QObject):
 		self.get_roi_bbox.emit()
 
 	def set_searchArea(self):
-
 		self.tracker_image.searchArea = int(self.image_width/Tracking.SEARCH_AREA_RATIO)
 		# print('current search area : {}'.format(self.tracker_image.searchArea))
 
@@ -441,6 +436,7 @@ class TrackingController(QObject):
 			if(key in INTERNAL_STATE_VARIABLES):
 				self.internal_state.data[key] = self.get_latest_attr_value(key)
 			else:
+				print('>>>>>>' + key)
 				raise NameError('Key not found in Internal State')
 
 	def send_focus_tracking(self, focus_tracking_flag):
@@ -534,7 +530,7 @@ class microcontroller_Receiver(QObject):
 				# print('Flag recvd')
 				if(data[1] == ord('S')):
 					# print('Automated stage tracking flag recvd: {}'.format(data[2]))
-					self.internal_state.data['track_obj_stage'] = data[2]
+					self.internal_state.data['stage_tracking_enabled'] = data[2]
 					
 				elif(data[1] == ord('H')):
 					print('Homing flag state recvd: {}'.format(data[2]))
@@ -551,7 +547,7 @@ class microcontroller_Receiver(QObject):
 				elif(data[1] == ord('T')):
 					print('Toggle image tracking signal recvd: {}'.format(data[2]))
 
-					self.internal_state.data['track_obj_image_hrdware'] = not(self.internal_state.data['track_obj_image_hrdware'])
+					self.internal_state.data['enable_image_tracking_from_hardware_button'] = not(self.internal_state.data['enable_image_tracking_from_hardware_button'])
 				
 					self.start_tracking_signal.emit()
 

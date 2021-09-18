@@ -195,9 +195,9 @@ class TrackingControllerWidget(QFrame):
 			# Start a new track. If 'Acquire' is true this also creates a track file.
 			# Internal state is changed after creating this file.
 				# Update the internal_state to indicate that object should be tracked using image proc
-			self.internal_state.data['track_obj_image'] = True
+			self.internal_state.data['image_tracking_enabled'] = True
 
-			print('Set track_obj_image to : {}'.format(self.internal_state.data['track_obj_image']))
+			print('Set image_tracking_enabled to : {}'.format(self.internal_state.data['image_tracking_enabled']))
 			
 			if(self.tracking_init_roi.isChecked()):
 				self.trackingController.update_roi_bbox()
@@ -209,7 +209,7 @@ class TrackingControllerWidget(QFrame):
 		else:
 			self.btn_track.setText('Start Tracking')
 			self.streamHandler.stop_tracking()
-			self.internal_state.data['track_obj_image'] = False
+			self.internal_state.data['image_tracking_enabled'] = False
 			# Resets the track deques and counters
 			self.trackingController.initialise_track()
 
