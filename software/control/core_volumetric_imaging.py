@@ -296,8 +296,8 @@ class VolumetricImagingStreamHandler(QObject):
                 # focus tracking
                 if self.flag_focus_tracking:
                     pass
-                    # self.tracking_controller.track_focus = True
-                    # self.tracking_controller.y_error = self.defocus*1/1000.0 
+                    self.tracking_controller.track_focus = True
+                    self.tracking_controller.y_error = self.defocus*(-1)
                     # to do: add an adjustable scaling factor - this scaling factor depends on the liquid lens scan amplitude and objective being used
                 else:
                     self.tracking_controller.track_focus = False
