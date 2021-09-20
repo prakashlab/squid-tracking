@@ -61,7 +61,7 @@ class TrackingController(QObject):
 		# @@@ This needs to be removed. We should be able to calculate this when the image size changes without
 		# knowing the calib image width
 		self.units_converter.set_calib_imWidth(CALIB_IMG_WIDTH)
-		
+	
 		self.image = None
 
 		# Focus Tracker type
@@ -105,7 +105,7 @@ class TrackingController(QObject):
 		self.begining_Time = time.time()           #Time begin the first time we click on the start_tracking button
 		self.Time = deque(maxlen=self.dequeLen)
 
-		self.y_error = 0 # for PDAF focus tracking
+		self.focus_error = 0 # for PDAF focus tracking
 
 		self.X_image = deque(maxlen=self.dequeLen)
 		self.Z_image = deque(maxlen=self.dequeLen)
@@ -219,10 +219,10 @@ class TrackingController(QObject):
 					pass
 					'''
 					y_error will be set by the y focus tracking controller, 
-					which has a reference of this tracking controller, and can set self.y_error and self.track_focus
+					which has a reference of this tracking controller, and can set self.focus_error and self.track_focus
 					'''
 				else:
-					self.y_error = 0
+					self.focus_error = 0
 
 				# Emit the detected centroid position so other widgets can access it.
 				self.centroid_image.emit(self.centroid)
@@ -236,14 +236,16 @@ class TrackingController(QObject):
 				# get motion commands
 				# Error is in mm.
 				# print('Image error: {}, {}, {} mm'.format(x_error, y_error, z_error))
-				X_order, Y_order, Theta_order = self.get_motion_commands(x_error,self.y_error,z_error)
+				X_order, Y_order, Theta_order = self.get_motion_commands(x_error,self.focus_error,z_error)
 
+				''' 202109@@@
 				# New serial interface (send data directly to micro-controller object)
 				self.microcontroller.move_x_nonblocking(X_order*STAGE_MOVEMENT_SIGN_X)
 				if LIQUID_LENS_FOCUS_TRACKING == False:
 					self.microcontroller.move_y_nonblocking(Y_order*STAGE_MOVEMENT_SIGN_Y)
 					# when doing focus tracking with liquid lens, because of the potential difference update rate, y_order is sent separately
 				self.microcontroller.move_theta_nonblocking(Theta_order*STAGE_MOVEMENT_SIGN_THETA)  
+				'''
 
 			# Update the Internal State Model
 			self.update_internal_state()
@@ -321,36 +323,6 @@ class TrackingController(QObject):
 		# @@@ testing 
 		# print('Virtual depth :{} mm'.format(round(self.Z[-1], 2)))
 	
-	# def get_motion_commands_xyz(self, x_error, y_error, z_error):
-	# 	# Convert from mm to steps (these are rounded to the nearest integer).
-	# 	x_error_steps = int(Motion.STEPS_PER_MM_XY*x_error)
-	# 	y_error_steps = int(Motion.STEPS_PER_MM_XY*y_error)
-	# 	z_error_steps = int(Motion.STEPS_PER_MM_Z*z_error)
-
-	# 	if self.resetPID:
-	# 		self.pid_controller_x.initiate(x_error_steps,self.Time[-1]) #reset the PID
-	# 		self.pid_controller_y.initiate(y_error_steps,self.Time[-1]) #reset the PID
-	# 		self.pid_controller_z.initiate(z_error_steps,self.Time[-1]) #reset the PID
-			
-	# 		X_order = 0
-	# 		Y_order = 0
-	# 		Z_order = 0
-
-	# 	else:
-	# 		X_order = self.pid_controller_x.update(x_error_steps,self.Time[-1])
-	# 		X_order = round(X_order,2)
-
-	# 		Y_order = self.pid_controller_y.update(y_error_steps,self.Time[-1])
-	# 		Y_order = round(Y_order,2)
-
-	# 		Z_order = self.pid_controller_z.update(z_error_steps,self.Time[-1])
-	# 		Z_order = round(Z_order,2)
-
-
-	# 	return X_order, Y_order, Z_order
-
-
-	# For Gravity Machine (X, Y, Theta tracking)
 	def get_motion_commands(self, x_error, y_error, z_error):
 		# Take an error signal and pass it through a PID algorithm
 		# Convert from mm to steps (these are rounded to the nearest integer).
@@ -491,7 +463,8 @@ class microcontroller_Receiver(QObject):
 		self.theta_pos = 0
 
 	def getData_microcontroller(self):
-		data = self.microcontroller.read_received_packet_nowait()
+		# data = self.microcontroller.read_received_packet_nowait()
+		data = None
 
 		if(data is not None):
 			# Parse the data

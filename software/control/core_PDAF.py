@@ -125,7 +125,7 @@ class PDAFController(QObject):
                         if self.PDAF_tracking_enable and ( self.defocus_um >= self.defocus_um_for_enable_tracking_min ) and ( self.defocus_um <= self.defocus_um_for_enable_tracking_max):
                             # self.signal_defocus_um_tracking.emit(self.defocus_um)
                             self.tracking_controller_in_plane.track_focus = True
-                            self.tracking_controller_in_plane.y_error = self.defocus_um/1000.0
+                            self.tracking_controller_in_plane.focus_error = self.defocus_um/1000.0
                         else:
                             self.tracking_controller_in_plane.track_focus = False
             except:
