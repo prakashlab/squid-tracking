@@ -16,7 +16,6 @@ import pyqtgraph.dockarea as dock
 from pyqtgraph.dockarea.Dock import DockLabel
 
 from control._def import *
-
 from control.utils import rangeslider as rangeslider
 
 class TrackingControllerWidget(QFrame):
@@ -32,25 +31,17 @@ class TrackingControllerWidget(QFrame):
 
 	def __init__(self, streamHandler, trackingController, trackingDataSaver, internal_state, ImageDisplayWindow, microcontroller, main=None, *args, **kwargs):
 		super().__init__(*args, **kwargs)
-
 		# self.setTitle('Tracking Controller')
-
 		self.base_path_is_set = False
-
 		self.streamHandler = streamHandler
 		self.trackingController = trackingController
-
 		self.trackingDataSaver = trackingDataSaver
-
 		self.internal_state = internal_state
-
 		self.ImageDisplayWindow = ImageDisplayWindow
-
 		self.microcontroller = microcontroller
 
 		# self.add_components()
 		self.setFrameStyle(QFrame.Panel | QFrame.Raised)
-
 		self.add_components()
 
 		# Initialize states in underlying objects
@@ -58,10 +49,7 @@ class TrackingControllerWidget(QFrame):
 		self.update_invert_image_flag()
 		self.sliders_move()
 
-
-
 	def add_components(self):
-
 		# Image Tracking Button
 		self.btn_track = QPushButton("Start Tracking")
 		# self.btn_track.setStyleSheet('QPushButton {color: red;}')
@@ -69,7 +57,6 @@ class TrackingControllerWidget(QFrame):
 		self.btn_track.setChecked(False)
 		self.btn_track.setDefault(False)
 		self.btn_track.setIcon(QIcon('icon/track_white.png'))
-
 
 		# Image Tracker Dropdown
 		self.dropdown_TrackerSelection = QComboBox()
@@ -157,13 +144,13 @@ class TrackingControllerWidget(QFrame):
 		self.tracking_setPoint_group.setLayout(tracking_setPoint_layout)
 
 		# Range sliders for image color thresholding
-		self.group_sliders = QGroupBox('Color thresholds', alignment = Qt.AlignCenter)
+		self.group_sliders = QGroupBox('Threshold', alignment = Qt.AlignCenter)
 		layout_sliders = QGridLayout()
 		
-		layout_sliders.addWidget(self.label_Hue,0,0,1,1)
-		layout_sliders.addWidget(self.range_slider1,0,1,1,1)
-		layout_sliders.addWidget(self.label_Saturation,1,0,1,1)
-		layout_sliders.addWidget(self.range_slider2,1,1,1,1)
+		# layout_sliders.addWidget(self.label_Hue,0,0,1,1)
+		# layout_sliders.addWidget(self.range_slider1,0,1,1,1)
+		# layout_sliders.addWidget(self.label_Saturation,1,0,1,1)
+		# layout_sliders.addWidget(self.range_slider2,1,1,1,1)
 		layout_sliders.addWidget(self.label_Vibrance,2,0,1,1)
 		layout_sliders.addWidget(self.range_slider3,2,1,1,1)
 		self.group_sliders.setLayout(layout_sliders)
@@ -180,23 +167,18 @@ class TrackingControllerWidget(QFrame):
 		self.setLayout(groupbox_track_layout)
 
 	def trigger_track_button(self):
-
 		if self.btn_track.isChecked():
 			pass
 		else:
 			self.btn_track.setChecked(True)
 			self.do_track_button_tasks()
 
-
 	def do_track_button_tasks(self):
-
 		if self.btn_track.isChecked():
-
 			# Start a new track. If 'Acquire' is true this also creates a track file.
 			# Internal state is changed after creating this file.
 				# Update the internal_state to indicate that object should be tracked using image proc
 			self.internal_state.data['image_tracking_enabled'] = True
-
 			print('Set image_tracking_enabled to : {}'.format(self.internal_state.data['image_tracking_enabled']))
 			
 			if(self.tracking_init_roi.isChecked()):
@@ -220,14 +202,12 @@ class TrackingControllerWidget(QFrame):
 		self.do_track_button_tasks()
 
 	def update_invert_image_flag(self):
-
 		if(self.invert_image_checkbox.isChecked()):
 			self.streamHandler.update_invert_image_flag(True)
 		else:
 			self.streamHandler.update_invert_image_flag(False)
 
 	def update_tracker_init_method(self):
-
 		if(self.tracking_init_threshold.isChecked()):
 			self.trackingController.tracker_image.update_init_method("threshold")
 			self.show_roi.emit(False)
@@ -235,19 +215,14 @@ class TrackingControllerWidget(QFrame):
 			self.trackingController.tracker_image.update_init_method("roi")
 			self.show_roi.emit(True)
 
-
-
 	def update_tracker(self, index):
-
 		self.trackingController.tracker_image.update_tracker_type(self.dropdown_TrackerSelection.currentText())
 
 	def update_tracking_setPoints(self):
-
 		value_x = self.tracking_setPoint_offset_x.value()
 		value_y = self.tracking_setPoint_offset_y.value()
 
 		self.trackingController.update_image_offset((value_x, value_y))
-
 		'''
 		Changing the tracking set point also changes the cross-hair location 
 		displayed on the window (so a user can position the object precisely 
@@ -255,13 +230,9 @@ class TrackingControllerWidget(QFrame):
 		'''
 		self.ImageDisplayWindow.update_image_offset((value_x, value_y))
 
-
-
 	def set_slider_defaults(self, LOWER =[0,0,0], UPPER = [255,255,255]):
-
 		LOWER=np.array(LOWER,dtype="uint8")
 		UPPER=np.array(UPPER,dtype="uint8")
-
 		self.range_slider1.setRange(LOWER[0],UPPER[0])
 		self.range_slider2.setRange(LOWER[1],UPPER[1])
 		self.range_slider3.setRange(LOWER[2],UPPER[2])
@@ -269,16 +240,12 @@ class TrackingControllerWidget(QFrame):
 	def sliders_move(self):
 		LOWER=np.array([0,0,0],dtype="uint8")
 		UPPER=np.array([255,255,255],dtype="uint8")
-		
 		LOWER[0],UPPER[0]=self.range_slider1.getRange()
 		LOWER[1],UPPER[1]=self.range_slider2.getRange()
 		LOWER[2],UPPER[2]=self.range_slider3.getRange()
-
 		self.streamHandler.set_image_thresholds(np.uint8(LOWER), np.uint8(UPPER))	
 
-
 class StageCalibrationWidget(QFrame):
-	
 	def __init__(self, internal_state, microcontroller,  main=None, *args, **kwargs):
 		super().__init__(*args, **kwargs)
 		self.internal_state = internal_state
@@ -287,46 +254,33 @@ class StageCalibrationWidget(QFrame):
 		self.setFrameStyle(QFrame.Panel | QFrame.Raised)
 
 	def add_components(self):
-
-
 		# Stage zeroing buttons
 		self.zero_X = QPushButton('Zero X-stage')
-		
 		self.zero_Y = QPushButton('Zero Y-stage')
-	
 		self.zero_Theta = QPushButton('Zero Theta-stage')
-	
 		
 		# Homing Button
 		self.homing_button = QPushButton('Run Homing')
-
 		stage_control = QGridLayout()
-
 		stage_control.addWidget(self.homing_button,0,0)
 		stage_control.addWidget(self.zero_X,0,1)
 		stage_control.addWidget(self.zero_Y,1,1)
 		stage_control.addWidget(self.zero_Theta,2,1)
-
 		self.setLayout(stage_control)
-
 
 		# Connections
 		self.zero_X.clicked.connect(self.zero_X_stage)
 		self.zero_Y.clicked.connect(self.zero_Y_stage)
 		self.zero_Theta.clicked.connect(self.zero_Theta_stage)
-
 		self.homing_button.clicked.connect(self.homing_button_click)
 
 	def zero_X_stage(self):
-
 		self.microcontroller.send_stage_zero_command(0)
 	
 	def zero_Y_stage(self):
-
 		self.microcontroller.send_stage_zero_command(1)
 
 	def zero_Theta_stage(self):
-
 		self.microcontroller.send_stage_zero_command(3)
 
 	def homing_button_click(self):
@@ -335,7 +289,6 @@ class StageCalibrationWidget(QFrame):
 
 	def update_homing_state():
 		self.homing_button.setText(self.internal_state.data['homing-state'])
-
 
 class NavigationWidget(QFrame):
     def __init__(self, navigationController, main=None, *args, **kwargs):
@@ -438,75 +391,46 @@ class NavigationWidget(QFrame):
 
 
 class PID_Group_Widget(QFrame):
-
 	def __init__(self, trackingController):
 		super().__init__()
 		# self.setTitle('PID settings')
 		self.setFrameStyle(QFrame.Panel | QFrame.Raised)
-
-		# self.setTitle('PID settings')
-
 		self.trackingController = trackingController
-
 		self.add_components()
 
 	def add_components(self):
-
 		self.PID_widget_x = PID_Widget('X')
 		self.PID_widget_z = PID_Widget('Z')
 		self.PID_widget_y = PID_Widget('Y')
 
-		# PID_imagePlane = QGroupBox('PID (Image Plane)')
-		# PID_imagePlane_layout = QHBoxLayout()
-
-		# PID_imagePlane_layout.addWidget(self.PID_widget_x)
-		# PID_imagePlane_layout.addWidget(self.PID_widget_y)
-
-		# PID_imagePlane.setLayout(PID_imagePlane_layout)
-
-		# PID_focus = QGroupBox('PID (Focus)')
-		# PID_focus_Layout = QHBoxLayout()
-		# PID_focus_Layout.addWidget(self.PID_widget_z)
-
-		# PID_focus.setLayout(PID_focus_Layout)
-
-		hor_layout = QGridLayout()
-
-		hor_layout.addWidget(self.PID_widget_x,0,0,1,1)
-		hor_layout.addWidget(self.PID_widget_y,1,0,1,1)
-		hor_layout.addWidget(self.PID_widget_z,2,0,1,1)
-
-
-		self.setLayout(hor_layout)
+		layout = QGridLayout()
+		layout.addWidget(QLabel('X'),0,0,1,1)
+		layout.addWidget(self.PID_widget_x,0,1,1,16)
+		layout.addWidget(QLabel('Y'),1,0,1,1)
+		layout.addWidget(self.PID_widget_y,1,1,1,16)
+		layout.addWidget(QLabel('Z'),2,0,1,1)
+		layout.addWidget(self.PID_widget_z,2,1,1,16)
+		self.setLayout(layout)
 
 		# Connections
-
 		# X
 		self.PID_widget_x.spinboxP.valueChanged.connect(self.trackingController.pid_controller_x.update_P)
 		self.PID_widget_x.spinboxI.valueChanged.connect(self.trackingController.pid_controller_x.update_I)
 		self.PID_widget_x.spinboxD.valueChanged.connect(self.trackingController.pid_controller_x.update_D)
-
 		# Y
 		self.PID_widget_y.spinboxP.valueChanged.connect(self.trackingController.pid_controller_y.update_P)
 		self.PID_widget_y.spinboxI.valueChanged.connect(self.trackingController.pid_controller_y.update_I)
 		self.PID_widget_y.spinboxD.valueChanged.connect(self.trackingController.pid_controller_y.update_D)
-
 		# Theta
 		self.PID_widget_z.spinboxP.valueChanged.connect(self.trackingController.pid_controller_theta.update_P)
 		self.PID_widget_z.spinboxI.valueChanged.connect(self.trackingController.pid_controller_theta.update_I)
 		self.PID_widget_z.spinboxD.valueChanged.connect(self.trackingController.pid_controller_theta.update_D)
 
-
-
-
-
-class PID_Widget(QGroupBox):
+class PID_Widget(QFrame):
 	
 	def __init__(self,name,Pmax=2,Dmax=1,Imax=1):
 		super().__init__()
-		
-		self.setTitle(name)
-	
+
 		# Slider Groupe P
 		defaultP = Pmax/10
 		stepP = Pmax/100
@@ -527,7 +451,6 @@ class PID_Widget(QGroupBox):
 		sliderP_layout.addWidget(self.spinboxP,1,0)
 		group_sliderP=QWidget()
 		group_sliderP.setLayout(sliderP_layout)
-		
 
 		defaultI = 0
 		stepI = Imax/100
@@ -572,12 +495,12 @@ class PID_Widget(QGroupBox):
 		
 		# Big PID group
 		groupbox_layout_PID = QHBoxLayout()
-		groupbox_layout_PID.addWidget(group_sliderP)   
+		# groupbox_layout_PID.addWidget(QLabel(name))
+		groupbox_layout_PID.addWidget(group_sliderP)
 		groupbox_layout_PID.addWidget(group_sliderI)
 		groupbox_layout_PID.addWidget(group_sliderD)
-		
-		
 		self.setLayout(groupbox_layout_PID)
+		self.setFrameStyle(QFrame.StyledPanel | QFrame.Plain)
 	
 	def spinBoxP_setValue(self,value):
 		newvalue=float(value)/100.
@@ -600,7 +523,6 @@ class PID_Widget(QGroupBox):
 	def hsliderD_setValue(self,value):
 		self.hsliderD.setValue(int(value*100))
 
-
 class PDAFControllerWidget(QFrame):
     def __init__(self, PDAFController, main=None, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -609,7 +531,6 @@ class PDAFControllerWidget(QFrame):
         self.setFrameStyle(QFrame.Panel | QFrame.Raised)
 
     def add_components(self):
- 
         self.entry_x_offset = QSpinBox()
         self.entry_x_offset.setMinimum(-1000) 
         self.entry_x_offset.setMaximum(1000) 

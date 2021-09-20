@@ -28,9 +28,7 @@ class VolumetricImagingWidget(QFrame):
         self.setFrameStyle(QFrame.Panel | QFrame.Raised)
 
     def add_components(self):
-        
         grid1 = QGridLayout()
-
         self.hslider_current_min = QSlider(Qt.Horizontal)
         self.hslider_current_min.setRange(-250,250)
         self.hslider_current_min.setValue(-20)
@@ -273,7 +271,6 @@ class VolumetricImagingWidget(QFrame):
         # self.entry_phase_delay
         self.hslider_current_DC.setEnabled(True)
         self.entry_current_DC.setEnabled(True)
-
 
 class PlotWidget(pg.GraphicsLayoutWidget):
     def __init__(self, window_title='',parent=None):

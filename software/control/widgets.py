@@ -6,9 +6,8 @@ import qtpy
 import pyqtgraph as pg
 import pyqtgraph.dockarea as dock
 from pyqtgraph.dockarea.Dock import DockLabel
+
 import control.utils.dockareaStyle as dstyle
-
-
 import numpy as np
 from collections import deque
 
@@ -245,13 +244,12 @@ class LiveControlWidget(QFrame):
 		working_resolution_group.setLayout(working_resolution_layout)
 
 		stream_fps_group = QGroupBox('Tracking FPS')
-		stream_fps_layout = QHBoxLayout()
-		stream_fps_layout.addWidget(self.actual_streamFPS)
+		stream_fps_layout = QGridLayout()
+		stream_fps_layout.addWidget(self.actual_streamFPS,0,1,1,1)
 		stream_fps_group.setLayout(stream_fps_layout)
 
 		display_fps_group = QGroupBox('Display FPS')
 		display_fps_layout = QGridLayout()
-		
 		display_fps_layout.addWidget(QLabel('Set'),0,0)
 		display_fps_layout.addWidget(self.entry_displayFPS, 0,1)
 		display_fps_layout.addWidget(QLabel('Actual'),0,2)
@@ -534,7 +532,6 @@ class RecordingWidget(QGroupBox):
 				if(self.checkbox[channel].isChecked()):
 					self.imageSaver[channel].start_saving_images()
 					self.streamHandler[channel].start_recording()
-
 		else:
 			''' Stop Acquisition
 			'''
@@ -545,7 +542,6 @@ class RecordingWidget(QGroupBox):
 			
 			self.lineEdit_experimentID.setEnabled(True)
 			self.btn_setSavingDir.setEnabled(True)
-			
 
 	# stop_recording can be called by imageSaver
 	def stop_recording(self):
@@ -567,14 +563,11 @@ class RecordingWidget(QGroupBox):
 	def update_save_fps(self, channel, real_fps):
 		self.actual_saveFPS[channel].display(real_fps)
 
-
-
 '''
 #%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 #                            Plot widget
 #%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 '''
-
 class dockAreaPlot(dock.DockArea):
 
 	def __init__(self, internal_state, parent=None):
@@ -617,7 +610,6 @@ class PlotWidget(pg.GraphicsLayoutWidget):
 		#plot Zobj
 		self.Abscissa=deque(maxlen=20)
 		self.Ordinate=deque(maxlen=20)
-		
 		self.Abs=[]
 		self.Ord=[]
 		self.plot1=self.addPlot(title=title)
@@ -625,7 +617,6 @@ class PlotWidget(pg.GraphicsLayoutWidget):
 		self.curve.setClipToView(True)
 		self.plot1.enableAutoRange('xy', True)
 		self.plot1.showGrid(x=True, y=True)
-		
 		
 	def update_plot(self):
 		data = np.zeros(2)
