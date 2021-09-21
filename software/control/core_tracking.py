@@ -77,7 +77,6 @@ class TrackingController(QObject):
 		self.tracking_setpoint_image = None
 		self.image_center = None
 		self.image_width = 720
-		self.position_error_image = np.array([0,0])
 		self.image_offset = np.array([0,0])
 
 		# Create a tracking object that does the image-based tracking
@@ -121,6 +120,9 @@ class TrackingController(QObject):
 		self.counter = 0
 		self.fps_real = 0
 
+		self.pixel_size_um_raw = None
+		self.pixel_size_um_scaled = None
+
 	# called by StreamHandler through its sigal packet_image_for_tracking
 	def on_new_frame(self, image, thresholded_image = None):
 
@@ -150,12 +152,19 @@ class TrackingController(QObject):
 			return
 
 		# find the object's position relative to the tracking set point on the image
-		self.position_error_image = self.centroid - self.tracking_setpoint_image
+		in_plane_position_error_pixel = self.centroid - self.tracking_setpoint_image
+		in_plane_position_error_mm = in_plane_position_error
+
+
+
+
 		x_error, z_error = self.units_converter.px_to_mm(self.position_error_image[0], self.image_width), self.units_converter.px_to_mm(self.position_error_image[1], self.image_width)
+
+
 
 		# self.focus_error is updated by the focus tracking controller
 
-		# Emit the detected centroid position so other widgets can access it.
+		# emit the detected centroid position so other widgets can access it.
 		self.centroid_image.emit(self.centroid)
 		self.Rect_pt1_pt2.emit(self.rect_pts)
 
@@ -323,6 +332,9 @@ class TrackingController(QObject):
 
 	def send_focus_tracking(self, focus_tracking_flag):
 		self.microcontroller.send_focus_tracking_command(focus_tracking_flag)
+
+	def update_pixel_size(self, pixel_size_um):
+		self.pixel_size_um = pixel_size_um
 
 class InternalState():
 	'''

@@ -1,8 +1,9 @@
 import os
 import glob
 
-# TRACKING_CONFIG = 'XYZ'
-TRACKING_CONFIG = 'XYT'
+# TRACKING_CONFIG = 'XY_Z'
+# TRACKING_CONFIG = 'XZ_Y'
+TRACKING_CONFIG = 'XTheta_Y'
 
 class TriggerMode:
     SOFTWARE = 'Software Trigger'
@@ -102,6 +103,14 @@ TRACKERS = ['nearest-nbr', 'csrt', 'kcf', 'mil', 'tld', 'medianflow','mosse','da
 DEFAULT_TRACKER = 'nearest-nbr'
 CROPPED_IMG_RATIO = 10
 
+CAMERA_PIXEL_SIZE_UM = {'IMX226':1.85,'IMX250':3.45,'IMX252':3.45,'PYTHON300':4.8}
+OBJECTIVES = {'2x':{'magnification':2, 'NA':0.10, 'tube_lens_f_mm':180}, 
+                '4x':{'magnification':4, 'NA':0.13, 'tube_lens_f_mm':180}, 
+                '10x':{'magnification':10, 'NA':0.25, 'tube_lens_f_mm':180}, 
+                '20x (Boli)':{'magnification':20, 'NA':0.4, 'tube_lens_f_mm':180}, 
+                '20x (Nikon)':{'magnification':20, 'NA':0.45, 'tube_lens_f_mm':200}, 
+                '40x':{'magnification':40, 'NA':0.6, 'tube_lens_f_mm':180}}
+
 ##################################################
 #### Default Configurations - to be overriden ####
 ##################################################
@@ -115,11 +124,14 @@ TWO_CAMERA_PDAF = True
 VOLUMETRIC_IMAGING = True
 USE_SEPARATE_TRIGGER_CONTROLLER = False
 TRIGGERCONTROLLER_SERIAL_NUMBER = None
-CAMERAS = {'DF1':{'make':'Daheng','serial':'FW0200050063','px_format':(2560,2048),'color_format':'GRAY8','fps': 60,'is_color':False,'rotate image angle':0,'flip image':'Horizental'},\
-           'DF2':{'make':'Daheng','serial':'FW0200050068','px_format':(2560,2048),'color_format':'GRAY8','fps':60,'is_color':False,'rotate image angle':0,'flip image':'Horizental'}, \
-           'volumetric imaging':{'make':'Daheng','serial':'FW0200050061','px_format':(600,600),'color_format':'GRAY8','fps':30,'is_color':False,'rotate image angle':0,'flip image':'Horizental'}}
-OBJECTIVES = {'2x':{'magnification':2, 'NA':0.10, 'PixelPermm':217}, '4x':{'magnification':4, 'NA':0.13, 'PixelPermm':432}, '10x':{'magnification':10, 'NA':0.25, 'PixelPermm':1066}, '20x':{'magnification':20, 'NA':0.4, 'PixelPermm':4008}, '40x':{'magnification':40, 'NA':0.6,'PixelPermm':8016}}
+CAMERAS = {'DF1':{'make':'Daheng','serial':'FW0200050063','px_format':(2560,2048),'color_format':'GRAY8','fps': 60,'is_color':False,'rotate image angle':0,'flip image':'Horizental','sensor':'IMX226'},\
+           'DF2':{'make':'Daheng','serial':'FW0200050068','px_format':(2560,2048),'color_format':'GRAY8','fps': 60,'is_color':False,'rotate image angle':0,'flip image':'Horizental','sensor':'IMX226'}, \
+           'volumetric imaging':{'make':'Daheng','serial':'FW0200050061','px_format':(600,600),'color_format':'GRAY8','fps':30,'is_color':False,'rotate image angle':0,'flip image':'Horizental','sensor':'PYTHON300'}}
+TUBE_LENS_MM = {'DF1':50,'DF2':50,'volumetric imaging':75}
 DEFAULT_OBJECTIVE = '4x'
+
+# print('-------------------')
+# print(CAMERA_PIXEL_SIZE_UM[CAMERAS['DF1']['sensor']])
 
 ##########################################################
 #### start of loading machine specific configurations ####
@@ -141,7 +153,7 @@ FPS = {'display':{'min':1, 'max':30, 'default':15},
         'trigger_software':{'min':1, 'max':120, 'default':15}, 
         'save':{'min':1, 'max':100, 'default':10}}
 
-if TRACKING_CONFIG == 'XYT':
+if TRACKING_CONFIG == 'XTheta_Y':
     INTERNAL_STATE_VARIABLES = ['Time', 'X', 'Y', 'Z', 'X_stage', 'Y_stage',
         'Theta_stage', 'X_image', 'Z_image', 'image_tracking_enabled','enable_image_tracking_from_hardware_button', 'track_focus', 'stage_tracking_enabled', 
         'Acquisition', 'homing_status',  'Zero_stage', 'optical_path', 
@@ -162,7 +174,7 @@ if TRACKING_CONFIG == 'XYT':
     assert list(PLOT_VARIABLES.keys()) == list(PLOT_COLORS.keys())
     assert list(PLOT_VARIABLES.keys()) == list(PLOT_UNITS.keys())
     DEFAULT_PLOTS = ['X', 'Z']
-elif TRACKING_CONFIG == 'XYZ':
+elif TRACKING_CONFIG == 'XY_Z':
     INTERNAL_STATE_VARIABLES = ['Time', 'X', 'Y', 'Z', 'X_stage', 'Y_stage',
         'Z_stage', 'X_image', 'Y_image', 'image_tracking_enabled','enable_image_tracking_from_hardware_button', 'track_focus', 'stage_tracking_enabled', 
         'Acquisition', 'homing_status',  'Zero_stage', 'optical_path', 
@@ -210,4 +222,71 @@ STOP_TRIGGER_GENERATION = 15
 
 # Volumetric imaging
 VOLUMETRIC_IMAGING_NUMBER_OF_PLANES_PER_VOLUME_DEFAULT = 20
+
+
+class CMD_EXECUTION_STATUS:
+    COMPLETED_WITHOUT_ERRORS = 0
+    IN_PROGRESS = 1
+    CMD_CHECKSUM_ERROR = 2
+    CMD_INVALID = 3
+    CMD_EXECUTION_ERROR = 4
+    ERROR_CODE_EMPTYING_THE_FLUDIIC_LINE_FAILED = 100
+
+STAGE_MOVEMENT_SIGN_X = -1
+STAGE_MOVEMENT_SIGN_Y = 1
+STAGE_MOVEMENT_SIGN_Z = 1
+STAGE_MOVEMENT_SIGN_THETA = 1
+
+STAGE_POS_SIGN_X = STAGE_MOVEMENT_SIGN_X
+STAGE_POS_SIGN_Y = STAGE_MOVEMENT_SIGN_Y
+STAGE_POS_SIGN_Z = STAGE_MOVEMENT_SIGN_Z
+STAGE_POS_SIGN_THETA = STAGE_MOVEMENT_SIGN_THETA
+
+TRACKING_MOVEMENT_SIGN_X = 1
+TRACKING_MOVEMENT_SIGN_Y = 1
+TRACKING_MOVEMENT_SIGN_Z = 1
+TRACKING_MOVEMENT_SIGN_THETA = 1
+
+USE_ENCODER_X = False
+USE_ENCODER_Y = False
+USE_ENCODER_Z = False
+USE_ENCODER_THETA = False
+
+ENCODER_POS_SIGN_X = 1
+ENCODER_POS_SIGN_Y = 1
+ENCODER_POS_SIGN_Z = 1
+ENCODER_POS_SIGN_THETA = 1
+
+ENCODER_STEP_SIZE_X_MM = 100e-6
+ENCODER_STEP_SIZE_Y_MM = 100e-6
+ENCODER_STEP_SIZE_Z_MM = 100e-6
+ENCODER_STEP_SIZE_THETA = 1
+
+FULLSTEPS_PER_REV_X = 200
+FULLSTEPS_PER_REV_Y = 200
+FULLSTEPS_PER_REV_Z = 200
+FULLSTEPS_PER_REV_THETA = 200
+
+SCREW_PITCH_X_MM = 1
+SCREW_PITCH_Y_MM = 1
+SCREW_PITCH_Z_MM = 0.012*25.4
+
+MICROSTEPPING_DEFAULT_X = 8
+MICROSTEPPING_DEFAULT_Y = 8
+MICROSTEPPING_DEFAULT_Z = 8
+MICROSTEPPING_DEFAULT_THETA = 8
+
+SCAN_STABILIZATION_TIME_MS_X = 160
+SCAN_STABILIZATION_TIME_MS_Y = 160
+SCAN_STABILIZATION_TIME_MS_Z = 20
+
+HOMING_ENABLED_X = True
+HOMING_ENABLED_Y = True
+HOMING_ENABLED_Z = False
+
+SLEEP_TIME_S = 0.005
+
+LED_MATRIX_R_FACTOR = 0
+LED_MATRIX_G_FACTOR = 0
+LED_MATRIX_B_FACTOR = 1
 

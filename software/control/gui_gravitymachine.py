@@ -141,7 +141,8 @@ class GravityMachine_GUI(QMainWindow):
 		self.recordingControlWidget.start_tracking_signal.connect(self.trackingControlWidget.trigger_track_button)
 		# self.microcontroller_receiver.update_stage_position.connect(self.trackingController.update_stage_position)
 		# Pixel per mm update due to objective change
-		self.liveControlWidget.new_pixelpermm.connect(self.trackingController.units_converter.update_pixel_size)
+		self.liveControlWidget.signal_update_pixel_size.connect(self.trackingController.update_pixel_size)
+		self.liveControlWidget.update_pixel_size()
 		self.microcontroller_receiver.update_plot.connect(self.plotWidget.update_plots)
 
 		# tracking start/stop

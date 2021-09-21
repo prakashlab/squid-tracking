@@ -149,7 +149,7 @@ class LiveControlWidget(QFrame):
 		- Objective
 		- Display resolution slider
 	'''
-	new_pixelpermm = Signal(int) # Pixel size based on calibration image
+	signal_update_pixel_size = Signal(float) # Pixel size based on calibration image
 	resolution_scaling_signal = Signal(int)
 	show_window = Signal(bool)
 
@@ -286,11 +286,11 @@ class LiveControlWidget(QFrame):
 	def update_pixel_size(self):
 		self.objective = self.dropdown_objectiveSelection.currentText()
 		self.internal_state.data['Objective'] = self.objective
-		print('Updated internal state objective {}'.format(self.internal_state.data['Objective'] ))
-		
-		#@@@ Need to connect this signal to a slot!@@@
-		self.new_pixelpermm.emit(OBJECTIVES[self.objective]['PixelPermm'])
-		
+		# only do the calculation for the tracking camera
+		pixel_size_um = CAMERA_PIXEL_SIZE_UM[CAMERAS[TRACKING]['sensor']] / ( TUBE_LENS_MM[TRACKING] / (OBJECTIVES[self.objective]['tube_lens_f_mm']/OBJECTIVES[self.objective]['magnification']) )
+		self.signal_update_pixel_size.emit(pixel_size_um)
+		print('pixel size is ' + str(pixel_size_um) + ' um')
+
 	def toggle_live(self,pressed):
 		if pressed:
 			for channel in self.imaging_channels:
