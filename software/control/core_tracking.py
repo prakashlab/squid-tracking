@@ -51,7 +51,7 @@ class TrackingController(QObject):
 	save_data_signal -> DataSaver
 
 	'''
-	def __init__(self, microcontroller, internal_state, rotate_image_angle = 0, color = False):
+	def __init__(self, microcontroller, internal_state, color = False):
 		QObject.__init__(self)
 		self.microcontroller = microcontroller
 		self.internal_state = internal_state
@@ -69,18 +69,16 @@ class TrackingController(QObject):
 		self.track_focus = False
 		# For testing
 		self.image_tracking_enabled = False
-		self.is_first_frame = True
 		self.objectFound = False
 
 		self.centroid = None
 		self.rect_pts = None
 
-		self.image_setPoint = None
+		self.tracking_setpoint_image = None
 		self.image_center = None
 		self.image_width = 720
-		self.posError_image = np.array([0,0])
+		self.position_error_image = np.array([0,0])
 		self.image_offset = np.array([0,0])
-		self.rotate_image_angle = rotate_image_angle
 
 		# Create a tracking object that does the image-based tracking
 		self.tracker_image = tracking.Tracker_Image(color = color)
@@ -133,13 +131,13 @@ class TrackingController(QObject):
 		
 		# check if it's a new track [or if the object being tracked was lost - removed in this update]
 		if self.tracking_frame_counter == 0:
-			self.is_first_frame = True
+			is_first_frame = True
 			self.resetPID = True
 		else:
-			self.is_first_frame = False
+			is_first_frame = False
 		
 		# track the object in the image
-		self.objectFound, self.centroid, self.rect_pts = self.tracker_image.track(image, thresholded_image, is_first_frame = self.is_first_frame)
+		self.objectFound, self.centroid, self.rect_pts = self.tracker_image.track(image, thresholded_image, is_first_frame = is_first_frame)
 		
 		# check if tracking object in the image was successful, if not, terminated the track
 		if self.objectFound:
@@ -151,25 +149,15 @@ class TrackingController(QObject):
 			self.reset_track()
 			return
 
-		# Find the object's position relative to the tracking set point on the image
-		self.posError_image = self.centroid - self.image_setPoint
-		# Get the error and convert it to mm
-		# x_error, z_error are in mm		
+		# find the object's position relative to the tracking set point on the image
+		self.position_error_image = self.centroid - self.tracking_setpoint_image
+		x_error, z_error = self.units_converter.px_to_mm(self.position_error_image[0], self.image_width), self.units_converter.px_to_mm(self.position_error_image[1], self.image_width)
 
-		if(self.rotate_image_angle == 0):
-			x_error, z_error = self.units_converter.px_to_mm(self.posError_image[0], self.image_width), self.units_converter.px_to_mm(self.posError_image[1], self.image_width)
-		elif(self.rotate_image_angle == 90):
-			z_error, x_error = self.units_converter.px_to_mm(self.posError_image[0], self.image_width), self.units_converter.px_to_mm(self.posError_image[1], self.image_width)
-		# Flip the sign of Z-error since image coordinates and physical coordinates are reversed.
-		# z_error = -z_error
-
-		# get the object location along the optical axis. 
-		# Is the object position necessary for this? Alternatively we can pass the centroid
-		# and handle this downstream
+		# focus tracking - to move
 		if(self.track_focus):
 			pass
 			'''
-			y_error will be set by the y focus tracking controller, 
+			focus_error will be set by the focus tracking controller, 
 			which has a reference of this tracking controller, and can set self.focus_error and self.track_focus
 			'''
 		else:
@@ -227,7 +215,6 @@ class TrackingController(QObject):
 		# @@@ Testing
 		print('resetting track...')
 		self.tracking_frame_counter = 0
-		self.is_first_frame = True
 		self.objectFound = False
 		self.tracker_image.reset()
 
@@ -314,7 +301,7 @@ class TrackingController(QObject):
 			
 	def _update_tracking_setpoint(self):
 		if(self.image_center is not None):
-			self.image_setPoint = self.image_center + self.image_offset
+			self.tracking_setpoint_image = self.image_center + self.image_offset
 
 	def _update_image_offset(self, new_image_offset):
 		self.image_offset = new_image_offset
