@@ -72,10 +72,10 @@ class Tracker_Image(object):
 		self.searchArea = None
 		self.color = color
 		
-	def track(self, image, thresh_image, start_flag = False):
+	def track(self, image, thresh_image, is_first_frame = False):
 
 		# case 1: initialize the tracker
-		if(start_flag == True or self.trackerActive == False):
+		if(is_first_frame == True or self.trackerActive == False):
 			# tracker initialization - using ROI
 			if(self.init_method=="roi"):
 				self.bbox = tuple(self.roi_bbox)
@@ -110,7 +110,7 @@ class Tracker_Image(object):
 
 	def reset(self):
 		print('Reset image tracker state')
-		self.start_flag = True
+		self.is_first_frame = True
 		self.trackerActive = False
 		self.isCentroidFound = False
 
