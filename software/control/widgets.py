@@ -150,7 +150,6 @@ class LiveControlWidget(QFrame):
 		- Display resolution slider
 	'''
 	signal_update_pixel_size = Signal(float) # Pixel size based on calibration image
-	resolution_scaling_signal = Signal(int)
 	show_window = Signal(bool)
 
 	def __init__(self, streamHandler, liveController, internalState, main=None, *args, **kwargs):
@@ -307,9 +306,6 @@ class LiveControlWidget(QFrame):
 				else:
 					self.liveController.stop_live()
 				self.checkbox[channel].setEnabled(True)
-
-	def update_image_properties_tracking(self):
-		self.resolution_scaling_signal.emit(self.slider_resolutionScaling.value())
 
 	def update_active_channels(self):
 		# @@@ TO DO: Convert these to slots and remove dependency on low level objects
