@@ -150,6 +150,7 @@ class LiveControlWidget(QFrame):
 		- Display resolution slider
 	'''
 	signal_update_pixel_size = Signal(float) # Pixel size based on calibration image
+	signal_update_image_resizing_factor = Signal(float)
 	show_window = Signal(bool)
 
 	def __init__(self, streamHandler, liveController, internalState, main=None, *args, **kwargs):
@@ -162,7 +163,7 @@ class LiveControlWidget(QFrame):
 		self.fps_display = FPS['display']['default']
 		self.streamHandler.set_display_fps(self.fps_display)
 		self.add_components()
-		self.update_pixel_size()
+		self._update_pixel_size()
 		# self.setTitle('Live Controller')
 		self.setFrameStyle(QFrame.Panel | QFrame.Raised)
 
@@ -216,8 +217,8 @@ class LiveControlWidget(QFrame):
 
 		# connections
 		self.slider_resolutionScaling.valueChanged.connect(self.streamHandler.set_working_resolution_scaling)
-		self.slider_resolutionScaling.valueChanged.connect(self.update_image_properties_tracking)
-		self.dropdown_objectiveSelection.currentIndexChanged.connect(self.update_pixel_size)
+		self.slider_resolutionScaling.valueChanged.connect(self._update_image_resizing_factor)
+		self.dropdown_objectiveSelection.currentIndexChanged.connect(self._update_pixel_size)
 		self.btn_live.clicked.connect(self.toggle_live)
 
 		for channel in self.imaging_channels:
@@ -282,13 +283,16 @@ class LiveControlWidget(QFrame):
 	def update_working_resolution(self, value):
 		self.display_workingResolution.display(value)
 
-	def update_pixel_size(self):
+	def _update_pixel_size(self):
 		self.objective = self.dropdown_objectiveSelection.currentText()
 		self.internal_state.data['Objective'] = self.objective
 		# only do the calculation for the tracking camera
 		pixel_size_um = CAMERA_PIXEL_SIZE_UM[CAMERAS[TRACKING]['sensor']] / ( TUBE_LENS_MM[TRACKING] / (OBJECTIVES[self.objective]['tube_lens_f_mm']/OBJECTIVES[self.objective]['magnification']) )
 		self.signal_update_pixel_size.emit(pixel_size_um)
 		print('pixel size is ' + str(pixel_size_um) + ' um')
+
+	def _update_image_resizing_factor(self):
+		self.signal_update_image_resizing_factor.emit(self.slider_resolutionScaling.value()/100)
 
 	def toggle_live(self,pressed):
 		if pressed:

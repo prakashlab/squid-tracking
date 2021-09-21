@@ -100,8 +100,8 @@ class TrackingController(QObject):
 
 		self.focus_error = 0 # for PDAF focus tracking
 
-		self.X_image = deque(maxlen=self.dequeLen)
-		self.Z_image = deque(maxlen=self.dequeLen)
+		self.X_image_mm = deque(maxlen=self.dequeLen)
+		self.Z_image_mm = deque(maxlen=self.dequeLen)
 
 		self.X_stage = deque(maxlen=self.dequeLen)
 		self.Y_stage = deque(maxlen=self.dequeLen)
@@ -113,7 +113,7 @@ class TrackingController(QObject):
 		self.Z = deque(maxlen=self.dequeLen)
 
 		# Subset of INTERNAL_STATE_MODEL that is updated by Tracking_Controller (self)
-		self.internal_state_vars = ['Time','X_image', 'Z_image', 'X', 'Y', 'Z']		
+		self.internal_state_vars = ['Time','X_image_mm', 'Z_image_mm', 'X', 'Y', 'Z']		
 
 		# For fps measurement
 		self.timestamp_last = 0
@@ -121,6 +121,7 @@ class TrackingController(QObject):
 		self.fps_real = 0
 
 		self.pixel_size_um_raw = None
+		self.image_resizing_factor = None
 		self.pixel_size_um_scaled = None
 
 	# called by StreamHandler through its sigal packet_image_for_tracking
@@ -151,28 +152,36 @@ class TrackingController(QObject):
 			self.reset_track()
 			return
 
-		# find the object's position relative to the tracking set point on the image
-		in_plane_position_error_pixel = self.centroid - self.tracking_setpoint_image
-		in_plane_position_error_mm = in_plane_position_error
-
-
-
-
-		x_error, z_error = self.units_converter.px_to_mm(self.position_error_image[0], self.image_width), self.units_converter.px_to_mm(self.position_error_image[1], self.image_width)
-
-
-
-		# self.focus_error is updated by the focus tracking controller
-
-		# emit the detected centroid position so other widgets can access it.
+		# emit the detected object position for display
 		self.centroid_image.emit(self.centroid)
 		self.Rect_pt1_pt2.emit(self.rect_pts)
 
+		# find the object's position relative to the tracking set point on the image
+		in_plane_position_error_pixel = self.centroid - self.tracking_setpoint_image
+		in_plane_position_error_mm = in_plane_position_error_pixel*self.pixel_size_um_scaled/1000
+
+		# assign in-plane position error based on the tracking configuration
+		if TRACKING_CONFIG == 'XTheta_Y' or TRACKING_CONFIG == 'XZ_Y':
+			x_error_mm = in_plane_position_error_mm[0]
+			z_error_mm = in_plane_position_error_mm[1]
+			# self.focus_error is updated by the focus tracking controller
+			self.X_image_mm.append( (self.centroid[0]-self.image_center[0])*pixel_size_um_scaled/1000 )
+			self.Z_image_mm.append( (self.centroid[1]-self.image_center[1])*pixel_size_um_scaled/1000 )
+		elif TRACKING_CONFIG == 'XY_Z':
+			x_error_mm = in_plane_position_error_mm[0]
+			y_error_mm = in_plane_position_error_mm[1]
+			# self.focus_error is updated by the focus tracking controller
+			self.X_image_mm.append( (self.centroid[0]-self.image_center[0])*pixel_size_um_scaled/1000 )
+			self.Y_image_mm.append( (self.centroid[1]-self.image_center[1])*pixel_size_um_scaled/1000 )
+
+		# get stage position - to finish
 		X_stage, Y_stage, Theta_stage = self.internal_state.data['X_stage'], self.internal_state.data['Y_stage'], self.internal_state.data['Theta_stage']
+		self.X_stage.append(x)
+		self.Y_stage.append(y)
+		self.Theta_stage.append(theta)
+
+		self.update_obj_position() # to finish
 		
-		self.update_image_position()
-		self.update_stage_position(X_stage, Y_stage, Theta_stage)
-		self.update_obj_position()
 		# get motion commands
 		# Error is in mm.
 		# print('Image error: {}, {}, {} mm'.format(x_error, y_error, z_error))
@@ -223,8 +232,8 @@ class TrackingController(QObject):
 		self.begining_Time = time.time()           #Time begin the first time we click on the start_tracking button
 		self.Time = deque(maxlen=self.dequeLen)
 
-		self.X_image = deque(maxlen=self.dequeLen)
-		self.Z_image = deque(maxlen=self.dequeLen)
+		self.X_image_mm = deque(maxlen=self.dequeLen)
+		self.Z_image_mm = deque(maxlen=self.dequeLen)
 
 		self.X_stage = deque(maxlen=self.dequeLen)
 		self.Y_stage = deque(maxlen=self.dequeLen)
@@ -241,22 +250,13 @@ class TrackingController(QObject):
 
 	def _update_elapsed_time(self):
 		self.Time.append(time.time() - self.begining_Time)
-
-	def update_stage_position(self,x,y,theta):
-		self.X_stage.append(x)
-		self.Y_stage.append(y)
-		self.Theta_stage.append(theta)
-
-	def update_image_position(self):
-		# Object position relative to image center (in mm)
-		self.X_image.append(self.units_converter.px_to_mm(self.centroid[0] - self.image_center[0], self.image_width))
-		self.Z_image.append(self.units_converter.px_to_mm(self.centroid[1] - self.image_center[1], self.image_width))
+		
 
 	def update_obj_position(self):
-		self.X.append(self.X_stage[-1] + self.X_image[-1])
+		self.X.append(self.X_stage[-1] + self.X_image_mm[-1])
 		self.Y.append(self.Y_stage[-1])
 		if(len(self.Time)>1):
-			self.Z.append(self.Z[-1]+(self.Z_image[-1]-self.Z_image[-2]) + self.units_converter.rad_to_mm(self.Theta_stage[-1]-self.Theta_stage[-2],self.X[-1]))
+			self.Z.append(self.Z[-1]+(self.Z_image_mm[-1]-self.Z_image_mm[-2]) + self.units_converter.rad_to_mm(self.Theta_stage[-1]-self.Theta_stage[-2],self.X[-1]))
 		else:
 			self.Z.append(0)
 
@@ -335,6 +335,11 @@ class TrackingController(QObject):
 
 	def update_pixel_size(self, pixel_size_um):
 		self.pixel_size_um = pixel_size_um
+
+	def update_image_resizing_factor(self,image_resizing_factor):
+		self.image_resizing_factor = image_resizing_factor
+		print('update tracking image resizing factor to ' + str(self.image_resizing_factor))
+		self.pixel_size_um_scaled = self.pixel_size_um/self.image_resizing_factor
 
 class InternalState():
 	'''
