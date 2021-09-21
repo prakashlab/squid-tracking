@@ -84,16 +84,20 @@ class TrackingControllerWidget(QFrame):
 		self.label_x = QLabel('x (px)')
 		# Image tracking offset - X axis
 		self.tracking_setPoint_offset_x = QSpinBox()
-		self.tracking_setPoint_offset_x.setMinimum(-round(self.trackingController.image_width/4)) 
-		self.tracking_setPoint_offset_x.setMaximum(round(self.trackingController.image_width/4)) 
+		# self.tracking_setPoint_offset_x.setMinimum(-round(self.trackingController.image_width/4)) 
+		# self.tracking_setPoint_offset_x.setMaximum(round(self.trackingController.image_width/4)) 
+		self.tracking_setPoint_offset_x.setMinimum(-2000) # to change
+		self.tracking_setPoint_offset_x.setMaximum(2000) # to change
 		self.tracking_setPoint_offset_x.setSingleStep(1)
 		self.tracking_setPoint_offset_x.setValue(0)
 
 		# Image tracking offset - Z axis
 		self.label_y = QLabel('z (px)')
 		self.tracking_setPoint_offset_y = QSpinBox()
-		self.tracking_setPoint_offset_y.setMinimum(-round(self.trackingController.image_width/4)) 
-		self.tracking_setPoint_offset_y.setMaximum(round(self.trackingController.image_width/4)) 
+		# self.tracking_setPoint_offset_y.setMinimum(-round(self.trackingController.image_width/4)) 
+		# self.tracking_setPoint_offset_y.setMaximum(round(self.trackingController.image_width/4))
+		self.tracking_setPoint_offset_y.setMinimum(-2000) 
+		self.tracking_setPoint_offset_y.setMaximum(2000)  
 		self.tracking_setPoint_offset_y.setSingleStep(1)
 		self.tracking_setPoint_offset_y.setValue(0)
 
@@ -180,10 +184,9 @@ class TrackingControllerWidget(QFrame):
 				# Update the internal_state to indicate that object should be tracked using image proc
 			self.internal_state.data['image_tracking_enabled'] = True
 			print('Set image_tracking_enabled to : {}'.format(self.internal_state.data['image_tracking_enabled']))
-			
 			if(self.tracking_init_roi.isChecked()):
 				self.trackingController.update_roi_bbox()
-
+			self.trackingController.reset_track()
 			self.trackingDataSaver.start_new_track()
 			self.streamHandler.start_tracking()
 			self.btn_track.setText('Stop Tracking')
@@ -191,7 +194,6 @@ class TrackingControllerWidget(QFrame):
 			self.btn_track.setText('Start Tracking')
 			self.streamHandler.stop_tracking()
 			self.internal_state.data['image_tracking_enabled'] = False
-			# Resets the track deques and counters
 			self.trackingController.reset_track()
 			print('stop tracking')
 

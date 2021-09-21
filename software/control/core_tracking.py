@@ -76,7 +76,7 @@ class TrackingController(QObject):
 
 		self.tracking_setpoint_image = None
 		self.image_center = None
-		self.image_width = 720
+		self.image_width = None
 		self.image_offset = np.array([0,0])
 
 		# Create a tracking object that does the image-based tracking
@@ -88,32 +88,33 @@ class TrackingController(QObject):
 		self.pid_controller_theta = PID.PID()
 		self.resetPID = True
 
-		self.stage_tracking_enabled = False
-		self.tracking_frame_counter = 0
-
-		# Deque data length
-		self.dequeLen = 20
+		self.stage_tracking_enabled = None
+		self.tracking_frame_counter = None
 
 		#Time
-		self.begining_Time = time.time()           #Time begin the first time we click on the start_tracking button
-		self.Time = deque(maxlen=self.dequeLen)
+		self.t0 = time.time()           #Time begin the first time we click on the start_tracking button
+		self.Time = None
 
-		self.focus_error = 0 # for PDAF focus tracking
+		self.focus_error = 0 # for focus tracking; this variable is accessed by other objects
 
-		self.X_image_mm = deque(maxlen=self.dequeLen)
-		self.Z_image_mm = deque(maxlen=self.dequeLen)
-
-		self.X_stage = deque(maxlen=self.dequeLen)
-		self.Y_stage = deque(maxlen=self.dequeLen)
-		self.Theta_stage = deque(maxlen=self.dequeLen)
+		self.X_image = None # unit: mm
+		self.Y_image = None # unit: mm
+		self.Z_image = None # unit: mm
+		
+		self.X_stage = None # unit: mm
+		self.Y_stage = None # unit: mm
+		self.Z_stage = None # unit: mm
+		self.Theta_stage = None # unit: rad
 
 		# X, Y, Z represents the physical locations of the object - stage position + object offset in the image 
-		self.X = deque(maxlen=self.dequeLen)
-		self.Y = deque(maxlen=self.dequeLen)
-		self.Z = deque(maxlen=self.dequeLen)
+		self.X = None # unit: mm
+		self.Y = None # unit: mm
+		self.Z = None # unit: mm
+
+		self.current_radius = None # unit: mm
 
 		# Subset of INTERNAL_STATE_MODEL that is updated by Tracking_Controller (self)
-		self.internal_state_vars = ['Time','X_image_mm', 'Z_image_mm', 'X', 'Y', 'Z']		
+		self.internal_state_vars = ['Time','X_image', 'Z_image', 'X', 'Y', 'Z']		
 
 		# For fps measurement
 		self.timestamp_last = 0
@@ -138,6 +139,9 @@ class TrackingController(QObject):
 			self.resetPID = True
 		else:
 			is_first_frame = False
+
+		# get stage position - to add z
+		self._get_stage_position(is_first_frame=is_first_frame)
 		
 		# track the object in the image
 		self.objectFound, self.centroid, self.rect_pts = self.tracker_image.track(image, thresholded_image, is_first_frame = is_first_frame)
@@ -165,29 +169,32 @@ class TrackingController(QObject):
 			x_error_mm = in_plane_position_error_mm[0]
 			z_error_mm = in_plane_position_error_mm[1]
 			# self.focus_error is updated by the focus tracking controller
-			self.X_image_mm.append( (self.centroid[0]-self.image_center[0])*pixel_size_um_scaled/1000 )
-			self.Z_image_mm.append( (self.centroid[1]-self.image_center[1])*pixel_size_um_scaled/1000 )
+			# get position of the object in the image
+			self.X_image = (self.centroid[0]-self.image_center[0])*self.pixel_size_um_scaled/1000
+			self.Z_image = (self.centroid[1]-self.image_center[1])*self.pixel_size_um_scaled/1000
+			# get position of the object in the lab frame
+			self.X = self.X_stage + self.X_image
+			self.Y = self.Y_stage # can include the offset calculated from focus tracking controller later
+			self.Z = self.Z_stage + self.Z_image
+			if TRACKING_CONFIG == 'XTheta_Y':
+				self.current_radius = Chamber.R_HOME + self.X
 		elif TRACKING_CONFIG == 'XY_Z':
 			x_error_mm = in_plane_position_error_mm[0]
 			y_error_mm = in_plane_position_error_mm[1]
 			# self.focus_error is updated by the focus tracking controller
-			self.X_image_mm.append( (self.centroid[0]-self.image_center[0])*pixel_size_um_scaled/1000 )
-			self.Y_image_mm.append( (self.centroid[1]-self.image_center[1])*pixel_size_um_scaled/1000 )
-
-		# get stage position - to finish
-		X_stage, Y_stage, Theta_stage = self.internal_state.data['X_stage'], self.internal_state.data['Y_stage'], self.internal_state.data['Theta_stage']
-		self.X_stage.append(x)
-		self.Y_stage.append(y)
-		self.Theta_stage.append(theta)
-
-		self.update_obj_position() # to finish
+			# get position of the object in the image
+			self.X_image = (self.centroid[0]-self.image_center[0])*self.pixel_size_um_scaled/1000
+			self.Y_image = (self.centroid[1]-self.image_center[1])*self.pixel_size_um_scaled/1000
+			# get position of the object in the lab frame 
+			self.X = self.X_stage + self.X_image
+			self.Y = self.Y_stage + self.Y_image
+			self.Z = self.Z_stage # can include the offset calculated from focus tracking controller later
 		
+		'''				
 		# get motion commands
-		# Error is in mm.
-		# print('Image error: {}, {}, {} mm'.format(x_error, y_error, z_error))
-
 		if self.stage_tracking_enabled:
 			X_order, Y_order, Theta_order = self.get_motion_commands(x_error,self.focus_error,z_error)
+		'''
 
 		# 202109@@@
 		''' 
@@ -204,12 +211,11 @@ class TrackingController(QObject):
 
 		# Send a signal to the DataSaver module and instruct it to Save Data
 		if self.internal_state.data['Acquisition'] == True:
-			# print('Sending data for saving...')
 			self.save_data_signal.emit()
 
-		self.measure_tracking_fps()
+		self._measure_tracking_fps()
 
-	def measure_tracking_fps(self):
+	def _measure_tracking_fps(self):
 		# measure real fps
 		timestamp_now = round(time.time())
 		if timestamp_now == self.timestamp_last:
@@ -219,49 +225,30 @@ class TrackingController(QObject):
 			self.fps_real = self.counter
 			self.counter = 0
 			self.signal_tracking_fps.emit(self.fps_real)
+
+	def _get_stage_position(self,is_first_frame):
+		self.X_stage = self.internal_state.data['X_stage']
+		self.Y_stage = self.internal_state.data['Y_stage']
+		if TRACKING_CONFIG == 'XTheta_Y':
+			if is_first_frame:
+				self.Z_stage = 0
+				self.Theta_stage = self.internal_state.data['Theta_stage']
+			else:
+				delta_theta = self.internal_state.data['Theta_stage'] - self.Theta_stage
+				self.Theta_stage = self.internal_state.data['Theta_stage']
+				self.Z_stage = self.Z_stage + self.current_radius*delta_theta
+		else:
+			self.Z_stage = self.internal_state.data['Z_stage']
 			
 	# Triggered when you hit image_tracking_enabled
 	def reset_track(self):
-		# @@@ Testing
-		print('resetting track...')
 		self.tracking_frame_counter = 0
 		self.objectFound = False
 		self.tracker_image.reset()
-
-		#Time
-		self.begining_Time = time.time()           #Time begin the first time we click on the start_tracking button
-		self.Time = deque(maxlen=self.dequeLen)
-
-		self.X_image_mm = deque(maxlen=self.dequeLen)
-		self.Z_image_mm = deque(maxlen=self.dequeLen)
-
-		self.X_stage = deque(maxlen=self.dequeLen)
-		self.Y_stage = deque(maxlen=self.dequeLen)
-		self.Theta_stage = deque(maxlen=self.dequeLen)
-
-		for ii in range(self.dequeLen):
-			self.X_stage.append(0)
-			self.Y_stage.append(0)
-			self.Theta_stage.append(0)
-
-		self.X = deque(maxlen=self.dequeLen)
-		self.Y = deque(maxlen=self.dequeLen)
-		self.Z = deque(maxlen=self.dequeLen)
+		self.t0 = time.time()
 
 	def _update_elapsed_time(self):
-		self.Time.append(time.time() - self.begining_Time)
-		
-
-	def update_obj_position(self):
-		self.X.append(self.X_stage[-1] + self.X_image_mm[-1])
-		self.Y.append(self.Y_stage[-1])
-		if(len(self.Time)>1):
-			self.Z.append(self.Z[-1]+(self.Z_image_mm[-1]-self.Z_image_mm[-2]) + self.units_converter.rad_to_mm(self.Theta_stage[-1]-self.Theta_stage[-2],self.X[-1]))
-		else:
-			self.Z.append(0)
-
-		# @@@ testing 
-		# print('Virtual depth :{} mm'.format(round(self.Z[-1], 2)))
+		self.Time = time.time() - self.t0
 	
 	def get_motion_commands(self, x_error, y_error, z_error):
 		# Take an error signal and pass it through a PID algorithm
@@ -325,7 +312,8 @@ class TrackingController(QObject):
 	def update_internal_state(self):
 		for key in self.internal_state_vars:
 			if(key in INTERNAL_STATE_VARIABLES):
-				self.internal_state.data[key] = self.get_latest_attr_value(key)
+				self.internal_state.data[key] = getattr(self,key)
+				# print(key + ': ' + str(getattr(self,key)))
 			else:
 				print('>>>>>>' + key)
 				raise NameError('Key not found in Internal State')
