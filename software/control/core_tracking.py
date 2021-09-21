@@ -40,6 +40,7 @@ class TrackingController(QObject):
 	save_data_signal = Signal()
 	get_roi_bbox = Signal()
 	signal_tracking_fps = Signal(int)
+	signal_stop_tracking = Signal()
 
 	''' 
 	Connection map
@@ -68,12 +69,9 @@ class TrackingController(QObject):
 		self.track_focus = False
 		# For testing
 		self.image_tracking_enabled = False
-		self.start_flag = True
+		self.is_first_frame = True
 		self.objectFound = False
-		self.tracking_triggered_prev = False
 
-		# Image type of the tracking image stream
-		self.color = False
 		self.centroid = None
 		self.rect_pts = None
 
@@ -93,9 +91,7 @@ class TrackingController(QObject):
 		self.pid_controller_theta = PID.PID()
 		self.resetPID = True
 
-		self.stage_auto = False
-		self.stage_auto_prev = False
-
+		self.stage_tracking_enabled = False
 		self.tracking_frame_counter = 0
 
 		# Deque data length
@@ -127,137 +123,95 @@ class TrackingController(QObject):
 		self.counter = 0
 		self.fps_real = 0
 
+	# called by StreamHandler through its sigal packet_image_for_tracking
+	def on_new_frame(self, image, thresholded_image = None):
 
-	# Triggered by signal from StreamHandler
-	def on_new_frame(self,image, thresh_image = None):
-		# @@@testing
-		# print('In Tracking controller new frame')
 		self.image = image
-		tracking_triggered = self.internal_state.data['enable_image_tracking_from_hardware_button']
-		self.stage_auto = self.internal_state.data['stage_tracking_enabled']
-
-		# If image tracking is triggered using hardware button
-		# Need to distinguish between Hardware button and Software button-based triggers
-		# if tracking_triggered and tracking_triggered != self.tracking_triggered_prev:
-		# 	''' @@@@@ Then emit the start_tracking signal to change the track button 
-		# 	state of the Tracking Widget.
-		# 	 EMIT (tracking_triggered)
-		# 	'''
-		# 	# This Toggles the state of the Track Button.
-		# 	self.start_tracking_signal.emit()
-		# 	self.internal_state.data['enable_image_tracking_from_hardware_button'] = False
-			
-		# self.tracking_triggered_prev = tracking_triggered
-
-		''' 
-			Note that this needs to be a local copy since on the internal_state 
-			value changing due to a hardware button press
-		'''
-		if self.internal_state.data['image_tracking_enabled'] == True:
-			self.update_elapsed_time()
-			# print('In track function')
-			# initialize the tracker when a new track is started
-			if self.tracking_frame_counter == 0 or self.objectFound == False:
-				''' 
-				First frame
-				Get centroid using thresholding and initialize tracker based on this object.
-				initialize the tracker
-				'''
-				self.start_flag = True
-				# initialize the PID controller
-				self.resetPID = True
-				# Get initial parameters of the tracking image stream that are immutable (eg. color vs GS)
-				self.set_image_type()
-				self.update_image_center_width()
-			else:
-				self.start_flag = False
-				self.resetPID = False
-				
-			self.objectFound, self.centroid, self.rect_pts = self.tracker_image.track(image, thresh_image, start_flag = self.start_flag)
+		self._update_elapsed_time()
+		self._update_image_center_width()
+		self.stage_tracking_enabled = self.internal_state.data['stage_tracking_enabled']
+		
+		# check if it's a new track [or if the object being tracked was lost - removed in this update]
+		if self.tracking_frame_counter == 0:
+			self.is_first_frame = True
+			self.resetPID = True
+		else:
+			self.is_first_frame = False
+		
+		# track the object in the image
+		self.objectFound, self.centroid, self.rect_pts = self.tracker_image.track(image, thresholded_image, is_first_frame = self.is_first_frame)
+		
+		# check if tracking object in the image was successful, if not, terminated the track
+		if self.objectFound:
 			self.tracking_frame_counter += 1
-			#-----------------------------------------------------
-			# Tests
-			#-----------------------------------------------------
-		 
-			# print(self.objectFound, self.centroid, self.rect_pts)
-			# cv2.circle(image,(self.centroid[0], self.centroid[1]), 20, (255,0,0), 2)
-			# self.ptRect1=(self.rect_pts[0][0], self.rect_pts[0][1])
-			# self.ptRect2=(self.rect_pts[1][0], self.rect_pts[1][1])
-			# cv2.rectangle(image, self.ptRect1, self.ptRect2,(0,0,0) , 2) #cv2.rectangle(img, (20,20), (300,300),(0,0,255) , 2)#
+		else:
+			# tracking failed, stop tracking and emit the stop_tracking signal
+			self.internal_state.data['image_tracking_enabled'] = False
+			self.signal_stop_tracking.emit()
+			self.reset_track()
+			return
 
+		# Find the object's position relative to the tracking set point on the image
+		self.posError_image = self.centroid - self.image_setPoint
+		# Get the error and convert it to mm
+		# x_error, z_error are in mm		
 
-			# cv2.imshow('Image with centroid', image)
-			# cv2.waitKey(1)
-			#-----------------------------------------------------
-			# Things to do if an object is detected.
-			if(self.objectFound):
+		if(self.rotate_image_angle == 0):
+			x_error, z_error = self.units_converter.px_to_mm(self.posError_image[0], self.image_width), self.units_converter.px_to_mm(self.posError_image[1], self.image_width)
+		elif(self.rotate_image_angle == 90):
+			z_error, x_error = self.units_converter.px_to_mm(self.posError_image[0], self.image_width), self.units_converter.px_to_mm(self.posError_image[1], self.image_width)
+		# Flip the sign of Z-error since image coordinates and physical coordinates are reversed.
+		# z_error = -z_error
 
-				if ((self.stage_auto_prev == 0 and self.stage_auto == 1)):
-					# If we switched from manual to auto stage control.
-					self.resetPID = True
+		# get the object location along the optical axis. 
+		# Is the object position necessary for this? Alternatively we can pass the centroid
+		# and handle this downstream
+		if(self.track_focus):
+			pass
+			'''
+			y_error will be set by the y focus tracking controller, 
+			which has a reference of this tracking controller, and can set self.focus_error and self.track_focus
+			'''
+		else:
+			self.focus_error = 0
 
-				self.stage_auto_prev = self.stage_auto
-				# Find the object's position relative to the tracking set point on the image
-				self.posError_image = self.centroid - self.image_setPoint
-				# Get the error and convert it to mm
-				# x_error, z_error are in mm
+		# Emit the detected centroid position so other widgets can access it.
+		self.centroid_image.emit(self.centroid)
+		self.Rect_pt1_pt2.emit(self.rect_pts)
 
-				# Need to update this continuously to account for the user changing the resolution on-the-fly.
-				self.update_image_center_width()				
+		X_stage, Y_stage, Theta_stage = self.internal_state.data['X_stage'], self.internal_state.data['Y_stage'], self.internal_state.data['Theta_stage']
+		
+		self.update_image_position()
+		self.update_stage_position(X_stage, Y_stage, Theta_stage)
+		self.update_obj_position()
+		# get motion commands
+		# Error is in mm.
+		# print('Image error: {}, {}, {} mm'.format(x_error, y_error, z_error))
 
-				if(self.rotate_image_angle == 0):
-					x_error, z_error = self.units_converter.px_to_mm(self.posError_image[0], self.image_width), self.units_converter.px_to_mm(self.posError_image[1], self.image_width)
-				elif(self.rotate_image_angle == 90):
-					z_error, x_error = self.units_converter.px_to_mm(self.posError_image[0], self.image_width), self.units_converter.px_to_mm(self.posError_image[1], self.image_width)
-				# Flip the sign of Z-error since image coordinates and physical coordinates are reversed.
-				# z_error = -z_error
+		if self.stage_tracking_enabled:
+			X_order, Y_order, Theta_order = self.get_motion_commands(x_error,self.focus_error,z_error)
 
-				# get the object location along the optical axis. 
-				# Is the object position necessary for this? Alternatively we can pass the centroid
-				# and handle this downstream
-				if(self.track_focus):
-					pass
-					'''
-					y_error will be set by the y focus tracking controller, 
-					which has a reference of this tracking controller, and can set self.focus_error and self.track_focus
-					'''
-				else:
-					self.focus_error = 0
+		# 202109@@@
+		''' 
+		# New serial interface (send data directly to micro-controller object)
+		self.microcontroller.move_x_nonblocking(X_order*STAGE_MOVEMENT_SIGN_X)
+		if LIQUID_LENS_FOCUS_TRACKING == False:
+			self.microcontroller.move_y_nonblocking(Y_order*STAGE_MOVEMENT_SIGN_Y)
+			# when doing focus tracking with liquid lens, because of the potential difference update rate, y_order is sent separately
+		self.microcontroller.move_theta_nonblocking(Theta_order*STAGE_MOVEMENT_SIGN_THETA)  
+		'''
 
-				# Emit the detected centroid position so other widgets can access it.
-				self.centroid_image.emit(self.centroid)
-				self.Rect_pt1_pt2.emit(self.rect_pts)
+		# Update the Internal State Model
+		self.update_internal_state()
 
-				X_stage, Y_stage, Theta_stage = self.internal_state.data['X_stage'], self.internal_state.data['Y_stage'], self.internal_state.data['Theta_stage']
-				
-				self.update_image_position()
-				self.update_stage_position(X_stage, Y_stage, Theta_stage)
-				self.update_obj_position()
-				# get motion commands
-				# Error is in mm.
-				# print('Image error: {}, {}, {} mm'.format(x_error, y_error, z_error))
-				X_order, Y_order, Theta_order = self.get_motion_commands(x_error,self.focus_error,z_error)
+		# Send a signal to the DataSaver module and instruct it to Save Data
+		if self.internal_state.data['Acquisition'] == True:
+			# print('Sending data for saving...')
+			self.save_data_signal.emit()
 
-				''' 202109@@@
-				# New serial interface (send data directly to micro-controller object)
-				self.microcontroller.move_x_nonblocking(X_order*STAGE_MOVEMENT_SIGN_X)
-				if LIQUID_LENS_FOCUS_TRACKING == False:
-					self.microcontroller.move_y_nonblocking(Y_order*STAGE_MOVEMENT_SIGN_Y)
-					# when doing focus tracking with liquid lens, because of the potential difference update rate, y_order is sent separately
-				self.microcontroller.move_theta_nonblocking(Theta_order*STAGE_MOVEMENT_SIGN_THETA)  
-				'''
+		self.measure_tracking_fps()
 
-			# Update the Internal State Model
-			self.update_internal_state()
-
-			# Send a signal to the DataSaver module and instruct it to Save Data
-			if self.internal_state.data['Acquisition'] == True:
-				# print('Sending data for saving...')
-				self.save_data_signal.emit()
-
-			self.get_real_tracking_fps()
-
-	def get_real_tracking_fps(self):
+	def measure_tracking_fps(self):
 		# measure real fps
 		timestamp_now = round(time.time())
 		if timestamp_now == self.timestamp_last:
@@ -266,17 +220,15 @@ class TrackingController(QObject):
 			self.timestamp_last = timestamp_now
 			self.fps_real = self.counter
 			self.counter = 0
-			# print('real camera fps is ' + str(self.fps_real))
 			self.signal_tracking_fps.emit(self.fps_real)
 			
 	# Triggered when you hit image_tracking_enabled
-	def initialise_track(self):
+	def reset_track(self):
 		# @@@ Testing
-		print('Initializing track...')
+		print('resetting track...')
 		self.tracking_frame_counter = 0
-		self.start_flag = True
+		self.is_first_frame = True
 		self.objectFound = False
-		self.tracking_triggered_prev = False
 		self.tracker_image.reset()
 
 		#Time
@@ -299,7 +251,7 @@ class TrackingController(QObject):
 		self.Y = deque(maxlen=self.dequeLen)
 		self.Z = deque(maxlen=self.dequeLen)
 
-	def update_elapsed_time(self):
+	def _update_elapsed_time(self):
 		self.Time.append(time.time() - self.begining_Time)
 
 	def update_stage_position(self,x,y,theta):
@@ -334,10 +286,10 @@ class TrackingController(QObject):
 			self.pid_controller_x.initiate(x_error_steps,self.Time[-1]) #reset the PID
 			self.pid_controller_y.initiate(y_error_steps,self.Time[-1]) #reset the PID
 			self.pid_controller_theta.initiate(theta_error_steps,self.Time[-1]) #reset the PID
-			
 			X_order = 0
 			Y_order = 0
 			Theta_order = 0
+			self.resetPID = False
 
 		else:
 			X_order = self.pid_controller_x.update(x_error_steps,self.Time[-1])
@@ -354,45 +306,24 @@ class TrackingController(QObject):
 
 	# Image related functions
 
-	def set_image_type(self):
-		try:
-			imW, imH, channels = np.shape(self.image)
-			if(channels>2):
-				self.color = True
-			else:
-				self.color = False
-		except:
-			self.color = False
-
-	def update_image_center_width(self):
+	def _update_image_center_width(self):
 		if(self.image is not None):
-			# The image width determines the actual pixelpermm value for the downsampled image.
 			self.image_center, self.image_width = image_processing.get_image_center_width(self.image)
-			# print(self.image_center)
-			# Update search area
-			self.set_searchArea()
-			# The tracking set point is modified since it depends on the image center.
-			self.update_tracking_setpoint()
+			self._set_search_area()
+			self._update_tracking_setpoint() # The tracking set point is modified since it depends on the image center.
 			
-	def update_tracking_setpoint(self):
+	def _update_tracking_setpoint(self):
 		if(self.image_center is not None):
 			self.image_setPoint = self.image_center + self.image_offset
-		else:
-			pass
-		#@@@Testing
-		# print('New tracking set point :{}'.format(self.image_setPoint))
 
-	def update_image_offset(self, new_image_offset):
+	def _update_image_offset(self, new_image_offset):
 		self.image_offset = new_image_offset
-
-		self.update_tracking_setpoint()
-		#@@@Testing
-		# print('Updated image offset to :{}'.format(self.image_offset))
+		self._update_tracking_setpoint()
 
 	def update_roi_bbox(self):
 		self.get_roi_bbox.emit()
 
-	def set_searchArea(self):
+	def _set_search_area(self):
 		self.tracker_image.searchArea = int(self.image_width/Tracking.SEARCH_AREA_RATIO)
 		# print('current search area : {}'.format(self.tracker_image.searchArea))
 

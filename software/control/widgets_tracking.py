@@ -187,13 +187,13 @@ class TrackingControllerWidget(QFrame):
 			self.trackingDataSaver.start_new_track()
 			self.streamHandler.start_tracking()
 			self.btn_track.setText('Stop Tracking')
-
 		else:
 			self.btn_track.setText('Start Tracking')
 			self.streamHandler.stop_tracking()
 			self.internal_state.data['image_tracking_enabled'] = False
 			# Resets the track deques and counters
-			self.trackingController.initialise_track()
+			self.trackingController.reset_track()
+			print('stop tracking')
 
 	# This function is connected to the signal from tracking Controller triggered by 
 	# hardware start-tracking input.
@@ -244,6 +244,10 @@ class TrackingControllerWidget(QFrame):
 		LOWER[1],UPPER[1]=self.range_slider2.getRange()
 		LOWER[2],UPPER[2]=self.range_slider3.getRange()
 		self.streamHandler.set_image_thresholds(np.uint8(LOWER), np.uint8(UPPER))	
+
+	def slot_stop_tracking(self):
+		self.btn_track.setChecked(False) # note that this will not cause the clicked signal to emit
+		self.btn_track.setText('Start Tracking')
 
 class StageCalibrationWidget(QFrame):
 	def __init__(self, internal_state, microcontroller,  main=None, *args, **kwargs):
@@ -388,7 +392,6 @@ class NavigationWidget(QFrame):
     	self.label_Xpos.setText('{:.02f}'.format(round(X_stage,2)))
     	self.label_Ypos.setText('{:.02f}'.format(round(Y_stage,2)))
     	self.label_Thetapos.setText('{:.02f}'.format(round(Theta_stage,2)))
-
 
 class PID_Group_Widget(QFrame):
 	def __init__(self, trackingController):

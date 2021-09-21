@@ -143,6 +143,10 @@ class GravityMachine_GUI(QMainWindow):
 		# Pixel per mm update due to objective change
 		self.liveControlWidget.new_pixelpermm.connect(self.trackingController.units_converter.update_pixel_size)
 		self.microcontroller_receiver.update_plot.connect(self.plotWidget.update_plots)
+
+		# tracking start/stop
+		self.trackingController.signal_stop_tracking.connect(self.trackingControlWidget.slot_stop_tracking)
+		self.trackingController.signal_stop_tracking.connect(self.streamHandler[TRACKING].stop_tracking)
 		
 		#-----------------------------------------------------
 		# Dock area for image display
