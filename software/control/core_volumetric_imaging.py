@@ -300,6 +300,7 @@ class VolumetricImagingStreamHandler(QObject):
                     # to do: add an adjustable scaling factor - this scaling factor depends on the liquid lens scan amplitude and objective being used
                 else:
                     self.tracking_controller.track_focus = False
+                    self.tracking_controller.focus_error = 0
 
         # check if camera has registered requested number of frames
         if self.flag_volumetric_imaging_started and self.number_of_requested_frames!=0 and self.frame_ID>=(self.number_of_requested_frames-1):

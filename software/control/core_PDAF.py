@@ -128,6 +128,7 @@ class PDAFController(QObject):
                             self.tracking_controller_in_plane.focus_error = self.defocus_um/1000.0
                         else:
                             self.tracking_controller_in_plane.track_focus = False
+                            self.tracking_controller_in_plane.focus_error = 0
             except:
                 pass
             # get ready for the next calculation

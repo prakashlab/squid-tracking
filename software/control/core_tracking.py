@@ -153,15 +153,7 @@ class TrackingController(QObject):
 		self.position_error_image = self.centroid - self.tracking_setpoint_image
 		x_error, z_error = self.units_converter.px_to_mm(self.position_error_image[0], self.image_width), self.units_converter.px_to_mm(self.position_error_image[1], self.image_width)
 
-		# focus tracking - to move
-		if(self.track_focus):
-			pass
-			'''
-			focus_error will be set by the focus tracking controller, 
-			which has a reference of this tracking controller, and can set self.focus_error and self.track_focus
-			'''
-		else:
-			self.focus_error = 0
+		# self.focus_error is updated by the focus tracking controller
 
 		# Emit the detected centroid position so other widgets can access it.
 		self.centroid_image.emit(self.centroid)
