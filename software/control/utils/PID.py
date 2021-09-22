@@ -39,8 +39,11 @@ class PID:
         self.previousError=error
         self.Integrator=self.Ki*self.previousOutput
 
-        
-        
+    def initialize(self,error,time):
+        self.previousTime=time
+        self.previousError=error
+        self.Integrator=0
+
     def update(self,error,time): #then you can call 
         """
         Calculate PID output value for given reference input and feedback

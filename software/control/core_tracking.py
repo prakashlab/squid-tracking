@@ -51,8 +51,9 @@ class TrackingController(QObject):
 	save_data_signal -> DataSaver
 
 	'''
-	def __init__(self, microcontroller, internal_state, color = False):
+	def __init__(self, navigationController, microcontroller, internal_state, color = False):
 		QObject.__init__(self)
+		self.navigationController = navigationController
 		self.microcontroller = microcontroller
 		self.internal_state = internal_state
 		self.units_converter = Units_Converter()
@@ -85,8 +86,7 @@ class TrackingController(QObject):
 		# PID controller for each axis
 		self.pid_controller_x = PID.PID()
 		self.pid_controller_y = PID.PID()
-		self.pid_controller_theta = PID.PID()
-		self.resetPID = True
+		self.pid_controller_z = PID.PID()
 
 		self.stage_tracking_enabled = None
 		self.tracking_frame_counter = None
@@ -129,19 +129,20 @@ class TrackingController(QObject):
 	def on_new_frame(self, image, thresholded_image = None):
 
 		self.image = image
-		self._update_elapsed_time()
+		self.Time = time.time() - self.t0 # update elapsed time
 		self._update_image_center_width()
 		self.stage_tracking_enabled = self.internal_state.data['stage_tracking_enabled']
 		
 		# check if it's a new track [or if the object being tracked was lost - removed in this update]
 		if self.tracking_frame_counter == 0:
 			is_first_frame = True
-			self.resetPID = True
 		else:
 			is_first_frame = False
 
 		# get stage position - to add z
-		self._get_stage_position(is_first_frame=is_first_frame)
+		self._get_stage_position(is_first_frame=is_first_frame) 
+		# note that for XTheta-Y tracking, Z_stage is calculated with the previous self.current_radius
+		# which is available post first frame (for the first frame, set z = 0)
 		
 		# track the object in the image
 		self.objectFound, self.centroid, self.rect_pts = self.tracker_image.track(image, thresholded_image, is_first_frame = is_first_frame)
@@ -153,7 +154,6 @@ class TrackingController(QObject):
 			# tracking failed, stop tracking and emit the stop_tracking signal
 			self.internal_state.data['image_tracking_enabled'] = False
 			self.signal_stop_tracking.emit()
-			self.reset_track()
 			return
 
 		# emit the detected object position for display
@@ -169,6 +169,7 @@ class TrackingController(QObject):
 			x_error_mm = in_plane_position_error_mm[0]
 			z_error_mm = in_plane_position_error_mm[1]
 			# self.focus_error is updated by the focus tracking controller
+			y_error_mm = self.focus_error
 			# get position of the object in the image
 			self.X_image = (self.centroid[0]-self.image_center[0])*self.pixel_size_um_scaled/1000
 			self.Z_image = (self.centroid[1]-self.image_center[1])*self.pixel_size_um_scaled/1000
@@ -181,6 +182,7 @@ class TrackingController(QObject):
 		elif TRACKING_CONFIG == 'XY_Z':
 			x_error_mm = in_plane_position_error_mm[0]
 			y_error_mm = in_plane_position_error_mm[1]
+			z_error_mm = self.focus_error
 			# self.focus_error is updated by the focus tracking controller
 			# get position of the object in the image
 			self.X_image = (self.centroid[0]-self.image_center[0])*self.pixel_size_um_scaled/1000
@@ -190,21 +192,34 @@ class TrackingController(QObject):
 			self.Y = self.Y_stage + self.Y_image
 			self.Z = self.Z_stage # can include the offset calculated from focus tracking controller later
 		
-		'''				
-		# get motion commands
+		# stage tracking
 		if self.stage_tracking_enabled:
-			X_order, Y_order, Theta_order = self.get_motion_commands(x_error,self.focus_error,z_error)
-		'''
-
-		# 202109@@@
-		''' 
-		# New serial interface (send data directly to micro-controller object)
-		self.microcontroller.move_x_nonblocking(X_order*STAGE_MOVEMENT_SIGN_X)
-		if LIQUID_LENS_FOCUS_TRACKING == False:
-			self.microcontroller.move_y_nonblocking(Y_order*STAGE_MOVEMENT_SIGN_Y)
-			# when doing focus tracking with liquid lens, because of the potential difference update rate, y_order is sent separately
-		self.microcontroller.move_theta_nonblocking(Theta_order*STAGE_MOVEMENT_SIGN_THETA)  
-		'''
+			
+			# get PID calculation result
+			x_correction_mm,y_correction_mm,z_correction_mm = self._get_PID_feedback(x_error_mm,y_error_mm,z_error_mm,is_first_frame)
+			
+			# get motion commands
+			x_correction_usteps = int(x_correction_mm/(SCREW_PITCH_X_MM/FULLSTEPS_PER_REV_X/self.navigationController.x_microstepping))
+			y_correction_usteps = int(y_correction_mm/(SCREW_PITCH_Y_MM/FULLSTEPS_PER_REV_Y/self.navigationController.y_microstepping))
+			if TRACKING_CONFIG == 'XTheta_Y':
+				z_correction_theta = z_correction_mm/self.current_radius 
+				z_correction_usteps = int(z_correction_theta/(2*np.pi/GEAR_RATIO_THETA/FULLSTEPS_PER_REV_THETA/self.navigationController.theta_microstepping))
+			else:
+				z_correction_usteps = int(y_correction_mm/(SCREW_PITCH_Y_MM/FULLSTEPS_PER_REV_Y/self.navigationController.y_microstepping))
+		
+			# send motion commands
+			if TRACKING_CONFIG == 'XY_Z':
+				self.microcontroller.move_x_usteps(x_correction_usteps)
+				self.microcontroller.move_y_usteps(y_correction_usteps) 
+				self.microcontroller.move_z_usteps(z_correction_usteps) # can move to the focus tracking controller
+			elif TRACKING_CONFIG == 'XZ_Y':
+				self.microcontroller.move_x_usteps(x_correction_usteps) # in-plane axis 0
+				self.microcontroller.move_y_usteps(z_correction_usteps)	# in-plane axis 1
+				self.microcontroller.move_z_usteps(y_correction_usteps) # focus axis - can move to the focus tracking controller
+			elif TRACKING_CONFIG == 'XTheta_Y':
+				self.microcontroller.move_x_usteps(x_correction_usteps) # in-plane axis 0
+				self.microcontroller.move_y_usteps(z_correction_usteps) # in-plane axis 1
+				self.microcontroller.move_z_usteps(y_correction_usteps) # focus axis - can move to the focus tracking controller
 
 		# Update the Internal State Model
 		self.update_internal_state()
@@ -239,48 +254,29 @@ class TrackingController(QObject):
 				self.Z_stage = self.Z_stage + self.current_radius*delta_theta
 		else:
 			self.Z_stage = self.internal_state.data['Z_stage']
+
+	def _get_PID_feedback(self,x_error_mm,y_error_mm,z_error_mm,is_first_frame):
+		if is_first_frame:
+			self.pid_controller_x.initialize(x_error_mm,self.Time)
+			self.pid_controller_y.initialize(y_error_mm,self.Time)
+			self.pid_controller_z.initialize(z_error_mm,self.Time)
+			x_correction_mm = 0
+			y_correction_mm = 0
+			z_correction_mm = 0
+		else:
+			x_correction_mm = self.pid_controller_x.update(x_error_mm,self.Time)
+			y_correction_mm = self.pid_controller_y.update(y_error_mm,self.Time)
+			z_correction_mm = self.pid_controller_z.update(z_error_mm,self.Time)
+		return x_correction_mm,y_correction_mm,z_correction_mm
 			
-	# Triggered when you hit image_tracking_enabled
+	# called before a new track is started
 	def reset_track(self):
 		self.tracking_frame_counter = 0
 		self.objectFound = False
 		self.tracker_image.reset()
-		self.t0 = time.time()
-
-	def _update_elapsed_time(self):
-		self.Time = time.time() - self.t0
+		self.t0 = time.time()		
 	
-	def get_motion_commands(self, x_error, y_error, z_error):
-		# Take an error signal and pass it through a PID algorithm
-		# Convert from mm to steps (these are rounded to the nearest integer).
-		x_error_steps = int(Motion.STEPS_PER_MM_X*x_error)
-		y_error_steps = int(Motion.STEPS_PER_MM_Y*y_error)
-		theta_error_steps = int(self.units_converter.Z_mm_to_step(z_error, self.X_stage[-1]))
-
-		if self.resetPID:
-			self.pid_controller_x.initiate(x_error_steps,self.Time[-1]) #reset the PID
-			self.pid_controller_y.initiate(y_error_steps,self.Time[-1]) #reset the PID
-			self.pid_controller_theta.initiate(theta_error_steps,self.Time[-1]) #reset the PID
-			X_order = 0
-			Y_order = 0
-			Theta_order = 0
-			self.resetPID = False
-
-		else:
-			X_order = self.pid_controller_x.update(x_error_steps,self.Time[-1])
-			X_order = round(X_order,2)
-
-			Y_order = self.pid_controller_y.update(y_error_steps,self.Time[-1])
-			# Y_order = y_error_steps #@@@ NonPID focus tracking; may need to reverse the sign - no longer needed, to remove in the next update
-			Y_order = round(Y_order,2)
-
-			Theta_order = self.pid_controller_theta.update(theta_error_steps,self.Time[-1])
-			Theta_order = round(Theta_order,2)
-
-		return X_order, Y_order, Theta_order
-
 	# Image related functions
-
 	def _update_image_center_width(self):
 		if(self.image is not None):
 			self.image_center, self.image_width = image_processing.get_image_center_width(self.image)

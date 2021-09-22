@@ -83,7 +83,7 @@ class GravityMachine_GUI(QMainWindow):
 		#-----------------------------------------------------------------------------------------------		
 		self.liveController = {key:core.LiveController(self.camera[key],self.microcontroller) for key in self.imaging_channels}
 		self.navigationController = core.NavigationController(self.microcontroller)
-		self.trackingController = core_tracking.TrackingController(self.microcontroller,self.internal_state,color = CAMERAS[TRACKING]['is_color'])
+		self.trackingController = core_tracking.TrackingController(self.navigationController,self.microcontroller,self.internal_state,color = CAMERAS[TRACKING]['is_color'])
 		self.trackingDataSaver = core_tracking.TrackingDataSaver(self.internal_state)
 		self.microcontroller_receiver = core_tracking.microcontroller_Receiver(self.microcontroller, self.internal_state) # Microcontroller Receiver object
 					

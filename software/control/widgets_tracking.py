@@ -194,7 +194,6 @@ class TrackingControllerWidget(QFrame):
 			self.btn_track.setText('Start Tracking')
 			self.streamHandler.stop_tracking()
 			self.internal_state.data['image_tracking_enabled'] = False
-			self.trackingController.reset_track()
 			print('stop tracking')
 
 	# This function is connected to the signal from tracking Controller triggered by 
@@ -427,9 +426,9 @@ class PID_Group_Widget(QFrame):
 		self.PID_widget_y.spinboxI.valueChanged.connect(self.trackingController.pid_controller_y.update_I)
 		self.PID_widget_y.spinboxD.valueChanged.connect(self.trackingController.pid_controller_y.update_D)
 		# Theta
-		self.PID_widget_z.spinboxP.valueChanged.connect(self.trackingController.pid_controller_theta.update_P)
-		self.PID_widget_z.spinboxI.valueChanged.connect(self.trackingController.pid_controller_theta.update_I)
-		self.PID_widget_z.spinboxD.valueChanged.connect(self.trackingController.pid_controller_theta.update_D)
+		self.PID_widget_z.spinboxP.valueChanged.connect(self.trackingController.pid_controller_z.update_P)
+		self.PID_widget_z.spinboxI.valueChanged.connect(self.trackingController.pid_controller_z.update_I)
+		self.PID_widget_z.spinboxD.valueChanged.connect(self.trackingController.pid_controller_z.update_D)
 
 class PID_Widget(QFrame):
 	
