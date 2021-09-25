@@ -335,16 +335,10 @@ class LiveController(QObject):
 
     # illumination control
     def turn_on_illumination(self):
-        if self.mode == MicroscopeMode.BFDF:
-            self.microcontroller.toggle_LED(1)
-        else:
-            self.microcontroller.toggle_laser(1)
+        pass
 
     def turn_off_illumination(self):
-        if self.mode == MicroscopeMode.BFDF:
-            self.microcontroller.toggle_LED(0)
-        else:
-            self.microcontroller.toggle_laser(0)
+        pass
 
     def start_live(self):
         self.is_live = True
@@ -463,47 +457,61 @@ class LiveController(QObject):
         if self.fps_software_trigger <= 5:
             self.turn_off_illumination()
 
+
 class NavigationController(QObject):
 
-    xPos = Signal(float)
-    yPos = Signal(float)
-    zPos = Signal(float)
-    thetaPos = Signal(float)
+    signal_x_mm = Signal(float)
+    signal_y_mm = Signal(float)
+    signal_z_mm = Signal(float)
+    signal_theta_degree = Signal(float)
 
     def __init__(self,microcontroller):
         QObject.__init__(self)
         self.microcontroller = microcontroller
-        self.x_pos = 0 # in mm
-        self.y_pos = 0 # in mm
-        self.theta_pos = 0 # in radians
-        self.z_pos = 0 # in mm
+        self.x_pos_mm = 0
+        self.y_pos_mm = 0
+        self.z_pos_mm = 0
+        self.theta_pos_rad = 0
+        self.x_microstepping = MICROSTEPPING_DEFAULT_X
+        self.y_microstepping = MICROSTEPPING_DEFAULT_Y
+        self.z_microstepping = MICROSTEPPING_DEFAULT_Z
+        self.theta_microstepping = MICROSTEPPING_DEFAULT_THETA
 
-    def move_x(self,delta):
-        self.microcontroller.move_x(delta)
-        self.x_pos = self.x_pos + delta
+    def move_x_usteps(self,usteps):
+        self.microcontroller.move_x_usteps(usteps)
 
-    def move_y(self,delta):
-        self.microcontroller.move_y(delta)
-        self.y_pos = self.y_pos + delta
+    def move_y_usteps(self,usteps):
+        self.microcontroller.move_y_usteps(usteps)
 
-    def move_z(self,delta):
-        self.microcontroller.move_z(delta)
-        self.z_pos = self.z_pos + delta
+    def move_z_usteps(self,usteps):
+        self.microcontroller.move_z_usteps(usteps)
 
-    def move_theta(self,delta):
-        self.microcontroller.move_theta(delta)
-        self.theta_pos = self.theta_pos + delta
+    def home_x(self):
+        self.microcontroller.home_x()
 
-    # For closed loop operation get stage positions from uController.
-    def update_stage_positions(self, x_pos, y_pos, theta_pos):
-        self.x_pos = x_pos
-        self.y_pos = y_pos
-        self.theta_pos = theta_pos
+    def home_y(self):
+        self.microcontroller.home_y()
 
-    # @@@ Implement later. Make the NavigationController the central node for stage positions.
-    def emit_stage_positions(self):
+    def home_z(self):
+        self.microcontroller.home_z()
+
+    def home_theta(self):
+        self.microcontroller.home_theta()
+
+    def zero_x(self):
+        self.microcontroller.zero_x()
+
+    def zero_y(self):
+        self.microcontroller.zero_y()
+
+    def zero_z(self):
+        self.microcontroller.zero_z()
+
+    def zero_theta(self):
+        self.microcontroller.zero_tehta()
+
+    def home(self):
         pass
-
 
 
 class ImageDisplay(QObject):
@@ -526,11 +534,9 @@ class ImageDisplay(QObject):
             # process the queue
             try:
                 [image, frame_ID, timestamp, imaging_channel] = self.queue.get(timeout=0.1)
-           
                 self.image_lock.acquire(True)
                 # Send image and imaging_channel
                 self.image_to_display.emit(image, imaging_channel)
-               
                 self.image_lock.release()
                 self.queue.task_done()
             except:
@@ -544,7 +550,6 @@ class ImageDisplay(QObject):
             # print('In image display queue')
             self.queue.put_nowait([image, None, None, imaging_channel])
             # when using self.queue.put(str_) instead of try + nowait, program can be slowed down despite multithreading because of the block and the GIL
-        
         except:
             pass
             # print('imageDisplay queue is full, image discarded')
@@ -616,19 +621,10 @@ class ImageDisplayWindow(QMainWindow):
         self.widget.setLayout(layout)
         self.setCentralWidget(self.widget)
 
-    def display_image(self,image, imaging_channel = TRACKING):
-        
+    def display_image(self,image, imaging_channel = TRACKING):    
         image = np.copy(image) # Avoid overwriting the source image
-        
-      
-        
-     
-
         if(imaging_channel == TRACKING):
-
             self.image_height, self.image_width = image_processing.get_image_height_width(image)
-
-
             if(self.DrawRect):
                 cv2.rectangle(image, self.ptRect1, self.ptRect2,(255,255,255) , 4) #cv2.rectangle(img, (20,20), (300,300),(0,0,255) , 2)#
                 self.DrawRect=False
@@ -640,15 +636,12 @@ class ImageDisplayWindow(QMainWindow):
             if(self.DrawCrossHairs):
                 # Only need to do this if the image size changes
                 self.update_image_center_width(image)
-
                 self.draw_crosshairs()
                 cv2.line(image, self.horLine_pt1, self.horLine_pt2, (255,255,255), thickness=3, lineType=8, shift=0) 
                 cv2.line(image, self.verLine_pt1, self.verLine_pt2, (255,255,255), thickness=3, lineType=8, shift=0) 
 
-
         self.graphics_widget.img.setImage(image, autoLevels=False)
         # print('In ImageDisplayWindow display image')
-    
     
     def draw_rectangle(self, pts):
         # Connected to Signal from Tracking object
