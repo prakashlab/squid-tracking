@@ -296,103 +296,170 @@ class StageCalibrationWidget(QFrame):
 		self.homing_button.setText(self.internal_state.data['homing-state'])
 
 class NavigationWidget(QFrame):
-    def __init__(self, navigationController, main=None, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        self.navigationController = navigationController
-        self.add_components()
-        self.setFrameStyle(QFrame.Panel | QFrame.Raised)
+	def __init__(self, navigationController, main=None, *args, **kwargs):
+		super().__init__(*args, **kwargs)
+		self.navigationController = navigationController
+		self.add_components()
+		self.setFrameStyle(QFrame.Panel | QFrame.Raised)
 
-    def add_components(self):
-        self.label_Xpos = QLabel()
-        self.label_Xpos.setNum(0)
-        self.label_Xpos.setFrameStyle(QFrame.Panel | QFrame.Sunken)
-        self.entry_dX = QDoubleSpinBox()
-        self.entry_dX.setMinimum(0) 
-        self.entry_dX.setMaximum(5) 
-        self.entry_dX.setSingleStep(0.2)
-        self.entry_dX.setValue(0)
-        self.btn_moveX_forward = QPushButton('Forward')
-        self.btn_moveX_forward.setDefault(False)
-        self.btn_moveX_backward = QPushButton('Backward')
-        self.btn_moveX_backward.setDefault(False)
-        
-        self.label_Ypos = QLabel()
-        self.label_Ypos.setNum(0)
-        self.label_Ypos.setFrameStyle(QFrame.Panel | QFrame.Sunken)
-        self.entry_dY = QDoubleSpinBox()
-        self.entry_dY.setMinimum(0)
-        self.entry_dY.setMaximum(5)
-        self.entry_dY.setSingleStep(0.2)
-        self.entry_dY.setValue(0)
-        self.btn_moveY_forward = QPushButton('Forward')
-        self.btn_moveY_forward.setDefault(False)
-        self.btn_moveY_backward = QPushButton('Backward')
-        self.btn_moveY_backward.setDefault(False)
+	def add_components(self):
+		self.label_Xpos = QLabel()
+		self.label_Xpos.setNum(0)
+		self.label_Xpos.setFrameStyle(QFrame.Panel | QFrame.Sunken)
+		self.entry_dX = QDoubleSpinBox()
+		self.entry_dX.setMinimum(0) 
+		self.entry_dX.setMaximum(5) 
+		self.entry_dX.setSingleStep(0.2)
+		self.entry_dX.setValue(0)
+		self.btn_moveX_forward = QPushButton('Forward')
+		self.btn_moveX_forward.setDefault(False)
+		self.btn_moveX_backward = QPushButton('Backward')
+		self.btn_moveX_backward.setDefault(False)
+		
+		self.label_Ypos = QLabel()
+		self.label_Ypos.setNum(0)
+		self.label_Ypos.setFrameStyle(QFrame.Panel | QFrame.Sunken)
+		self.entry_dY = QDoubleSpinBox()
+		self.entry_dY.setMinimum(0)
+		self.entry_dY.setMaximum(5)
+		self.entry_dY.setSingleStep(0.2)
+		self.entry_dY.setValue(0)
+		self.btn_moveY_forward = QPushButton('Forward')
+		self.btn_moveY_forward.setDefault(False)
+		self.btn_moveY_backward = QPushButton('Backward')
+		self.btn_moveY_backward.setDefault(False)
 
-        self.label_Thetapos = QLabel()
-        self.label_Thetapos.setNum(0)
-        self.label_Thetapos.setFrameStyle(QFrame.Panel | QFrame.Sunken)
-        self.entry_dTheta = QDoubleSpinBox()
-        self.entry_dTheta.setMinimum(0) 
-        self.entry_dTheta.setMaximum(2*np.pi) 
-        self.entry_dTheta.setSingleStep(0.01)
-        self.entry_dTheta.setValue(0)
-        self.btn_moveTheta_forward = QPushButton('Forward')
-        self.btn_moveTheta_forward.setDefault(False)
-        self.btn_moveTheta_backward = QPushButton('Backward')
-        self.btn_moveTheta_backward.setDefault(False)
-        
-        grid_line0 = QGridLayout()
-        grid_line0.addWidget(QLabel('X (mm)'), 0,0)
-        grid_line0.addWidget(self.label_Xpos, 0,1)
-        grid_line0.addWidget(self.entry_dX, 0,2)
-        grid_line0.addWidget(self.btn_moveX_forward, 0,3)
-        grid_line0.addWidget(self.btn_moveX_backward, 0,4)
+		self.label_Zpos = QLabel()
+		self.label_Zpos.setNum(0)
+		self.label_Zpos.setFrameStyle(QFrame.Panel | QFrame.Sunken)
+		self.entry_dZ = QDoubleSpinBox()
+		self.entry_dZ.setMinimum(0)
+		self.entry_dZ.setMaximum(5)
+		self.entry_dZ.setSingleStep(0.2)
+		self.entry_dZ.setValue(0)
+		self.btn_moveZ_forward = QPushButton('Forward')
+		self.btn_moveZ_forward.setDefault(False)
+		self.btn_moveZ_backward = QPushButton('Backward')
+		self.btn_moveZ_backward.setDefault(False)
 
-        grid_line1 = QGridLayout()
-        grid_line1.addWidget(QLabel('Y (mm)'), 0,0)
-        grid_line1.addWidget(self.label_Ypos, 0,1)
-        grid_line1.addWidget(self.entry_dY, 0,2)
-        grid_line1.addWidget(self.btn_moveY_forward, 0,3)
-        grid_line1.addWidget(self.btn_moveY_backward, 0,4)
+		self.label_Thetapos = QLabel()
+		self.label_Thetapos.setNum(0)
+		self.label_Thetapos.setFrameStyle(QFrame.Panel | QFrame.Sunken)
+		self.entry_dTheta = QDoubleSpinBox()
+		self.entry_dTheta.setMinimum(0) 
+		self.entry_dTheta.setMaximum(2*np.pi) 
+		self.entry_dTheta.setSingleStep(0.01)
+		self.entry_dTheta.setValue(0)
+		self.btn_moveTheta_forward = QPushButton('Forward')
+		self.btn_moveTheta_forward.setDefault(False)
+		self.btn_moveTheta_backward = QPushButton('Backward')
+		self.btn_moveTheta_backward.setDefault(False)
+		
+		grid_line0 = QGridLayout()
+		grid_line0.addWidget(QLabel('X (mm)'), 0,0)
+		grid_line0.addWidget(self.label_Xpos, 0,1)
+		grid_line0.addWidget(self.entry_dX, 0,2)
+		grid_line0.addWidget(self.btn_moveX_forward, 0,3)
+		grid_line0.addWidget(self.btn_moveX_backward, 0,4)
 
-        grid_line2 = QGridLayout()
-        grid_line2.addWidget(QLabel('Theta (radians)'), 0,0)
-        grid_line2.addWidget(self.label_Thetapos, 0,1)
-        grid_line2.addWidget(self.entry_dTheta, 0,2)
-        grid_line2.addWidget(self.btn_moveTheta_forward, 0,3)
-        grid_line2.addWidget(self.btn_moveTheta_backward, 0,4)
+		grid_line1 = QGridLayout()
+		grid_line1.addWidget(QLabel('Y (mm)'), 0,0)
+		grid_line1.addWidget(self.label_Ypos, 0,1)
+		grid_line1.addWidget(self.entry_dY, 0,2)
+		grid_line1.addWidget(self.btn_moveY_forward, 0,3)
+		grid_line1.addWidget(self.btn_moveY_backward, 0,4)
 
-        self.grid = QGridLayout()
-        self.grid.addLayout(grid_line0,0,0)
-        self.grid.addLayout(grid_line1,1,0)
-        self.grid.addLayout(grid_line2,2,0)
-        self.setLayout(self.grid)
+		if TRACKING_CONFIG == 'XTheta_Y':
+			grid_line2 = QGridLayout()
+			grid_line2.addWidget(QLabel('Theta (degree)'), 0,0)
+			grid_line2.addWidget(self.label_Thetapos, 0,1)
+			grid_line2.addWidget(self.entry_dTheta, 0,2)
+			grid_line2.addWidget(self.btn_moveTheta_forward, 0,3)
+			grid_line2.addWidget(self.btn_moveTheta_backward, 0,4)
+		else:
+			grid_line2 = QGridLayout()
+			grid_line2.addWidget(QLabel('Z (mm)'), 0,0)
+			grid_line2.addWidget(self.label_Zpos, 0,1)
+			grid_line2.addWidget(self.entry_dZ, 0,2)
+			grid_line2.addWidget(self.btn_moveZ_forward, 0,3)
+			grid_line2.addWidget(self.btn_moveZ_backward, 0,4)
 
-        self.btn_moveX_forward.clicked.connect(self.move_x_forward)
-        self.btn_moveX_backward.clicked.connect(self.move_x_backward)
-        self.btn_moveY_forward.clicked.connect(self.move_y_forward)
-        self.btn_moveY_backward.clicked.connect(self.move_y_backward)
-        self.btn_moveTheta_forward.clicked.connect(self.move_theta_forward)
-        self.btn_moveTheta_backward.clicked.connect(self.move_theta_backward)
-        
-    def move_x_forward(self):
-        self.navigationController.move_x(self.entry_dX.value())
-    def move_x_backward(self):
-        self.navigationController.move_x(-self.entry_dX.value())
-    def move_y_forward(self):
-        self.navigationController.move_y(self.entry_dY.value())
-    def move_y_backward(self):
-        self.navigationController.move_y(-self.entry_dY.value())
-    def move_theta_forward(self):
-        self.navigationController.move_theta(self.entry_dTheta.value())
-    def move_theta_backward(self):
-        self.navigationController.move_theta(-self.entry_dTheta.value())
-    
-    def update_display(self, X_stage, Y_stage, Theta_stage):
-    	self.label_Xpos.setText('{:.02f}'.format(round(X_stage,2)))
-    	self.label_Ypos.setText('{:.02f}'.format(round(Y_stage,2)))
-    	self.label_Thetapos.setText('{:.02f}'.format(round(Theta_stage,2)))
+		self.grid = QGridLayout()
+		self.grid.addLayout(grid_line0,0,0)
+		self.grid.addLayout(grid_line1,1,0)
+		self.grid.addLayout(grid_line2,2,0)
+		self.setLayout(self.grid)
+
+		self.btn_moveX_forward.clicked.connect(self.move_x_forward)
+		self.btn_moveX_backward.clicked.connect(self.move_x_backward)
+		self.btn_moveY_forward.clicked.connect(self.move_y_forward)
+		self.btn_moveY_backward.clicked.connect(self.move_y_backward)
+		self.btn_moveTheta_forward.clicked.connect(self.move_theta_forward)
+		self.btn_moveTheta_backward.clicked.connect(self.move_theta_backward)
+
+		self.navigationController.signal_x_mm.connect(self.update_x_display)
+		self.navigationController.signal_y_mm.connect(self.update_y_display)
+		self.navigationController.signal_z_mm.connect(self.update_z_display)
+		self.navigationController.signal_theta_degree.connect(self.update_theta_display)
+		
+	def move_x_forward(self):
+		dx_mm = self.entry_dX.value()
+		dx_usteps = dx_mm/(SCREW_PITCH_X_MM/(self.navigationController.x_microstepping*FULLSTEPS_PER_REV_X))
+		self.navigationController.move_x_usteps(STAGE_MOVEMENT_SIGN_X*dx_usteps)
+	def move_x_backward(self):
+		dx_mm = self.entry_dX.value()
+		dx_usteps = dx_mm/(SCREW_PITCH_X_MM/(self.navigationController.x_microstepping*FULLSTEPS_PER_REV_X))
+		self.navigationController.move_x_usteps(-STAGE_MOVEMENT_SIGN_X*dx_usteps)
+	
+	def move_y_forward(self):
+		dy_mm = self.entry_dY.value()
+		dy_usteps = dy_mm/(SCREW_PITCH_Y_MM/(self.navigationController.y_microstepping*FULLSTEPS_PER_REV_Y))
+		if TRACKING_CONFIG == 'XY_Z':
+			self.navigationController.move_y_usteps(STAGE_MOVEMENT_SIGN_Y*dy_usteps)
+		else:
+			self.navigationController.move_z_usteps(STAGE_MOVEMENT_SIGN_Y*dy_usteps)
+	def move_y_backward(self):
+		dy_mm = self.entry_dY.value()
+		dy_usteps = dy_mm/(SCREW_PITCH_Y_MM/(self.navigationController.y_microstepping*FULLSTEPS_PER_REV_Y))
+		if TRACKING_CONFIG == 'XY_Z':
+			self.navigationController.move_y_usteps(-STAGE_MOVEMENT_SIGN_Y*dy_usteps)
+		else:
+			self.navigationController.move_z_usteps(-STAGE_MOVEMENT_SIGN_Y*dy_usteps)
+
+	def move_z_forward(self):
+		dz_mm = self.entry_dZ.value()
+		dz_usteps = self.entry_dZ.value()/(SCREW_PITCH_Z_MM/(self.navigationController.z_microstepping*FULLSTEPS_PER_REV_Z))
+		if TRACKING_CONFIG == 'XY_Z':
+			self.navigationController.move_z_usteps(STAGE_MOVEMENT_SIGN_Z*dz_usteps)
+		elif TRACKING_CONFIG == 'XZ_Y':
+			self.navigationController.move_y_usteps(STAGE_MOVEMENT_SIGN_Z*dz_usteps)
+	def move_z_backward(self):
+		dz_mm = self.entry_dZ.value()
+		dz_usteps = self.entry_dZ.value()/(SCREW_PITCH_Z_MM/(self.navigationController.z_microstepping*FULLSTEPS_PER_REV_Z))
+		if TRACKING_CONFIG == 'XY_Z':
+			self.navigationController.move_z_usteps(-STAGE_MOVEMENT_SIGN_Z*dz_usteps)
+		elif TRACKING_CONFIG == 'XZ_Y':
+			self.navigationController.move_y_usteps(-STAGE_MOVEMENT_SIGN_Z*dz_usteps)
+
+	def move_theta_forward(self):
+		dTheta_degree = self.entry_dTheta.value()
+		dTheta_rad = (dTheta_degree/360)*2*np.pi
+		dTheta_usteps = dTheta_rad/((2*np.pi)/(FULLSTEPS_PER_REV_THETA*self.navigationController.theta_microstepping*GEAR_RATIO_THETA))
+		self.navigationController.move_y_usteps(STAGE_POS_SIGN_THETA*dTheta_usteps)
+	def move_theta_backward(self):
+		dTheta_degree = self.entry_dTheta.value()
+		dTheta_rad = (dTheta_degree/360)*2*np.pi
+		dTheta_usteps = dTheta_rad/((2*np.pi)/(FULLSTEPS_PER_REV_THETA*self.navigationController.theta_microstepping*GEAR_RATIO_THETA))
+		self.navigationController.move_y_usteps(-STAGE_POS_SIGN_THETA*dTheta_usteps)
+
+	def update_x_display(self,value):
+		self.label_Xpos.setText('{:.03f}'.format(value))
+	def update_y_display(self,value):
+		self.label_Ypos.setText('{:.03f}'.format(value))
+	def update_z_display(self,value):
+		self.label_Zpos.setText('{:.03f}'.format(value))
+	def update_theta_display(self,value):
+		self.label_Thetapos.setText('{:.03f}'.format(value))
 
 class PID_Group_Widget(QFrame):
 	def __init__(self, trackingController):
@@ -659,4 +726,4 @@ class PDAFControllerWidget(QFrame):
     		self.PDAFController.enable_tracking(True)
     	else:
     		self.PDAFController.enable_tracking(False)
-
+    		
