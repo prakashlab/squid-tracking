@@ -71,12 +71,31 @@ class Tracking:
     DEFAULT_INIT_METHOD = "threshold"
 
 class MicrocontrollerDef:
-     # Time interval for reading micro Controller (ms)
-    UCONTROLLER_READ_INTERVAL = 25 
-    MSG_LENGTH = 12
-    CMD_LENGTH = 4
-    N_BYTES_POS = 3
-    RUN_OPENLOOP = False # Determines whether stepper/encoders are used to calculate stage positions.
+    MSG_LENGTH = 24
+    CMD_LENGTH = 8
+    N_BYTES_POS = 4
+
+class CMD_SET:
+    MOVE_X = 0
+    MOVE_Y = 1
+    MOVE_Z = 2
+    MOVE_THETA = 3
+    HOME_OR_ZERO = 5
+    TURN_ON_ILLUMINATION = 10
+    TURN_OFF_ILLUMINATION = 11
+    SET_ILLUMINATION = 12
+    SET_ILLUMINATION_LED_MATRIX = 13
+
+class HOME_OR_ZERO:
+    HOME_NEGATIVE = 1 # motor moves along the negative direction (MCU coordinates)
+    HOME_POSITIVE = 0 # motor moves along the negative direction (MCU coordinates)
+    ZERO = 2
+
+class AXIS:
+    X = 0 # in plane axis 0
+    Y = 1 # in plane axis 1 (actual y or actual z or actual theta - depending on the configuration)
+    Z = 2 # focus axis (actual z or actual y, depending on the configuration)
+    THETA = 3 # not used
 
 class PID_parameters:
     MAX_DISTANCE = 2 # Max distance (in mm) for truncating PID command
