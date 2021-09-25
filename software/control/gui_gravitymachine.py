@@ -55,7 +55,8 @@ class GravityMachine_GUI(QMainWindow):
 		if simulation is True:
 			# Define a camera object for each unique image-stream.
 			self.camera = {key:camera_Daheng.Camera_Simulation() for key in self.imaging_channels}
-			self.microcontroller = microcontroller.Microcontroller_Simulation()
+			# self.microcontroller = microcontroller.Microcontroller_Simulation()
+			self.microcontroller = microcontroller.Microcontroller()
 		else:
 			self.camera = {}
 			for key in self.imaging_channels:
@@ -78,14 +79,10 @@ class GravityMachine_GUI(QMainWindow):
 			else:
 				self.imageSaver[key] = core_tracking.ImageSaver(self.internal_state, imaging_channel = key, image_format = '.bmp', rotate_image_angle = 180)
 
-		self.stateUpdater = core_tracking.StateUpdater(self.microcontroller, self.internal_state)
-		self.microcontroller.set_callback(self.stateUpdater.read_microcontroller)
-
-		#-----------------------------------------------------------------------------------------------
-		# Tracking-related objects
-		#-----------------------------------------------------------------------------------------------		
 		self.liveController = {key:core.LiveController(self.camera[key],self.microcontroller) for key in self.imaging_channels}
 		self.navigationController = core.NavigationController(self.microcontroller)
+		self.stateUpdater = core_tracking.StateUpdater(self.navigationController, self.internal_state)
+		self.microcontroller.set_callback(self.stateUpdater.read_microcontroller)
 		self.trackingController = core_tracking.TrackingController(self.navigationController,self.microcontroller,self.internal_state,color = CAMERAS[TRACKING]['is_color'])
 		self.trackingDataSaver = core_tracking.TrackingDataSaver(self.internal_state)
 		
