@@ -307,6 +307,7 @@ class GravityMachine_GUI(QMainWindow):
 				self.imageArrayDisplayWindow.close()
 			self.trackingDataSaver.close()
 			self.imageDisplayWindow_ThresholdedImage.close()
+			self.microcontroller.close()
 			event.accept()
 		else:
 			event.ignore() 
