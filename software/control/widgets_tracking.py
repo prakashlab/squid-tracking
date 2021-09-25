@@ -170,20 +170,9 @@ class TrackingControllerWidget(QFrame):
 		groupbox_track_layout.addWidget(self.group_sliders,2,0,1,2)
 		self.setLayout(groupbox_track_layout)
 
-	def trigger_track_button(self):
-		if self.btn_track.isChecked():
-			pass
-		else:
-			self.btn_track.setChecked(True)
-			self.do_track_button_tasks()
-
 	def do_track_button_tasks(self):
 		if self.btn_track.isChecked():
-			# Start a new track. If 'Acquire' is true this also creates a track file.
-			# Internal state is changed after creating this file.
-				# Update the internal_state to indicate that object should be tracked using image proc
 			self.internal_state.data['image_tracking_enabled'] = True
-			print('Set image_tracking_enabled to : {}'.format(self.internal_state.data['image_tracking_enabled']))
 			if(self.tracking_init_roi.isChecked()):
 				self.trackingController.update_roi_bbox()
 			self.trackingController.reset_track()
@@ -196,9 +185,15 @@ class TrackingControllerWidget(QFrame):
 			self.internal_state.data['image_tracking_enabled'] = False
 			print('stop tracking')
 
-	# This function is connected to the signal from tracking Controller triggered by 
-	# hardware start-tracking input.
-	def handle_hardware_track_signal(self):
+	def slot_start_tracking(self):
+		# called after start recording is pressed
+		if self.btn_track.isChecked():
+			pass
+		else:
+			self.btn_track.setChecked(True)
+			self.do_track_button_tasks()
+
+	def slot_joystick_button_pressed(self):
 		self.btn_track.toggle()
 		self.do_track_button_tasks()
 

@@ -121,22 +121,19 @@ class GravityMachine_GUI(QMainWindow):
 		self.streamHandler[TRACKING].signal_working_resolution.connect(self.liveControlWidget.update_working_resolution)
 		# Only display the image-display rate of the main/tracking image stream
 		self.streamHandler[TRACKING].signal_fps_display.connect(self.liveControlWidget.update_display_fps)
-		# self.streamHandler[TRACKING].signal_fps.connect(self.liveControlWidget.update_stream_fps)
 		# self.trackingController.centroid_image.connect(self.imageDisplayWindow[TRACKING].draw_circle)
 		self.trackingController.Rect_pt1_pt2.connect(self.imageDisplayWindow[TRACKING].draw_rectangle)
 		self.trackingController.save_data_signal.connect(self.trackingDataSaver.enqueue)
 		self.trackingController.signal_tracking_fps.connect(self.liveControlWidget.update_stream_fps)
 		self.trackingController.signal_update_plots.connect(self.plotWidget.update_plots)
 
-		# Connections for all image-streams
 		for channel in self.imaging_channels:
 			self.streamHandler[channel].signal_fps.connect(self.cameraSettingsWidget[channel].update_stream_fps)
-		# Connect roi from ImageDisplayWindow to TrackingController.
 		self.trackingController.get_roi_bbox.connect(self.imageDisplayWindow[TRACKING].send_bbox)
 		self.imageDisplayWindow[TRACKING].roi_bbox.connect(self.trackingController.tracker_image.set_roi_bbox)
 		self.trackingControlWidget.show_roi.connect(self.imageDisplayWindow[TRACKING].toggle_ROI_selector)
-		# self.microcontroller_receiver.start_tracking_signal.connect(self.trackingControlWidget.handle_hardware_track_signal)
-		self.recordingControlWidget.start_tracking_signal.connect(self.trackingControlWidget.trigger_track_button)
+		self.recordingControlWidget.start_tracking_signal.connect(self.trackingControlWidget.slot_start_tracking)
+		self.stateUpdater.signal_joystick_button_pressed.connect(self.trackingControlWidget.slot_joystick_button_pressed)
 		self.liveControlWidget.signal_update_pixel_size.connect(self.trackingController.update_pixel_size)
 		self.liveControlWidget._update_pixel_size()
 		self.liveControlWidget.signal_update_image_resizing_factor.connect(self.trackingController.update_image_resizing_factor)

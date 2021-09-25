@@ -332,6 +332,8 @@ class TrackingController(QObject):
 
 class StateUpdater(QObject):
 
+	signal_joystick_button_pressed = Signal()
+
 	def __init__(self,navigationController,internal_state):
 		QObject.__init__(self)
 		self.navigationController = navigationController
@@ -402,8 +404,12 @@ class StateUpdater(QObject):
 			self.navigationController.signal_theta_degree.emit(theta_pos_rad*360/(2*np.pi))
 
 		# read push-buttons and switches
-		# self.internal_state.data['stage_tracking_enabled'] = [to finish]
-		# self.internal_state.data['enable_image_tracking_from_hardware_button'] = [to finish]
+		if microcontroller.signal_joystick_button_pressed_event:
+			self.signal_joystick_button_pressed.emit()
+			print('joystick button pressed')
+			microcontroller.signal_joystick_button_pressed_event = False
+		self.internal_state.data['stage_tracking_enabled'] = microcontroller.switch_state
+
 
 class InternalState():
 	'''
