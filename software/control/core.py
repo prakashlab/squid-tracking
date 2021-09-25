@@ -478,13 +478,13 @@ class NavigationController(QObject):
         self.theta_microstepping = MICROSTEPPING_DEFAULT_THETA
 
     def move_x_usteps(self,usteps):
-        self.microcontroller.move_x_usteps(usteps)
+        self.microcontroller.move_x_usteps(int(usteps))
 
     def move_y_usteps(self,usteps):
-        self.microcontroller.move_y_usteps(usteps)
+        self.microcontroller.move_y_usteps(int(usteps))
 
     def move_z_usteps(self,usteps):
-        self.microcontroller.move_z_usteps(usteps)
+        self.microcontroller.move_z_usteps(int(usteps))
 
     def home_x(self):
         self.microcontroller.home_x()
