@@ -1,5 +1,6 @@
 import os
 import glob
+import numpy as np
 
 # TRACKING_CONFIG = 'XY_Z'
 # TRACKING_CONFIG = 'XZ_Y'
@@ -168,9 +169,9 @@ if TRACKING_CONFIG == 'XTheta_Y':
         'Theta_stage':0.0, 'X_image':0, 'Z_image':0, 'image_tracking_enabled':False, 'enable_image_tracking_from_hardware_button':False, 'track_focus':False, 
         'stage_tracking_enabled':False, 'Acquisition':False, 'homing_status': 'not-complete', 'Zero_stage':0, 'optical_path': None, 
         'imaging channels': list(CAMERAS.keys()),  'Objective':DEFAULT_OBJECTIVE, 'basePath':'/', 'experimentID':'track'}
-    PLOT_VARIABLES = {'X':'X','Y':'Y', 'Z':'Z', 'Theta':'Theta_stage', 'Phase':'FocusPhase'}
-    PLOT_COLORS = {'X':'r','Y':'g', 'Z':'b', 'Theta':'c', 'Phase':'w'}
-    PLOT_UNITS = {'X':'mm','Y':'mm', 'Z':'mm', 'Theta':'radians','Phase':'radians'}
+    PLOT_VARIABLES = {'X':'X','Y':'Y', 'Z':'Z', 'Theta':'Theta_stage'}
+    PLOT_COLORS = {'X':'r','Y':'g', 'Z':'b', 'Theta':'c'}
+    PLOT_UNITS = {'X':'mm','Y':'mm', 'Z':'mm', 'Theta':'radians'}
     assert list(PLOT_VARIABLES.keys()) == list(PLOT_COLORS.keys())
     assert list(PLOT_VARIABLES.keys()) == list(PLOT_UNITS.keys())
     DEFAULT_PLOTS = ['X', 'Z']
@@ -189,8 +190,8 @@ elif TRACKING_CONFIG == 'XY_Z':
         'Z_stage':0, 'X_image':0, 'Y_image':0, 'image_tracking_enabled':False, 'enable_image_tracking_from_hardware_button':False, 'track_focus':False, 
         'stage_tracking_enabled':False, 'Acquisition':False, 'homing_status': 'not-complete', 'Zero_stage':0, 'optical_path': None, 
         'imaging channels': list(CAMERAS.keys()),  'Objective':DEFAULT_OBJECTIVE, 'basePath':'/', 'experimentID':'track'}
-    PLOT_VARIABLES = {'X':'X','Y':'Y', 'Z':'Z', 'Phase':'FocusPhase'}
-    PLOT_UNITS = {'X':'mm','Y':'mm', 'Z':'mm','Phase':'radians'}
+    PLOT_VARIABLES = {'X':'X','Y':'Y', 'Z':'Z'}
+    PLOT_UNITS = {'X':'mm','Y':'mm', 'Z':'mm'}
     DEFAULT_PLOTS = ['X', 'Y']
 # changes 9/12/2021
 # X_objStage -> X
@@ -260,7 +261,7 @@ ENCODER_POS_SIGN_THETA = 1
 ENCODER_STEP_SIZE_X_MM = 100e-6
 ENCODER_STEP_SIZE_Y_MM = 100e-6
 ENCODER_STEP_SIZE_Z_MM = 100e-6
-ENCODER_STEP_SIZE_THETA = 1
+ENCODER_STEP_SIZE_THETA = 2*np.pi/(300*4)
 
 FULLSTEPS_PER_REV_X = 200
 FULLSTEPS_PER_REV_Y = 200
