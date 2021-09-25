@@ -78,6 +78,9 @@ class GravityMachine_GUI(QMainWindow):
 			else:
 				self.imageSaver[key] = core_tracking.ImageSaver(self.internal_state, imaging_channel = key, image_format = '.bmp', rotate_image_angle = 180)
 
+		self.stateUpdater = core_tracking.StateUpdater(self.microcontroller, self.internal_state)
+		self.microcontroller.set_callback(self.stateUpdater.read_microcontroller)
+
 		#-----------------------------------------------------------------------------------------------
 		# Tracking-related objects
 		#-----------------------------------------------------------------------------------------------		
@@ -85,8 +88,7 @@ class GravityMachine_GUI(QMainWindow):
 		self.navigationController = core.NavigationController(self.microcontroller)
 		self.trackingController = core_tracking.TrackingController(self.navigationController,self.microcontroller,self.internal_state,color = CAMERAS[TRACKING]['is_color'])
 		self.trackingDataSaver = core_tracking.TrackingDataSaver(self.internal_state)
-		self.microcontroller_receiver = core_tracking.microcontroller_Receiver(self.microcontroller, self.internal_state) # Microcontroller Receiver object
-					
+		
 		#------------------------------------------------------------------
 		# load widgets
 		#------------------------------------------------------------------
@@ -127,6 +129,7 @@ class GravityMachine_GUI(QMainWindow):
 		self.trackingController.Rect_pt1_pt2.connect(self.imageDisplayWindow[TRACKING].draw_rectangle)
 		self.trackingController.save_data_signal.connect(self.trackingDataSaver.enqueue)
 		self.trackingController.signal_tracking_fps.connect(self.liveControlWidget.update_stream_fps)
+		self.trackingController.signal_update_plots.connect(self.plotWidget.update_plots)
 
 		# Connections for all image-streams
 		for channel in self.imaging_channels:
@@ -134,21 +137,17 @@ class GravityMachine_GUI(QMainWindow):
 		# Connect roi from ImageDisplayWindow to TrackingController.
 		self.trackingController.get_roi_bbox.connect(self.imageDisplayWindow[TRACKING].send_bbox)
 		self.imageDisplayWindow[TRACKING].roi_bbox.connect(self.trackingController.tracker_image.set_roi_bbox)
-		# self.microcontroller_receiver.update_display.connect(self.navigationWidget.update_display)
 		self.trackingControlWidget.show_roi.connect(self.imageDisplayWindow[TRACKING].toggle_ROI_selector)
-		self.microcontroller_receiver.update_stage_position.connect(self.navigationWidget.update_display)
-		self.microcontroller_receiver.start_tracking_signal.connect(self.trackingControlWidget.handle_hardware_track_signal)
+		# self.microcontroller_receiver.start_tracking_signal.connect(self.trackingControlWidget.handle_hardware_track_signal)
 		self.recordingControlWidget.start_tracking_signal.connect(self.trackingControlWidget.trigger_track_button)
-		# self.microcontroller_receiver.update_stage_position.connect(self.trackingController.update_stage_position)
 		self.liveControlWidget.signal_update_pixel_size.connect(self.trackingController.update_pixel_size)
 		self.liveControlWidget._update_pixel_size()
 		self.liveControlWidget.signal_update_image_resizing_factor.connect(self.trackingController.update_image_resizing_factor)
 		self.liveControlWidget._update_image_resizing_factor()
-		self.microcontroller_receiver.update_plot.connect(self.plotWidget.update_plots)
 
 		# tracking start/stop
 		self.trackingController.signal_stop_tracking.connect(self.trackingControlWidget.slot_stop_tracking)
-		self.trackingController.signal_stop_tracking.connect(self.streamHandler[TRACKING].stop_tracking)
+		self.trackingController.signal_stop_tracking.connect(self.streamHandler[TRACKING].stop_tracking)		
 		
 		#-----------------------------------------------------
 		# Dock area for image display
@@ -311,7 +310,6 @@ class GravityMachine_GUI(QMainWindow):
 				self.imageArrayDisplayWindow.close()
 			self.trackingDataSaver.close()
 			self.imageDisplayWindow_ThresholdedImage.close()
-			self.microcontroller_receiver.stop()
 			event.accept()
 		else:
 			event.ignore() 

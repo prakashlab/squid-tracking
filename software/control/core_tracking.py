@@ -41,6 +41,7 @@ class TrackingController(QObject):
 	get_roi_bbox = Signal()
 	signal_tracking_fps = Signal(int)
 	signal_stop_tracking = Signal()
+	signal_update_plots = Signal()
 
 	''' 
 	Connection map
@@ -205,7 +206,7 @@ class TrackingController(QObject):
 				z_correction_theta = z_correction_mm/self.current_radius 
 				z_correction_usteps = int(z_correction_theta/(2*np.pi/GEAR_RATIO_THETA/FULLSTEPS_PER_REV_THETA/self.navigationController.theta_microstepping))
 			else:
-				z_correction_usteps = int(y_correction_mm/(SCREW_PITCH_Y_MM/FULLSTEPS_PER_REV_Y/self.navigationController.y_microstepping))
+				z_correction_usteps = int(z_correction_mm/(SCREW_PITCH_Z_MM/FULLSTEPS_PER_REV_Z/self.navigationController.z_microstepping))
 		
 			# send motion commands
 			if TRACKING_CONFIG == 'XY_Z':
@@ -221,10 +222,13 @@ class TrackingController(QObject):
 				self.microcontroller.move_y_usteps(z_correction_usteps) # in-plane axis 1
 				self.microcontroller.move_z_usteps(y_correction_usteps) # focus axis - can move to the focus tracking controller
 
-		# Update the Internal State Model
+		# update the internal states
 		self.update_internal_state()
 
-		# Send a signal to the DataSaver module and instruct it to Save Data
+		# update plots
+		self.signal_update_plots.emit()
+
+		# send a signal to the DataSaver module and instruct it to Save Data
 		if self.internal_state.data['Acquisition'] == True:
 			self.save_data_signal.emit()
 
@@ -325,6 +329,82 @@ class TrackingController(QObject):
 		print('update tracking image resizing factor to ' + str(self.image_resizing_factor))
 		self.pixel_size_um_scaled = self.pixel_size_um/self.image_resizing_factor
 
+
+class StateUpdater(QObject):
+
+	def __init__(self,navigationController,internal_state):
+		QObject.__init__(self)
+		self.navigationController = navigationController
+		self.internal_state = internal_state
+
+	# call back function
+	def read_microcontroller(self,microcontroller):
+		# get the stage positions in usteps or encoder counts
+		x_pos, y_pos, z_pos, _ = microcontroller.get_pos()
+
+		# assign the readings to the correct axes and convert the unit to mm or rad
+		# x axis is the same across configurations
+		if USE_ENCODER_X:
+			x_pos_mm = x_pos*STAGE_POS_SIGN_X*ENCODER_STEP_SIZE_X_MM
+		else:
+			x_pos_mm = x_pos*STAGE_POS_SIGN_X*(SCREW_PITCH_X_MM/(self.navigationController.x_microstepping*FULLSTEPS_PER_REV_X))
+		self.internal_state.data['X_stage'] = x_pos_mm
+		self.navigationController.signal_x_mm.emit(x_pos_mm)
+
+		# Y/Z or Y/Theta depend on the microscope configuration
+		# XY_Z
+		if TRACKING_CONFIG == 'XY_Z':
+			# Y axis
+			if USE_ENCODER_Y:
+				y_pos_mm = y_pos*STAGE_POS_SIGN_Y*ENCODER_STEP_SIZE_Y_MM
+			else:
+				y_pos_mm = y_pos*STAGE_POS_SIGN_Y*(SCREW_PITCH_Y_MM/(self.navigationController.y_microstepping*FULLSTEPS_PER_REV_Y))
+			self.internal_state.data['Y_stage'] = y_pos_mm
+			self.navigationController.signal_y_mm.emit(y_pos_mm)
+			# Z axis (focus axis)
+			if USE_ENCODER_Z:
+				z_pos_mm = z_pos*STAGE_POS_SIGN_Z*ENCODER_STEP_SIZE_Z_MM
+			else:
+				z_pos_mm = z_pos*STAGE_POS_SIGN_Z*(SCREW_PITCH_Z_MM/(self.navigationController.z_microstepping*FULLSTEPS_PER_REV_Z))
+			self.internal_state.data['Z_stage'] = z_pos_mm
+			self.navigationController.signal_z_mm.emit(z_pos_mm)
+		# XZ_Y
+		elif TRACKING_CONFIG == 'XZ_Y':
+			# Z axis
+			if USE_ENCODER_Z: # microcontroller y-axis is connected to the z-stage
+				z_pos_mm = y_pos*STAGE_POS_SIGN_Z*ENCODER_STEP_SIZE_Z_MM 
+			else:
+				z_pos_mm = y_pos*STAGE_POS_SIGN_Z*(SCREW_PITCH_Z_MM/(self.navigationController.z_microstepping*FULLSTEPS_PER_REV_Z))
+			self.internal_state.data['Z_stage'] = z_pos_mm
+			self.navigationController.signal_z_mm.emit(z_pos_mm)
+			# Y axis (focus axis)
+			if USE_ENCODER_Y: # microcontroller z-axis is connected to the y-stage
+				y_pos_mm = z_pos*STAGE_POS_SIGN_Y*ENCODER_STEP_SIZE_Y_MM
+			else:
+				y_pos_mm = z_pos*STAGE_POS_SIGN_Y*(SCREW_PITCH_Y_MM/(self.navigationController.y_microstepping*FULLSTEPS_PER_REV_Y))
+			self.internal_state.data['Y_stage'] = y_pos_mm
+			self.navigationController.signal_y_mm.emit(y_pos_mm)
+		# XTheta_Y
+		elif TRACKING_CONFIG == 'XTheta_Y':
+			# Y axis (focus axis)
+			if USE_ENCODER_Y: # microcontroller z-axis is connected to the y-stage
+				y_pos_mm = z_pos*STAGE_POS_SIGN_Y*ENCODER_STEP_SIZE_Y_MM
+			else:
+				y_pos_mm = z_pos*STAGE_POS_SIGN_Y*(SCREW_PITCH_Y_MM/(self.navigationController.y_microstepping*FULLSTEPS_PER_REV_Y))
+			self.internal_state.data['Y_stage'] = y_pos_mm
+			self.navigationController.signal_y_mm.emit(y_pos_mm)
+			# Theta axis
+			if USE_ENCODER_THETA:
+				theta_pos_rad = y_pos*STAGE_POS_SIGN_THETA*ENCODER_STEP_SIZE_THETA/GEAR_RATIO_THETA
+			else:
+				theta_pos_rad = y_pos*STAGE_POS_SIGN_THETA*(2*np.pi)/(FULLSTEPS_PER_REV_THETA*self.navigationController.theta_microstepping*GEAR_RATIO_THETA)
+			self.internal_state.data['Theta_stage'] = theta_pos_rad
+			self.navigationController.signal_theta_degree.emit(theta_pos_rad*360/(2*np.pi))
+
+		# read push-buttons and switches
+		# self.internal_state.data['stage_tracking_enabled'] = [to finish]
+		# self.internal_state.data['enable_image_tracking_from_hardware_button'] = [to finish]
+
 class InternalState():
 	'''
 	This holds an up-to date internal state of GUI variables as well as Data from microcontroller
@@ -338,117 +418,6 @@ class InternalState():
 		for key in INTERNAL_STATE_VARIABLES:
 			self.data[key] = INITIAL_VALUES[key]
 		print(self.data)
-		
-class microcontroller_Receiver(QObject):
-	'''
-	Receives data from microcontroller and updates the Internal state variables to the latest value
-	Connection Map:
-	StreamHandler (rec new image) -> getData_microcontroller
-	'''
-	update_stage_position = Signal(float, float, float)
-	update_homing_state = Signal()
-	start_tracking_signal = Signal()
-	update_plot = Signal()
-
-	def __init__(self, microcontroller, internal_state):
-		QObject.__init__(self)
-
-		self.microcontroller = microcontroller
-		self.internal_state = internal_state
-		self.units_converter = Units_Converter()
-		self.readings_from_MCU = {key:[] for key in READINGS_FROM_MCU}
-
-		# Define a timer to read the Arduino at regular intervals
-		self.timer_read_uController = QTimer()
-		self.timer_read_uController.setInterval(MicrocontrollerDef.UCONTROLLER_READ_INTERVAL)
-		self.timer_read_uController.timeout.connect(self.getData_microcontroller)
-		self.timer_read_uController.start()
-
-		self.stop_signal_received = False
-
-		self.time_now = 0
-		self.time_prev = 0
-
-		self.x_pos = 0
-		self.y_pos = 0
-		self.theta_pos = 0
-
-	def getData_microcontroller(self):
-		# data = self.microcontroller.read_received_packet_nowait()
-		data = None
-
-		if(data is not None):
-			# Parse the data
-			if(data[0] == ord('M')):
-
-				phase = byte_operations.data2byte_to_int(data[1], data[2])*2*np.pi/65535.
-
-				if(MicrocontrollerDef.RUN_OPENLOOP == True):
-					# X stage position (mm)					
-					self.x_pos = byte_operations.unsigned_to_signed(data[3:6],MicrocontrollerDef.N_BYTES_POS)/(Motion.STEPS_PER_MM_X*Motion.MAX_MICROSTEPS) 
-					# Y stage position (mm)
-					self.y_pos = byte_operations.unsigned_to_signed(data[6:9],MicrocontrollerDef.N_BYTES_POS)/(Motion.STEPS_PER_MM_Y*Motion.MAX_MICROSTEPS)
-					# Theta stage position (encoder counts to radians)
-					self.theta_pos = 2*np.pi*byte_operations.unsigned_to_signed(data[9:12],MicrocontrollerDef.N_BYTES_POS)/(Motion.STEPS_PER_REV_THETA_SHAFT*Motion.MAX_MICROSTEPS) 
-
-				elif(MicrocontrollerDef.RUN_OPENLOOP == False):
-					# X stage position (mm)
-					self.x_pos = X_ENCODER_SIGN*byte_operations.unsigned_to_signed(data[3:6],MicrocontrollerDef.N_BYTES_POS)/(Encoders.COUNTS_PER_MM_X) 
-					# Y stage position (mm)
-					self.y_pos = Y_ENCODER_SIGN*byte_operations.unsigned_to_signed(data[6:9],MicrocontrollerDef.N_BYTES_POS)/(Encoders.COUNTS_PER_MM_Y)
-					# Theta stage position (encoder counts to radians)
-					self.theta_pos = THETA_ENCODER_SIGN*2*np.pi*byte_operations.unsigned_to_signed(data[9:12],MicrocontrollerDef.N_BYTES_POS)/(Encoders.COUNTS_PER_REV_THETA) 
-
-				self.readings_from_MCU['FocusPhase'] = phase
-				self.readings_from_MCU['X_stage'] = self.x_pos
-				self.readings_from_MCU['Y_stage'] = self.y_pos
-				self.readings_from_MCU['Theta_stage'] = self.theta_pos
-
-				self.update_stage_position.emit(self.x_pos, self.y_pos, self.theta_pos)
-
-				for key in READINGS_FROM_MCU:
-					if(key in INTERNAL_STATE_VARIABLES):
-						self.internal_state.data[key] = self.readings_from_MCU[key]
-
-			elif(data[0] == ord('F')):
-				# print('Flag recvd')
-				if(data[1] == ord('S')):
-					# print('Automated stage tracking flag recvd: {}'.format(data[2]))
-					self.internal_state.data['stage_tracking_enabled'] = data[2]
-					
-				elif(data[1] == ord('H')):
-					print('Homing flag state recvd: {}'.format(data[2]))
-					if(data[2] == 0):
-						self.internal_state.data['homing-state'] = 'not-complete'
-
-					elif(data[2] == 1):
-						self.internal_state.data['homing-state'] = 'in-progress'
-					elif(data[2] == 2):
-						self.internal_state.data['homing-state'] = 'complete'
-					
-					print('Homing state: {}'.format(self.internal_state.data['homing-state']))
-
-				elif(data[1] == ord('T')):
-					print('Toggle image tracking signal recvd: {}'.format(data[2]))
-
-					self.internal_state.data['enable_image_tracking_from_hardware_button'] = not(self.internal_state.data['enable_image_tracking_from_hardware_button'])
-				
-					self.start_tracking_signal.emit()
-
-
-				elif(data[1] == ord('F')):
-					print('Focus tracking flag changed in uController: {}'.format(data[2]))
-
-				elif(data[1] == ord('C')):
-					pass
-					# print('Camera trigger flag changed: {}'.format(data[2]))
-			# Send update plot signal
-			self.update_plot.emit()
-		else:
-			pass
-
-	def stop(self):
-		self.stop_signal_received = True
 
 
 class TrackingDataSaver(QObject):
@@ -537,8 +506,6 @@ class TrackingDataSaver(QObject):
 		# self.queue.join()
 		self.stop_signal_received = True
 		self.thread.join()
-
-
 
 	def set_base_path(self,path):
 		'''
