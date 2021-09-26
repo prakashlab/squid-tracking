@@ -408,7 +408,8 @@ class StateUpdater(QObject):
 			self.signal_joystick_button_pressed.emit()
 			print('joystick button pressed')
 			microcontroller.signal_joystick_button_pressed_event = False
-		self.internal_state.data['stage_tracking_enabled'] = microcontroller.switch_state
+		if USE_HARDWARE_SWITCH:
+			self.internal_state.data['stage_tracking_enabled'] = microcontroller.switch_state
 
 
 class InternalState():

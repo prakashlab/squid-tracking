@@ -6,6 +6,8 @@ import numpy as np
 # TRACKING_CONFIG = 'XZ_Y'
 TRACKING_CONFIG = 'XTheta_Y'
 
+USE_HARDWARE_SWITCH = False # for switching on/off stage tracking
+
 class TriggerMode:
     SOFTWARE = 'Software Trigger'
     HARDWARE = 'Hardware Trigger'
@@ -88,6 +90,7 @@ class CMD_SET:
     ACK_JOYSTICK_BUTTON_PRESSED = 14
 
 BIT_POS_JOYSTICK_BUTTON = 0
+BIT_POS_SWITCH = 1
 
 
 class HOME_OR_ZERO:
