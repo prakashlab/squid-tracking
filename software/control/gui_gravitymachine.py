@@ -134,6 +134,7 @@ class GravityMachine_GUI(QMainWindow):
 		self.trackingControlWidget.show_roi.connect(self.imageDisplayWindow[TRACKING].toggle_ROI_selector)
 		self.recordingControlWidget.start_tracking_signal.connect(self.trackingControlWidget.slot_start_tracking)
 		self.stateUpdater.signal_joystick_button_pressed.connect(self.trackingControlWidget.slot_joystick_button_pressed)
+		self.stateUpdater.signal_stage_tracking_status_changed.connect(self.trackingControlWidget.slot_update_stage_tracking_status)
 		self.liveControlWidget.signal_update_pixel_size.connect(self.trackingController.update_pixel_size)
 		self.liveControlWidget._update_pixel_size()
 		self.liveControlWidget.signal_update_image_resizing_factor.connect(self.trackingController.update_image_resizing_factor)

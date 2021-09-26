@@ -58,6 +58,14 @@ class TrackingControllerWidget(QFrame):
 		self.btn_track.setDefault(False)
 		self.btn_track.setIcon(QIcon('icon/track_white.png'))
 
+		self.checkbox_enable_stage_tracking = QCheckBox(' Enable Stage Tracking')
+		if USE_HARDWARE_SWITCH:
+			self.checkbox_enable_stage_tracking.setEnabled(False)
+		else:
+			self.checkbox_enable_stage_tracking.setEnabled(True)
+			self.checkbox_enable_stage_tracking.setChecked(True)
+		self.checkbox_enable_stage_tracking.stateChanged.connect(self.toggle_stage_tracking)
+
 		# Image Tracker Dropdown
 		self.dropdown_TrackerSelection = QComboBox()
 		self.dropdown_TrackerSelection.addItems(TRACKERS)
@@ -162,12 +170,13 @@ class TrackingControllerWidget(QFrame):
 
 		# Overall layout
 		groupbox_track_layout = QGridLayout()
-		groupbox_track_layout.addWidget(self.btn_track, 0,0,1,1)
+		groupbox_track_layout.addWidget(self.btn_track, 0,0,2,2)
 		# groupbox_track_layout.addWidget(self.dropdown_TrackerSelection, 0,1,1,1)
-		groupbox_track_layout.addLayout(tracking_group_layout,0,1,1,1)
-		groupbox_track_layout.addWidget(self.tracking_setPoint_group,1,0,1,1)
-		groupbox_track_layout.addWidget(self.tracking_init_group,1,1,1,1)
-		groupbox_track_layout.addWidget(self.group_sliders,2,0,1,2)
+		groupbox_track_layout.addLayout(tracking_group_layout,2,0)
+		groupbox_track_layout.addWidget(self.tracking_init_group,3,0)
+		groupbox_track_layout.addWidget(self.checkbox_enable_stage_tracking,2,1)
+		groupbox_track_layout.addWidget(self.tracking_setPoint_group,3,1)
+		groupbox_track_layout.addWidget(self.group_sliders,4,0,1,2)
 		self.setLayout(groupbox_track_layout)
 
 	def do_track_button_tasks(self):
@@ -244,6 +253,13 @@ class TrackingControllerWidget(QFrame):
 	def slot_stop_tracking(self):
 		self.btn_track.setChecked(False) # note that this will not cause the clicked signal to emit
 		self.btn_track.setText('Start Tracking')
+
+	def slot_update_stage_tracking_status(self):
+		self.checkbox_enable_stage_tracking.setChecked(self.internal_state.data['stage_tracking_enabled'])
+
+	def toggle_stage_tracking(self,enabled):
+		self.internal_state.data['stage_tracking_enabled'] = enabled
+
 
 class StageCalibrationWidget(QFrame):
 	def __init__(self, internal_state, microcontroller,  main=None, *args, **kwargs):

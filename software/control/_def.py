@@ -193,7 +193,7 @@ if TRACKING_CONFIG == 'XTheta_Y':
     READINGS_FROM_MCU = ['FocusPhase', 'X_stage', 'Y_stage', 'Theta_stage', 'enable_image_tracking_from_hardware_button', 'stage_tracking_enabled', 'homing_status']
     INITIAL_VALUES = {'Time':0, 'X':0, 'Y':0, 'Z':0, 'X_stage':0.0, 'Y_stage':0.0,
         'Theta_stage':0.0, 'X_image':0, 'Z_image':0, 'image_tracking_enabled':False, 'enable_image_tracking_from_hardware_button':False, 'track_focus':False, 
-        'stage_tracking_enabled':False, 'Acquisition':False, 'homing_status': 'not-complete', 'Zero_stage':0, 'optical_path': None, 
+        'stage_tracking_enabled':True, 'Acquisition':False, 'homing_status': 'not-complete', 'Zero_stage':0, 'optical_path': None, 
         'imaging channels': list(CAMERAS.keys()),  'Objective':DEFAULT_OBJECTIVE, 'basePath':'/', 'experimentID':'track'}
     PLOT_VARIABLES = {'X':'X','Y':'Y', 'Z':'Z', 'Theta':'Theta_stage'}
     PLOT_COLORS = {'X':'r','Y':'g', 'Z':'b', 'Theta':'c'}
@@ -214,7 +214,7 @@ elif TRACKING_CONFIG == 'XY_Z':
     READINGS_FROM_MCU = ['X_stage', 'Y_stage', 'Z_stage']
     INITIAL_VALUES = {'Time':0, 'X':0, 'Y':0, 'Z':0, 'X_stage':0, 'Y_stage':0,
         'Z_stage':0, 'X_image':0, 'Y_image':0, 'image_tracking_enabled':False, 'enable_image_tracking_from_hardware_button':False, 'track_focus':False, 
-        'stage_tracking_enabled':False, 'Acquisition':False, 'homing_status': 'not-complete', 'Zero_stage':0, 'optical_path': None, 
+        'stage_tracking_enabled':True, 'Acquisition':False, 'homing_status': 'not-complete', 'Zero_stage':0, 'optical_path': None, 
         'imaging channels': list(CAMERAS.keys()),  'Objective':DEFAULT_OBJECTIVE, 'basePath':'/', 'experimentID':'track'}
     PLOT_VARIABLES = {'X':'X','Y':'Y', 'Z':'Z'}
     PLOT_UNITS = {'X':'mm','Y':'mm', 'Z':'mm'}

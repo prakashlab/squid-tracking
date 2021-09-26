@@ -333,6 +333,7 @@ class TrackingController(QObject):
 class StateUpdater(QObject):
 
 	signal_joystick_button_pressed = Signal()
+	signal_stage_tracking_status_changed = Signal()
 
 	def __init__(self,navigationController,internal_state):
 		QObject.__init__(self)
@@ -409,8 +410,9 @@ class StateUpdater(QObject):
 			print('joystick button pressed')
 			microcontroller.signal_joystick_button_pressed_event = False
 		if USE_HARDWARE_SWITCH:
-			self.internal_state.data['stage_tracking_enabled'] = microcontroller.switch_state
-
+			if microcontroller.switch_state != self.internal_state.data['stage_tracking_enabled']:
+				self.internal_state.data['stage_tracking_enabled'] = microcontroller.switch_state
+				self.signal_stage_tracking_status_changed.emit()
 
 class InternalState():
 	'''
