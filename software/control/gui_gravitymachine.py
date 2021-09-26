@@ -242,6 +242,7 @@ class GravityMachine_GUI(QMainWindow):
 		layout_left.addWidget(self.liveSettings_Tab)
 		layout_left.addWidget(self.trackingControlWidget)
 		layout_left.addWidget(self.recordingControlWidget)
+		layout_left.addStretch()
 		
 		layout_right = QVBoxLayout()
 		layout_right.addWidget(self.SettingsTab)

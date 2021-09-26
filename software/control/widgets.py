@@ -118,11 +118,12 @@ class CameraSettingsWidget(QFrame):
 		triggerMode_layout.addWidget(self.dropdown_triggerMode)
 
 		# Overall layout
-		self.grid = QGridLayout()
-		self.grid.addLayout(grid_ctrl,0,0)
-		self.grid.addLayout(grid_ctrl_preset,1,0)
-		self.grid.addLayout(triggerMode_layout, 2, 0)
-		self.grid.addWidget(trigger_fps_group,3,0)
+		self.grid = QVBoxLayout()
+		self.grid.addLayout(grid_ctrl)
+		# self.grid.addLayout(grid_ctrl_preset)
+		self.grid.addLayout(triggerMode_layout)
+		self.grid.addWidget(trigger_fps_group)
+		self.grid.addStretch()
 		self.setLayout(self.grid)
 
 	def load_preset(self):
@@ -236,7 +237,7 @@ class LiveControlWidget(QFrame):
 		objective_layout = QHBoxLayout()
 		objective_layout.addWidget(QLabel('Objective'))
 		objective_layout.addWidget(self.dropdown_objectiveSelection)
-	  
+		
 		working_resolution_group = QGroupBox('Display resolution')
 		working_resolution_layout = QGridLayout()
 		working_resolution_layout.addWidget(self.slider_resolutionScaling, 0,0)
@@ -244,8 +245,9 @@ class LiveControlWidget(QFrame):
 		working_resolution_group.setLayout(working_resolution_layout)
 
 		stream_fps_group = QGroupBox('Tracking FPS')
-		stream_fps_layout = QGridLayout()
-		stream_fps_layout.addWidget(self.actual_streamFPS,0,1,1,1)
+		stream_fps_layout = QHBoxLayout()
+		stream_fps_layout.addWidget(QLabel('Measured'))
+		stream_fps_layout.addWidget(self.actual_streamFPS)
 		stream_fps_group.setLayout(stream_fps_layout)
 
 		display_fps_group = QGroupBox('Display FPS')
@@ -265,18 +267,12 @@ class LiveControlWidget(QFrame):
 		middle_box_layout = QHBoxLayout()
 		middle_box_layout.addWidget(stream_fps_group)
 		middle_box_layout.addWidget(display_fps_group)
-
-		# self.grid = QGridLayout()
-		# self.grid.addWidget(self.btn_live,0,0)
-		# self.grid.addLayout(objective_layout,0,1)
-		# self.grid.addWidget(display_fps_group, 1, 0)
-		# self.grid.addWidget(working_resolution_group,2,0,1,1)
-		# self.grid.addLayout(checkbox_layout,3,0,1,1)
 		
-		self.grid = QGridLayout()
-		self.grid.addLayout(top_box_layout,0,0)
-		self.grid.addLayout(middle_box_layout,1,0)
+		self.grid = QVBoxLayout()
+		self.grid.addLayout(top_box_layout)
+		self.grid.addLayout(middle_box_layout)
 		self.grid.addWidget(working_resolution_group)
+		self.grid.addStretch()
 		self.setLayout(self.grid)
 	
 	# Slot connected to signal from trackingController.
