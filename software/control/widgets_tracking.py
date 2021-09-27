@@ -261,51 +261,6 @@ class TrackingControllerWidget(QFrame):
 		self.internal_state.data['stage_tracking_enabled'] = enabled
 
 
-class StageCalibrationWidget(QFrame):
-	def __init__(self, internal_state, microcontroller,  main=None, *args, **kwargs):
-		super().__init__(*args, **kwargs)
-		self.internal_state = internal_state
-		self.microcontroller = microcontroller
-		self.add_components()
-		self.setFrameStyle(QFrame.Panel | QFrame.Raised)
-
-	def add_components(self):
-		# Stage zeroing buttons
-		self.zero_X = QPushButton('Zero X-stage')
-		self.zero_Y = QPushButton('Zero Y-stage')
-		self.zero_Theta = QPushButton('Zero Theta-stage')
-		
-		# Homing Button
-		self.homing_button = QPushButton('Run Homing')
-		stage_control = QGridLayout()
-		stage_control.addWidget(self.homing_button,0,0)
-		stage_control.addWidget(self.zero_X,0,1)
-		stage_control.addWidget(self.zero_Y,1,1)
-		stage_control.addWidget(self.zero_Theta,2,1)
-		self.setLayout(stage_control)
-
-		# Connections
-		self.zero_X.clicked.connect(self.zero_X_stage)
-		self.zero_Y.clicked.connect(self.zero_Y_stage)
-		self.zero_Theta.clicked.connect(self.zero_Theta_stage)
-		self.homing_button.clicked.connect(self.homing_button_click)
-
-	def zero_X_stage(self):
-		self.microcontroller.send_stage_zero_command(0)
-	
-	def zero_Y_stage(self):
-		self.microcontroller.send_stage_zero_command(1)
-
-	def zero_Theta_stage(self):
-		self.microcontroller.send_stage_zero_command(3)
-
-	def homing_button_click(self):
-		# Send homing command to microcontroller
-		self.microcontroller.send_homing_command()
-
-	def update_homing_state():
-		self.homing_button.setText(self.internal_state.data['homing-state'])
-
 class NavigationWidget(QFrame):
 	def __init__(self, navigationController, main=None, *args, **kwargs):
 		super().__init__(*args, **kwargs)
@@ -326,6 +281,11 @@ class NavigationWidget(QFrame):
 		self.btn_moveX_forward.setDefault(False)
 		self.btn_moveX_backward = QPushButton('Backward')
 		self.btn_moveX_backward.setDefault(False)
+		self.btn_home_X = QPushButton('Home')
+		self.btn_home_X.setDefault(False)
+		self.btn_home_X.setEnabled(HOMING_ENABLED_X)
+		self.btn_zero_X = QPushButton('Zero')
+		self.btn_zero_X.setDefault(False)
 		
 		self.label_Ypos = QLabel()
 		self.label_Ypos.setNum(0)
@@ -339,6 +299,11 @@ class NavigationWidget(QFrame):
 		self.btn_moveY_forward.setDefault(False)
 		self.btn_moveY_backward = QPushButton('Backward')
 		self.btn_moveY_backward.setDefault(False)
+		self.btn_home_Y = QPushButton('Home')
+		self.btn_home_Y.setDefault(False)
+		self.btn_home_Y.setEnabled(HOMING_ENABLED_Y)
+		self.btn_zero_Y = QPushButton('Zero')
+		self.btn_zero_Y.setDefault(False)
 
 		self.label_Zpos = QLabel()
 		self.label_Zpos.setNum(0)
@@ -352,6 +317,11 @@ class NavigationWidget(QFrame):
 		self.btn_moveZ_forward.setDefault(False)
 		self.btn_moveZ_backward = QPushButton('Backward')
 		self.btn_moveZ_backward.setDefault(False)
+		self.btn_home_Z = QPushButton('Home')
+		self.btn_home_Z.setDefault(False)
+		self.btn_home_Z.setEnabled(HOMING_ENABLED_Z)
+		self.btn_zero_Z = QPushButton('Zero')
+		self.btn_zero_Z.setDefault(False)
 
 		self.label_Thetapos = QLabel()
 		self.label_Thetapos.setNum(0)
@@ -365,6 +335,11 @@ class NavigationWidget(QFrame):
 		self.btn_moveTheta_forward.setDefault(False)
 		self.btn_moveTheta_backward = QPushButton('Backward')
 		self.btn_moveTheta_backward.setDefault(False)
+		self.btn_home_Theta = QPushButton('Home')
+		self.btn_home_Theta.setDefault(False)
+		self.btn_home_Theta.setEnabled(HOMING_ENABLED_THETA)
+		self.btn_zero_Theta = QPushButton('Zero')
+		self.btn_zero_Theta.setDefault(False)
 		
 		grid_line0 = QGridLayout()
 		grid_line0.addWidget(QLabel('X (mm)'), 0,0)
@@ -372,6 +347,8 @@ class NavigationWidget(QFrame):
 		grid_line0.addWidget(self.entry_dX, 0,2)
 		grid_line0.addWidget(self.btn_moveX_forward, 0,3)
 		grid_line0.addWidget(self.btn_moveX_backward, 0,4)
+		grid_line0.addWidget(self.btn_home_X, 0,5)
+		grid_line0.addWidget(self.btn_zero_X, 0,6)
 
 		grid_line1 = QGridLayout()
 		grid_line1.addWidget(QLabel('Y (mm)'), 0,0)
@@ -379,6 +356,8 @@ class NavigationWidget(QFrame):
 		grid_line1.addWidget(self.entry_dY, 0,2)
 		grid_line1.addWidget(self.btn_moveY_forward, 0,3)
 		grid_line1.addWidget(self.btn_moveY_backward, 0,4)
+		grid_line1.addWidget(self.btn_home_Y, 0,5)
+		grid_line1.addWidget(self.btn_zero_Y, 0,6)
 
 		if TRACKING_CONFIG == 'XTheta_Y':
 			grid_line2 = QGridLayout()
@@ -387,6 +366,8 @@ class NavigationWidget(QFrame):
 			grid_line2.addWidget(self.entry_dTheta, 0,2)
 			grid_line2.addWidget(self.btn_moveTheta_forward, 0,3)
 			grid_line2.addWidget(self.btn_moveTheta_backward, 0,4)
+			grid_line2.addWidget(self.btn_home_Theta, 0,5)
+			grid_line2.addWidget(self.btn_zero_Theta, 0,6)
 		else:
 			grid_line2 = QGridLayout()
 			grid_line2.addWidget(QLabel('Z (mm)'), 0,0)
@@ -394,6 +375,8 @@ class NavigationWidget(QFrame):
 			grid_line2.addWidget(self.entry_dZ, 0,2)
 			grid_line2.addWidget(self.btn_moveZ_forward, 0,3)
 			grid_line2.addWidget(self.btn_moveZ_backward, 0,4)
+			grid_line2.addWidget(self.btn_home_Z, 0,5)
+			grid_line2.addWidget(self.btn_zero_Z, 0,6)
 
 		self.grid = QGridLayout()
 		self.grid.addLayout(grid_line0,0,0)
@@ -405,8 +388,19 @@ class NavigationWidget(QFrame):
 		self.btn_moveX_backward.clicked.connect(self.move_x_backward)
 		self.btn_moveY_forward.clicked.connect(self.move_y_forward)
 		self.btn_moveY_backward.clicked.connect(self.move_y_backward)
+		self.btn_moveZ_forward.clicked.connect(self.move_z_forward)
+		self.btn_moveZ_backward.clicked.connect(self.move_z_backward)
 		self.btn_moveTheta_forward.clicked.connect(self.move_theta_forward)
 		self.btn_moveTheta_backward.clicked.connect(self.move_theta_backward)
+
+		self.btn_home_X.clicked.connect(self.home_x)
+		self.btn_home_Y.clicked.connect(self.home_y)
+		self.btn_home_Z.clicked.connect(self.home_z)
+		self.btn_home_Theta.clicked.connect(self.home_theta)
+		self.btn_zero_X.clicked.connect(self.zero_x)
+		self.btn_zero_Y.clicked.connect(self.zero_y)
+		self.btn_zero_Z.clicked.connect(self.zero_z)
+		self.btn_zero_Theta.clicked.connect(self.zero_theta)
 
 		self.navigationController.signal_x_mm.connect(self.update_x_display)
 		self.navigationController.signal_y_mm.connect(self.update_y_display)
@@ -421,6 +415,28 @@ class NavigationWidget(QFrame):
 		dx_mm = self.entry_dX.value()
 		dx_usteps = dx_mm/(SCREW_PITCH_X_MM/(self.navigationController.x_microstepping*FULLSTEPS_PER_REV_X))
 		self.navigationController.move_x_usteps(-STAGE_MOVEMENT_SIGN_X*dx_usteps)
+	def home_x(self):
+		msg = QMessageBox()
+		msg.setIcon(QMessageBox.Information)
+		msg.setText("Confirm your action")
+		msg.setInformativeText("Click OK to run homing")
+		msg.setWindowTitle("Confirmation")
+		msg.setStandardButtons(QMessageBox.Ok | QMessageBox.Cancel)
+		msg.setDefaultButton(QMessageBox.Cancel)
+		retval = msg.exec_()
+		if QMessageBox.Ok == retval:
+			self.navigationController.home_x()
+	def zero_x(self):
+		msg = QMessageBox()
+		msg.setIcon(QMessageBox.Information)
+		msg.setText("Confirm your action")
+		msg.setInformativeText("Click OK to zero")
+		msg.setWindowTitle("Confirmation")
+		msg.setStandardButtons(QMessageBox.Ok | QMessageBox.Cancel)
+		msg.setDefaultButton(QMessageBox.Cancel)
+		retval = msg.exec_()
+		if QMessageBox.Ok == retval:
+			self.navigationController.zero_x()
 	
 	def move_y_forward(self):
 		dy_mm = self.entry_dY.value()
@@ -436,6 +452,34 @@ class NavigationWidget(QFrame):
 			self.navigationController.move_y_usteps(-STAGE_MOVEMENT_SIGN_Y*dy_usteps)
 		else:
 			self.navigationController.move_z_usteps(-STAGE_MOVEMENT_SIGN_Y*dy_usteps)
+	def home_y(self):
+		msg = QMessageBox()
+		msg.setIcon(QMessageBox.Information)
+		msg.setText("Confirm your action")
+		msg.setInformativeText("Click OK to run homing")
+		msg.setWindowTitle("Confirmation")
+		msg.setStandardButtons(QMessageBox.Ok | QMessageBox.Cancel)
+		msg.setDefaultButton(QMessageBox.Cancel)
+		retval = msg.exec_()
+		if QMessageBox.Ok == retval:
+			if TRACKING_CONFIG == 'XY_Z':
+				self.navigationController.home_y()
+			else:
+				self.navigationController.home_z() # y is the focus axis (driver stack z)
+	def zero_y(self):
+		msg = QMessageBox()
+		msg.setIcon(QMessageBox.Information)
+		msg.setText("Confirm your action")
+		msg.setInformativeText("Click OK to zero")
+		msg.setWindowTitle("Confirmation")
+		msg.setStandardButtons(QMessageBox.Ok | QMessageBox.Cancel)
+		msg.setDefaultButton(QMessageBox.Cancel)
+		retval = msg.exec_()
+		if QMessageBox.Ok == retval:
+			if TRACKING_CONFIG == 'XY_Z':
+				self.navigationController.zero_y()
+			else:
+				self.navigationController.zero_z() # y is the focus axis (driver stack z)
 
 	def move_z_forward(self):
 		dz_mm = self.entry_dZ.value()
@@ -451,6 +495,34 @@ class NavigationWidget(QFrame):
 			self.navigationController.move_z_usteps(-STAGE_MOVEMENT_SIGN_Z*dz_usteps)
 		elif TRACKING_CONFIG == 'XZ_Y':
 			self.navigationController.move_y_usteps(-STAGE_MOVEMENT_SIGN_Z*dz_usteps)
+	def home_z(self):
+		msg = QMessageBox()
+		msg.setIcon(QMessageBox.Information)
+		msg.setText("Confirm your action")
+		msg.setInformativeText("Click OK to run homing")
+		msg.setWindowTitle("Confirmation")
+		msg.setStandardButtons(QMessageBox.Ok | QMessageBox.Cancel)
+		msg.setDefaultButton(QMessageBox.Cancel)
+		retval = msg.exec_()
+		if QMessageBox.Ok == retval:
+			if TRACKING_CONFIG == 'XY_Z':
+				self.navigationController.home_z()
+			else:
+				self.navigationController.home_y() # z is the in-plane axis (driver stack y)
+	def zero_z(self):
+		msg = QMessageBox()
+		msg.setIcon(QMessageBox.Information)
+		msg.setText("Confirm your action")
+		msg.setInformativeText("Click OK to zero")
+		msg.setWindowTitle("Confirmation")
+		msg.setStandardButtons(QMessageBox.Ok | QMessageBox.Cancel)
+		msg.setDefaultButton(QMessageBox.Cancel)
+		retval = msg.exec_()
+		if QMessageBox.Ok == retval:
+			if TRACKING_CONFIG == 'XY_Z':
+				self.navigationController.zero_z()
+			else:
+				self.navigationController.zero_y() # z is the in-plane axis (driver stack y)
 
 	def move_theta_forward(self):
 		dTheta_degree = self.entry_dTheta.value()
@@ -462,6 +534,28 @@ class NavigationWidget(QFrame):
 		dTheta_rad = (dTheta_degree/360)*2*np.pi
 		dTheta_usteps = dTheta_rad/((2*np.pi)/(FULLSTEPS_PER_REV_THETA*self.navigationController.theta_microstepping*GEAR_RATIO_THETA))
 		self.navigationController.move_y_usteps(-STAGE_POS_SIGN_THETA*dTheta_usteps)
+	def home_theta(self):
+		msg = QMessageBox()
+		msg.setIcon(QMessageBox.Information)
+		msg.setText("Confirm your action")
+		msg.setInformativeText("Click OK to run homing")
+		msg.setWindowTitle("Confirmation")
+		msg.setStandardButtons(QMessageBox.Ok | QMessageBox.Cancel)
+		msg.setDefaultButton(QMessageBox.Cancel)
+		retval = msg.exec_()
+		if QMessageBox.Ok == retval:
+			self.navigationController.home_y() # theta is the in-plane axis (driver stack y)
+	def zero_theta(self):
+		msg = QMessageBox()
+		msg.setIcon(QMessageBox.Information)
+		msg.setText("Confirm your action")
+		msg.setInformativeText("Click OK to zero")
+		msg.setWindowTitle("Confirmation")
+		msg.setStandardButtons(QMessageBox.Ok | QMessageBox.Cancel)
+		msg.setDefaultButton(QMessageBox.Cancel)
+		retval = msg.exec_()
+		if QMessageBox.Ok == retval:
+			self.navigationController.zero_y() # theta is the in-plane axis (driver stack y)
 
 	def update_x_display(self,value):
 		self.label_Xpos.setText('{:.03f}'.format(value))
@@ -606,135 +700,135 @@ class PID_Widget(QFrame):
 		self.hsliderD.setValue(int(value*100))
 
 class PDAFControllerWidget(QFrame):
-    def __init__(self, PDAFController, main=None, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        self.PDAFController = PDAFController
-        self.add_components()
-        self.setFrameStyle(QFrame.Panel | QFrame.Raised)
+	def __init__(self, PDAFController, main=None, *args, **kwargs):
+		super().__init__(*args, **kwargs)
+		self.PDAFController = PDAFController
+		self.add_components()
+		self.setFrameStyle(QFrame.Panel | QFrame.Raised)
 
-    def add_components(self):
-        self.entry_x_offset = QSpinBox()
-        self.entry_x_offset.setMinimum(-1000) 
-        self.entry_x_offset.setMaximum(1000) 
-        self.entry_x_offset.setValue(PDAF.x_offset_default)
+	def add_components(self):
+		self.entry_x_offset = QSpinBox()
+		self.entry_x_offset.setMinimum(-1000) 
+		self.entry_x_offset.setMaximum(1000) 
+		self.entry_x_offset.setValue(PDAF.x_offset_default)
 
-        self.entry_y_offset = QSpinBox()
-        self.entry_y_offset.setMinimum(-1000) 
-        self.entry_y_offset.setMaximum(1000)
-        self.entry_y_offset.setValue(PDAF.y_offset_default)
+		self.entry_y_offset = QSpinBox()
+		self.entry_y_offset.setMinimum(-1000) 
+		self.entry_y_offset.setMaximum(1000)
+		self.entry_y_offset.setValue(PDAF.y_offset_default)
 
-        self.entry_ROI_ratio_width = QDoubleSpinBox()
-        self.entry_ROI_ratio_width.setMinimum(0.5) 
-        self.entry_ROI_ratio_width.setMaximum(10) 
-        self.entry_ROI_ratio_width.setSingleStep(0.1)
-        self.entry_ROI_ratio_width.setValue(PDAF.ROI_ratio_width_default)
+		self.entry_ROI_ratio_width = QDoubleSpinBox()
+		self.entry_ROI_ratio_width.setMinimum(0.5) 
+		self.entry_ROI_ratio_width.setMaximum(10) 
+		self.entry_ROI_ratio_width.setSingleStep(0.1)
+		self.entry_ROI_ratio_width.setValue(PDAF.ROI_ratio_width_default)
 
-        self.entry_ROI_ratio_height = QDoubleSpinBox()
-        self.entry_ROI_ratio_height.setMinimum(0.5) 
-        self.entry_ROI_ratio_height.setMaximum(10) 
-        self.entry_ROI_ratio_height.setSingleStep(0.1)
-        self.entry_ROI_ratio_height.setValue(PDAF.ROI_ratio_height_default)
+		self.entry_ROI_ratio_height = QDoubleSpinBox()
+		self.entry_ROI_ratio_height.setMinimum(0.5) 
+		self.entry_ROI_ratio_height.setMaximum(10) 
+		self.entry_ROI_ratio_height.setSingleStep(0.1)
+		self.entry_ROI_ratio_height.setValue(PDAF.ROI_ratio_height_default)
 
-        self.entry_shift_to_distance_um = QDoubleSpinBox()
-        self.entry_shift_to_distance_um.setMinimum(-10) 
-        self.entry_shift_to_distance_um.setMaximum(10) 
-        self.entry_shift_to_distance_um.setSingleStep(0.1)
-        self.entry_shift_to_distance_um.setValue(PDAF.shift_to_distance_um_default)
+		self.entry_shift_to_distance_um = QDoubleSpinBox()
+		self.entry_shift_to_distance_um.setMinimum(-10) 
+		self.entry_shift_to_distance_um.setMaximum(10) 
+		self.entry_shift_to_distance_um.setSingleStep(0.1)
+		self.entry_shift_to_distance_um.setValue(PDAF.shift_to_distance_um_default)
 
-        self.entry_tracking_range_min_um = QDoubleSpinBox()
-        self.entry_tracking_range_min_um.setMinimum(-10000) 
-        self.entry_tracking_range_min_um.setMaximum(10000) 
-        self.entry_tracking_range_min_um.setSingleStep(0.1)
-        self.entry_tracking_range_min_um.setValue(-10000)
+		self.entry_tracking_range_min_um = QDoubleSpinBox()
+		self.entry_tracking_range_min_um.setMinimum(-10000) 
+		self.entry_tracking_range_min_um.setMaximum(10000) 
+		self.entry_tracking_range_min_um.setSingleStep(0.1)
+		self.entry_tracking_range_min_um.setValue(-10000)
 
-        self.entry_tracking_range_max_um = QDoubleSpinBox()
-        self.entry_tracking_range_max_um.setMinimum(-10000) 
-        self.entry_tracking_range_max_um.setMaximum(10000) 
-        self.entry_tracking_range_max_um.setSingleStep(0.1)
-        self.entry_tracking_range_max_um.setValue(10000)
+		self.entry_tracking_range_max_um = QDoubleSpinBox()
+		self.entry_tracking_range_max_um.setMinimum(-10000) 
+		self.entry_tracking_range_max_um.setMaximum(10000) 
+		self.entry_tracking_range_max_um.setSingleStep(0.1)
+		self.entry_tracking_range_max_um.setValue(10000)
 
-        self.btn_enable_calculation = QPushButton('Enable Calculation')
-        self.btn_enable_calculation.setCheckable(True)
-        self.btn_enable_calculation.setChecked(False)
-        self.btn_enable_calculation.setDefault(False)
-        
-        self.btn_enable_tracking = QPushButton('Enable Focus Tracking')
-        self.btn_enable_tracking.setCheckable(True)
-        self.btn_enable_tracking.setChecked(False)
-        self.btn_enable_tracking.setDefault(False)
+		self.btn_enable_calculation = QPushButton('Enable Calculation')
+		self.btn_enable_calculation.setCheckable(True)
+		self.btn_enable_calculation.setChecked(False)
+		self.btn_enable_calculation.setDefault(False)
+		
+		self.btn_enable_tracking = QPushButton('Enable Focus Tracking')
+		self.btn_enable_tracking.setCheckable(True)
+		self.btn_enable_tracking.setChecked(False)
+		self.btn_enable_tracking.setDefault(False)
 
-        # self.label_Shift = QLabel()
-        # self.label_Shift.setFrameStyle(QFrame.Panel | QFrame.Sunken)
-        # self.label_Error = QLabel()
-        # self.label_Error.setFrameStyle(QFrame.Panel | QFrame.Sunken)
-        self.display_defocus_um = QLCDNumber()
-        self.display_defocus_um.setNumDigits(4)
-        self.display_error = QLCDNumber()
-        self.display_error.setNumDigits(4)
-        
-        grid_line0 = QGridLayout()
-        grid_line0.addWidget(QLabel('X Crop Offset'), 0,0)
-        grid_line0.addWidget(self.entry_x_offset, 0,1)
-        grid_line0.addWidget(QLabel('Y Crop Offset'), 0,2)
-        grid_line0.addWidget(self.entry_y_offset, 0,3)
-        grid_line0.addWidget(QLabel('ROI Width Scaling'), 1,0)
-        grid_line0.addWidget(self.entry_ROI_ratio_width, 1,1)
-        grid_line0.addWidget(QLabel('ROI Height Scaling'), 1,2)
-        grid_line0.addWidget(self.entry_ROI_ratio_height, 1,3)
-        grid_line0.addWidget(self.btn_enable_calculation, 2,0,1,2)
-        grid_line0.addWidget(self.btn_enable_tracking, 2,2,1,2)
-        grid_line0.addWidget(QLabel('Defocus (um)'), 3,0,1,1)
-        grid_line0.addWidget(self.display_defocus_um, 3,1,1,1)
-        grid_line0.addWidget(QLabel('Error'), 3,2,1,1)
-        grid_line0.addWidget(self.display_error, 3,3,1,1)
+		# self.label_Shift = QLabel()
+		# self.label_Shift.setFrameStyle(QFrame.Panel | QFrame.Sunken)
+		# self.label_Error = QLabel()
+		# self.label_Error.setFrameStyle(QFrame.Panel | QFrame.Sunken)
+		self.display_defocus_um = QLCDNumber()
+		self.display_defocus_um.setNumDigits(4)
+		self.display_error = QLCDNumber()
+		self.display_error.setNumDigits(4)
+		
+		grid_line0 = QGridLayout()
+		grid_line0.addWidget(QLabel('X Crop Offset'), 0,0)
+		grid_line0.addWidget(self.entry_x_offset, 0,1)
+		grid_line0.addWidget(QLabel('Y Crop Offset'), 0,2)
+		grid_line0.addWidget(self.entry_y_offset, 0,3)
+		grid_line0.addWidget(QLabel('ROI Width Scaling'), 1,0)
+		grid_line0.addWidget(self.entry_ROI_ratio_width, 1,1)
+		grid_line0.addWidget(QLabel('ROI Height Scaling'), 1,2)
+		grid_line0.addWidget(self.entry_ROI_ratio_height, 1,3)
+		grid_line0.addWidget(self.btn_enable_calculation, 2,0,1,2)
+		grid_line0.addWidget(self.btn_enable_tracking, 2,2,1,2)
+		grid_line0.addWidget(QLabel('Defocus (um)'), 3,0,1,1)
+		grid_line0.addWidget(self.display_defocus_um, 3,1,1,1)
+		grid_line0.addWidget(QLabel('Error'), 3,2,1,1)
+		grid_line0.addWidget(self.display_error, 3,3,1,1)
 
-        self.grid = QGridLayout()
-        self.grid.addLayout(grid_line0,0,0)
+		self.grid = QGridLayout()
+		self.grid.addLayout(grid_line0,0,0)
 
-        self.grid2 = QGridLayout()
-        self.grid2.addWidget(QLabel('tracking range min (um)'),0,0)
-        self.grid2.addWidget(self.entry_tracking_range_min_um,0,1)
-        self.grid2.addWidget(QLabel('tracking range max (um)'),0,2)
-        self.grid2.addWidget(self.entry_tracking_range_max_um,0,3)
-        
-        vbox = QVBoxLayout()
-        vbox.addLayout(self.grid)
-        vbox.addStretch()
-        vbox.addLayout(self.grid2)
-        self.setLayout(vbox)
+		self.grid2 = QGridLayout()
+		self.grid2.addWidget(QLabel('tracking range min (um)'),0,0)
+		self.grid2.addWidget(self.entry_tracking_range_min_um,0,1)
+		self.grid2.addWidget(QLabel('tracking range max (um)'),0,2)
+		self.grid2.addWidget(self.entry_tracking_range_max_um,0,3)
+		
+		vbox = QVBoxLayout()
+		vbox.addLayout(self.grid)
+		vbox.addStretch()
+		vbox.addLayout(self.grid2)
+		self.setLayout(vbox)
 
-        # self.btn_enable_calculation.clicked.connect(self.PDAFController.enable_caculation)
-        # self.btn_enable_tracking.clicked.connect(self.PDAFController.enable_tracking)
-        self.entry_x_offset.valueChanged.connect(self.PDAFController.set_x_offset)
-        self.entry_y_offset.valueChanged.connect(self.PDAFController.set_y_offset)
-        self.entry_ROI_ratio_width.valueChanged.connect(self.PDAFController.set_ROI_ratio_width)
-        self.entry_ROI_ratio_height.valueChanged.connect(self.PDAFController.set_ROI_ratio_height)
-        self.entry_shift_to_distance_um.valueChanged.connect(self.PDAFController.set_ROI_ratio_height)
+		# self.btn_enable_calculation.clicked.connect(self.PDAFController.enable_caculation)
+		# self.btn_enable_tracking.clicked.connect(self.PDAFController.enable_tracking)
+		self.entry_x_offset.valueChanged.connect(self.PDAFController.set_x_offset)
+		self.entry_y_offset.valueChanged.connect(self.PDAFController.set_y_offset)
+		self.entry_ROI_ratio_width.valueChanged.connect(self.PDAFController.set_ROI_ratio_width)
+		self.entry_ROI_ratio_height.valueChanged.connect(self.PDAFController.set_ROI_ratio_height)
+		self.entry_shift_to_distance_um.valueChanged.connect(self.PDAFController.set_ROI_ratio_height)
 
-        self.btn_enable_calculation.clicked.connect(self.enable_caculation)
-        self.btn_enable_tracking.clicked.connect(self.enable_tracking)
+		self.btn_enable_calculation.clicked.connect(self.enable_caculation)
+		self.btn_enable_tracking.clicked.connect(self.enable_tracking)
 
-        self.PDAFController.signal_defocus_um_display.connect(self.display_defocus_um.display)
-        self.PDAFController.signal_error.connect(self.display_error.display)
+		self.PDAFController.signal_defocus_um_display.connect(self.display_defocus_um.display)
+		self.PDAFController.signal_error.connect(self.display_error.display)
 
-        self.entry_tracking_range_min_um.valueChanged.connect(self.PDAFController.set_defocus_um_for_enable_tracking_min)
-        self.entry_tracking_range_max_um.valueChanged.connect(self.PDAFController.set_defocus_um_for_enable_tracking_max)
+		self.entry_tracking_range_min_um.valueChanged.connect(self.PDAFController.set_defocus_um_for_enable_tracking_min)
+		self.entry_tracking_range_max_um.valueChanged.connect(self.PDAFController.set_defocus_um_for_enable_tracking_max)
 
-    def enable_caculation(self,pressed):
-    	if pressed:
-    		self.PDAFController.enable_caculation(True)
-    	else:
-    		if self.btn_enable_tracking.isChecked():
-    			self.btn_enable_calculation.setChecked(True)
-    		else:
-    			self.PDAFController.enable_caculation(False)
+	def enable_caculation(self,pressed):
+		if pressed:
+			self.PDAFController.enable_caculation(True)
+		else:
+			if self.btn_enable_tracking.isChecked():
+				self.btn_enable_calculation.setChecked(True)
+			else:
+				self.PDAFController.enable_caculation(False)
 
-    def enable_tracking(self,pressed):
-    	if pressed:
-    		if self.btn_enable_calculation.isChecked() == False:
-    			self.btn_enable_calculation.setChecked(True)
-    			self.PDAFController.enable_caculation(True)
-    		self.PDAFController.enable_tracking(True)
-    	else:
-    		self.PDAFController.enable_tracking(False)
-    		
+	def enable_tracking(self,pressed):
+		if pressed:
+			if self.btn_enable_calculation.isChecked() == False:
+				self.btn_enable_calculation.setChecked(True)
+				self.PDAFController.enable_caculation(True)
+			self.PDAFController.enable_tracking(True)
+		else:
+			self.PDAFController.enable_tracking(False)
+			

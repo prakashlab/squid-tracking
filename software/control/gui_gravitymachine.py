@@ -55,8 +55,7 @@ class GravityMachine_GUI(QMainWindow):
 		if simulation is True:
 			# Define a camera object for each unique image-stream.
 			self.camera = {key:camera_Daheng.Camera_Simulation() for key in self.imaging_channels}
-			# self.microcontroller = microcontroller.Microcontroller_Simulation()
-			self.microcontroller = microcontroller.Microcontroller()
+			self.microcontroller = microcontroller.Microcontroller_Simulation()
 		else:
 			self.camera = {}
 			for key in self.imaging_channels:
@@ -95,7 +94,6 @@ class GravityMachine_GUI(QMainWindow):
 		self.trackingControlWidget = widgets_tracking.TrackingControllerWidget(self.streamHandler[TRACKING], self.trackingController, self.trackingDataSaver, self.internal_state, self.imageDisplayWindow[TRACKING], self.microcontroller)
 		self.PID_Group_Widget = widgets_tracking.PID_Group_Widget(self.trackingController)
 		self.recordingControlWidget = widgets.RecordingWidget(self.streamHandler,self.imageSaver, self.internal_state, self.trackingDataSaver, self.imaging_channels)			
-		self.stageCalibrationWidget = widgets_tracking.StageCalibrationWidget(self.internal_state, self.microcontroller) 
 		self.plotWidget = widgets.dockAreaPlot(self.internal_state)
 		
 		self.liveSettings_Tab = QTabWidget()
@@ -235,8 +233,7 @@ class GravityMachine_GUI(QMainWindow):
 			self.SettingsTab.addTab(self.PDAFControllerWidget, 'PDAF')
 		if VOLUMETRIC_IMAGING:
 			self.SettingsTab.addTab(self.volumetricImagingWidget, 'Volumetric Imaging')
-		self.SettingsTab.addTab(self.navigationWidget, 'Navigation')
-		self.SettingsTab.addTab(self.stageCalibrationWidget, 'Calibration')
+		self.SettingsTab.addTab(self.navigationWidget, 'Stage Control')
 		self.SettingsTab.addTab(self.plotWidget, 'Plots')
 
 		layout_left = QVBoxLayout()
