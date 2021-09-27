@@ -13,8 +13,6 @@ from control._def import *
 import control.tracking as tracking
 import control.utils.image_processing as image_processing
 import control.utils.PID as PID
-from control.utils.units_converter import Units_Converter
-import control.utils.byte_operations as byte_operations
 import control.utils.CSV_Tool as CSV_Tool
 
 from queue import Queue
@@ -57,14 +55,6 @@ class TrackingController(QObject):
 		self.navigationController = navigationController
 		self.microcontroller = microcontroller
 		self.internal_state = internal_state
-		self.units_converter = Units_Converter()
-
-		# Set the reference image width based on the camera sensor size used for calibration
-		# This allows physical distances be calculated even if the image res is down-sampled.
-		# @@@ This needs to be removed. We should be able to calculate this when the image size changes without
-		# knowing the calib image width
-		self.units_converter.set_calib_imWidth(CALIB_IMG_WIDTH)
-	
 		self.image = None
 
 		# Focus Tracker type
