@@ -200,17 +200,17 @@ class TrackingController(QObject):
 		
 			# send motion commands
 			if TRACKING_CONFIG == 'XY_Z':
-				self.microcontroller.move_x_usteps(x_correction_usteps)
-				self.microcontroller.move_y_usteps(y_correction_usteps) 
-				self.microcontroller.move_z_usteps(z_correction_usteps) # can move to the focus tracking controller
+				self.microcontroller.move_x_usteps(TRACKING_MOVEMENT_SIGN_X*x_correction_usteps)
+				self.microcontroller.move_y_usteps(TRACKING_MOVEMENT_SIGN_Y*y_correction_usteps) 
+				self.microcontroller.move_z_usteps(TRACKING_MOVEMENT_SIGN_Z*z_correction_usteps) # can move to the focus tracking controller
 			elif TRACKING_CONFIG == 'XZ_Y':
-				self.microcontroller.move_x_usteps(x_correction_usteps) # in-plane axis 0
-				self.microcontroller.move_y_usteps(z_correction_usteps)	# in-plane axis 1
-				self.microcontroller.move_z_usteps(y_correction_usteps) # focus axis - can move to the focus tracking controller
+				self.microcontroller.move_x_usteps(TRACKING_MOVEMENT_SIGN_X*x_correction_usteps) # in-plane axis 0
+				self.microcontroller.move_y_usteps(TRACKING_MOVEMENT_SIGN_Z*z_correction_usteps)	# in-plane axis 1
+				self.microcontroller.move_z_usteps(TRACKING_MOVEMENT_SIGN_Y*y_correction_usteps) # focus axis - can move to the focus tracking controller
 			elif TRACKING_CONFIG == 'XTheta_Y':
-				self.microcontroller.move_x_usteps(x_correction_usteps) # in-plane axis 0
-				self.microcontroller.move_y_usteps(z_correction_usteps) # in-plane axis 1
-				self.microcontroller.move_z_usteps(y_correction_usteps) # focus axis - can move to the focus tracking controller
+				self.microcontroller.move_x_usteps(TRACKING_MOVEMENT_SIGN_X*x_correction_usteps) # in-plane axis 0
+				self.microcontroller.move_y_usteps(TRACKING_MOVEMENT_SIGN_Z*z_correction_usteps) # in-plane axis 1
+				self.microcontroller.move_z_usteps(TRACKING_MOVEMENT_SIGN_Y*y_correction_usteps) # focus axis - can move to the focus tracking controller
 
 		# update the internal states
 		self.update_internal_state()
