@@ -73,16 +73,13 @@ class GravityMachine_GUI(QMainWindow):
 			self.streamHandler[key] = core.StreamHandler(camera = self.camera[key], crop_width = CAMERAS[key]['px_format'][0], crop_height= CAMERAS[key]['px_format'][1], imaging_channel = key, 
                 rotate_image_angle = CAMERAS[key]['rotate image angle'], flip_image = CAMERAS[key]['flip image'])
 			# load image saver
-			if CAMERAS[key]['is_color'] == False:
-				self.imageSaver[key] = core_tracking.ImageSaver(self.internal_state, imaging_channel = key, image_format = '.tif', rotate_image_angle = 180)
-			else:
-				self.imageSaver[key] = core_tracking.ImageSaver(self.internal_state, imaging_channel = key, image_format = '.bmp', rotate_image_angle = 180)
+			self.imageSaver[key] = core_tracking.ImageSaver(self.internal_state, imaging_channel = key, image_format = '.tif', rotate_image_angle = 180)
 
 		self.liveController = {key:core.LiveController(self.camera[key],self.microcontroller) for key in self.imaging_channels}
 		self.navigationController = core.NavigationController(self.microcontroller)
 		self.stateUpdater = core_tracking.StateUpdater(self.navigationController, self.internal_state)
 		self.microcontroller.set_callback(self.stateUpdater.read_microcontroller)
-		self.trackingController = core_tracking.TrackingController(self.navigationController,self.microcontroller,self.internal_state,color = CAMERAS[TRACKING]['is_color'])
+		self.trackingController = core_tracking.TrackingController(self.navigationController,self.microcontroller,self.internal_state)
 		self.trackingDataSaver = core_tracking.TrackingDataSaver(self.internal_state)
 		
 		#------------------------------------------------------------------

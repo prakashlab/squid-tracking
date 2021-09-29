@@ -72,7 +72,7 @@ class TrackingController(QObject):
 		self.image_offset = np.array([0,0])
 
 		# Create a tracking object that does the image-based tracking
-		self.tracker_image = tracking.Tracker_Image(color = color)
+		self.tracker_image = tracking.Tracker_Image()
 
 		# PID controller for each axis
 		self.pid_controller_x = PID.PID()

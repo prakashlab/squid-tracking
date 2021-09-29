@@ -23,7 +23,7 @@ class Tracker_Image(object):
 	SLOTS: update_tracker_type, Connected to: Tracking Widget
 	'''
 
-	def __init__(self, color = False):
+	def __init__(self):
 		# Define list of trackers being used(maybe do this as a definition?)
 		# OpenCV tracking suite
 		# self.OPENCV_OBJECT_TRACKERS = {}
@@ -70,7 +70,7 @@ class Tracker_Image(object):
 		self.isCentroidFound = False
 		self.trackerActive = False
 		self.searchArea = None
-		self.color = color
+		self.is_color = None
 		
 	def track(self, image, thresh_image, is_first_frame = False):
 
@@ -122,12 +122,15 @@ class Tracker_Image(object):
 			pass
 
 	def _initialize_tracker(self, image, centroid, bbox):
+		# check if the image is color or not
+		if(len(image.shape)<3):
+			self.is_color = False
 		# Initialize the OpenCV based tracker
 		if(self.tracker_type in self.OPENCV_OBJECT_TRACKERS.keys()):
 			print('Initializing openCV tracker')
 			print(self.tracker_type)
 			print(bbox)
-			if(self.color == False):
+			if(self.is_color == False):
 				image = cv2.cvtColor(image, cv2.COLOR_GRAY2BGR)
 			self.tracker.init(image, bbox)
 		# Initialize Neural Net based Tracker
@@ -135,7 +138,7 @@ class Tracker_Image(object):
 			# Initialize the tracker with this centroid position
 			print('Initializing with daSiamRPN tracker')
 			target_pos, target_sz = np.array([centroid[0], centroid[1]]), np.array([bbox[2], bbox[3]])
-			if(self.color==False):
+			if(self.is_color==False):
 				image = cv2.cvtColor(image, cv2.COLOR_GRAY2BGR)
 			self.state = SiamRPN_init(image, target_pos, target_sz, self.net)
 			print('daSiamRPN tracker initialized')
@@ -150,14 +153,14 @@ class Tracker_Image(object):
 		if(self.tracker_type in self.OPENCV_OBJECT_TRACKERS.keys()):
 			self.origin = np.array([0,0])
 			# (x,y,w,h)\
-			if(self.color==False):
+			if(self.is_color==False):
 				image = cv2.cvtColor(image, cv2.COLOR_GRAY2BGR)
 			ok, new_bbox = self.tracker.update(image)
 			return ok, new_bbox
 		# tracking w/ the neural network-based tracker
 		elif(self.tracker_type in self.NEURALNETTRACKERS.keys()):
 			self.origin = np.array([0,0])
-			if(self.color==False):
+			if(self.is_color==False):
 				image = cv2.cvtColor(image, cv2.COLOR_GRAY2BGR)
 			self.state = SiamRPN_track(self.state, image)
 			ok = True
