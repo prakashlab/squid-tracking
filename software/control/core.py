@@ -567,7 +567,7 @@ class ImageDisplayWindow(QMainWindow):
 
     roi_bbox = Signal(np.ndarray)
 
-    def __init__(self, window_title='', DrawCrossHairs = False, rotate_image_angle = 0, flip_image = None):
+    def __init__(self, window_title='', DrawCrossHairs = False):
         super().__init__()
         self.setWindowTitle(window_title)
         self.setWindowFlags(self.windowFlags() | Qt.CustomizeWindowHint)
@@ -609,12 +609,7 @@ class ImageDisplayWindow(QMainWindow):
         self.centroid = None
 
         self.DrawCrossHairs = DrawCrossHairs
-
         self.image_offset = np.array([0, 0])
-
-        # Image rotations and flipping
-        self.rotate_image_angle = rotate_image_angle
-        self.flip_image = flip_image
 
         layout = QGridLayout()
         layout.addWidget(self.graphics_widget, 0, 0) 

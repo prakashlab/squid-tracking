@@ -40,11 +40,9 @@ class GravityMachine_GUI(QMainWindow):
 		self.imageDisplayWindow = {}
 		for key in self.imaging_channels:
 			if(CAMERAS[key]['make']=='TIS'):
-				self.imageDisplayWindow[key] = core.ImageDisplayWindow(key + ' Display', 
-					DrawCrossHairs = True) 
+				self.imageDisplayWindow[key] = core.ImageDisplayWindow(key + ' Display', DrawCrossHairs = True) 
 			elif (CAMERAS[key]['make']=='Daheng'):
-				self.imageDisplayWindow[key] = core.ImageDisplayWindow(key + ' Display', 
-					DrawCrossHairs = True, rotate_image_angle=90) 		
+				self.imageDisplayWindow[key] = core.ImageDisplayWindow(key + ' Display', DrawCrossHairs = True) 		
 		self.imageDisplayWindow_ThresholdedImage = core.ImageDisplayWindow('Thresholded Image')
 		
 		#------------------------------------------------------------------
@@ -64,6 +62,7 @@ class GravityMachine_GUI(QMainWindow):
 						height = CAMERAS[key]['px_format'][1], framerate = CAMERAS[key]['fps'], color = CAMERAS[key]['is_color'])
 				elif (CAMERAS[key]['make']=='Daheng'):
 					self.camera[key] = camera_Daheng.Camera(sn = CAMERAS[key]['serial'])
+				self.camera[key].open()
 			self.microcontroller = microcontroller.Microcontroller()
 
 		self.streamHandler = {}
@@ -255,14 +254,11 @@ class GravityMachine_GUI(QMainWindow):
 		#-----------------------------------------------------
 		# Start all image-streams
 		#-----------------------------------------------------
-		print('Starting image streams')
 		for channel in self.imaging_channels:
-			self.camera[channel].open()
 			self.camera[channel].set_software_triggered_acquisition() #self.camera.set_continuous_acquisition()
 			self.camera[channel].set_callback(self.streamHandler[channel].on_new_frame)
 			self.camera[channel].enable_callback()
 			self.camera[channel].start_streaming()
-		print('Started image streams!')
 		self.image_window.show()
 
 	# @@@ TO DO

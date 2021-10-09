@@ -130,7 +130,7 @@ TRACKERS = ['nearest-nbr', 'csrt', 'kcf', 'mil', 'tld', 'medianflow','mosse','da
 DEFAULT_TRACKER = 'nearest-nbr'
 CROPPED_IMG_RATIO = 10
 
-CAMERA_PIXEL_SIZE_UM = {'IMX226':1.85,'IMX250':3.45,'IMX252':3.45,'PYTHON300':4.8}
+CAMERA_PIXEL_SIZE_UM = {'IMX226':1.85,'IMX250':3.45,'IMX252':3.45,'PYTHON300':4.8,'IMX178':2.4}
 OBJECTIVES = {'2x':{'magnification':2, 'NA':0.10, 'tube_lens_f_mm':180}, 
                 '4x':{'magnification':4, 'NA':0.13, 'tube_lens_f_mm':180}, 
                 '10x':{'magnification':10, 'NA':0.25, 'tube_lens_f_mm':180}, 
@@ -138,106 +138,8 @@ OBJECTIVES = {'2x':{'magnification':2, 'NA':0.10, 'tube_lens_f_mm':180},
                 '20x (Nikon)':{'magnification':20, 'NA':0.45, 'tube_lens_f_mm':200}, 
                 '40x':{'magnification':40, 'NA':0.6, 'tube_lens_f_mm':180}}
 
-##################################################
-#### Default Configurations - to be overriden ####
-##################################################
-STAGE_MOVEMENT_SIGN_X = 1
-STAGE_MOVEMENT_SIGN_Y = 1
-STAGE_MOVEMENT_SIGN_THETA = 1
-X_ENCODER_SIGN = 1
-Y_ENCODER_SIGN = 1
-THETA_ENCODER_SIGN = 1
-TWO_CAMERA_PDAF = True
-VOLUMETRIC_IMAGING = True
-USE_SEPARATE_TRIGGER_CONTROLLER = False
-TRIGGERCONTROLLER_SERIAL_NUMBER = None
-CAMERAS = {'DF1':{'make':'Daheng','serial':'FW0200050063','px_format':(2560,2048),'color_format':'GRAY8','fps': 60,'is_color':False,'rotate image angle':0,'flip image':'Horizental','sensor':'IMX226'},\
-           'DF2':{'make':'Daheng','serial':'FW0200050068','px_format':(2560,2048),'color_format':'GRAY8','fps': 60,'is_color':False,'rotate image angle':0,'flip image':'Horizental','sensor':'IMX226'}, \
-           'volumetric imaging':{'make':'Daheng','serial':'FW0200050061','px_format':(600,600),'color_format':'GRAY8','fps':30,'is_color':False,'rotate image angle':0,'flip image':'Horizental','sensor':'PYTHON300'}}
-TUBE_LENS_MM = {'DF1':50,'DF2':50,'volumetric imaging':75}
-DEFAULT_OBJECTIVE = '4x'
-
-# print('-------------------')
-# print(CAMERA_PIXEL_SIZE_UM[CAMERAS['DF1']['sensor']])
-
-##########################################################
-#### start of loading machine specific configurations ####
-##########################################################
-config_files = glob.glob('.' + '/' + 'configuration*.txt')
-if config_files:
-    print('load machine-specific configuration')
-    exec(open(config_files[0]).read())
-
-########################################################
-#### end of loading machine specific configurations ####
-########################################################
-
 TRACKING = 'DF1'
 
-FPS = {'display':{'min':1, 'max':30, 'default':15}, 
-        'trigger_hardware':{'min':1, 'max':CAMERAS[TRACKING]['fps'], 
-            'default':50}, 
-        'trigger_software':{'min':1, 'max':120, 'default':15}, 
-        'save':{'min':1, 'max':100, 'default':10}}
-
-if TRACKING_CONFIG == 'XTheta_Y':
-    INTERNAL_STATE_VARIABLES = ['Time', 'X', 'Y', 'Z', 'X_stage', 'Y_stage',
-        'Theta_stage', 'X_image', 'Z_image', 'image_tracking_enabled','enable_image_tracking_from_hardware_button', 'track_focus', 'stage_tracking_enabled', 
-        'Acquisition', 'homing_status',  'Zero_stage', 'optical_path', 
-        'imaging channels', 'Objective', 'basePath', 'experimentID']
-    # Based on the number of imaging channels, there will also be 1 or more image names saved.
-    SAVE_DATA = ['Time', 'X', 'Y', 'Z', 'Theta_stage', 'X_image', 
-        'Z_image', 'track_focus', 'stage_tracking_enabled']
-    # MOTION_COMMANDS = ['X_order', 'Y_order', 'Theta_order']
-    # SEND_DATA = ['liquidLens_Freq', 'track_focus', 'image_tracking_enabled' , 'X_order', 'Y_order', 'Theta_order', 'Zero_stage']
-    READINGS_FROM_MCU = ['FocusPhase', 'X_stage', 'Y_stage', 'Theta_stage', 'enable_image_tracking_from_hardware_button', 'stage_tracking_enabled', 'homing_status']
-    INITIAL_VALUES = {'Time':0, 'X':0, 'Y':0, 'Z':0, 'X_stage':0.0, 'Y_stage':0.0,
-        'Theta_stage':0.0, 'X_image':0, 'Z_image':0, 'image_tracking_enabled':False, 'enable_image_tracking_from_hardware_button':False, 'track_focus':False, 
-        'stage_tracking_enabled':True, 'Acquisition':False, 'homing_status': 'not-complete', 'Zero_stage':0, 'optical_path': None, 
-        'imaging channels': list(CAMERAS.keys()),  'Objective':DEFAULT_OBJECTIVE, 'basePath':'/', 'experimentID':'track'}
-    PLOT_VARIABLES = {'X':'X','Y':'Y', 'Z':'Z', 'Theta':'Theta_stage'}
-    PLOT_COLORS = {'X':'r','Y':'g', 'Z':'b', 'Theta':'c'}
-    PLOT_UNITS = {'X':'mm','Y':'mm', 'Z':'mm', 'Theta':'radians'}
-    assert list(PLOT_VARIABLES.keys()) == list(PLOT_COLORS.keys())
-    assert list(PLOT_VARIABLES.keys()) == list(PLOT_UNITS.keys())
-    DEFAULT_PLOTS = ['X', 'Z']
-elif TRACKING_CONFIG == 'XY_Z':
-    INTERNAL_STATE_VARIABLES = ['Time', 'X', 'Y', 'Z', 'X_stage', 'Y_stage',
-        'Z_stage', 'X_image', 'Y_image', 'image_tracking_enabled','enable_image_tracking_from_hardware_button', 'track_focus', 'stage_tracking_enabled', 
-        'Acquisition', 'homing_status',  'Zero_stage', 'optical_path', 
-        'imaging channels', 'Objective', 'basePath', 'experimentID']
-    # Based on the number of imaging channels, there will also be 1 or more image names saved.
-    SAVE_DATA = ['Time', 'X_stage', 'Y_stage', 'Z_stage', 'X_image', 
-        'Y_image', 'track_focus', 'stage_tracking_enabled']
-    # MOTION_COMMANDS = ['X_order', 'Y_order', 'Z_order']
-    # SEND_DATA = ['liquidLens_Freq', 'track_focus' , 'image_tracking_enabled' , 'X_order', 'Y_order', 'Z_order', 'Zero_stage']
-    READINGS_FROM_MCU = ['X_stage', 'Y_stage', 'Z_stage']
-    INITIAL_VALUES = {'Time':0, 'X':0, 'Y':0, 'Z':0, 'X_stage':0, 'Y_stage':0,
-        'Z_stage':0, 'X_image':0, 'Y_image':0, 'image_tracking_enabled':False, 'enable_image_tracking_from_hardware_button':False, 'track_focus':False, 
-        'stage_tracking_enabled':True, 'Acquisition':False, 'homing_status': 'not-complete', 'Zero_stage':0, 'optical_path': None, 
-        'imaging channels': list(CAMERAS.keys()),  'Objective':DEFAULT_OBJECTIVE, 'basePath':'/', 'experimentID':'track'}
-    PLOT_VARIABLES = {'X':'X','Y':'Y', 'Z':'Z'}
-    PLOT_UNITS = {'X':'mm','Y':'mm', 'Z':'mm'}
-    DEFAULT_PLOTS = ['X', 'Y']
-# changes 9/12/2021
-# X_objStage -> X
-# Y_objStage -> Y
-# Z_objStage -> Z
-# track_obj_stage -> stage_tracking_enabled
-# track_obj_image -> image_tracking_enabled
-# track_obj_image_hrdware -> enable_image_tracking_from_hardware_button
-
-
-if TWO_CAMERA_PDAF:
-    INTERNAL_STATE_VARIABLES.extend(['track_focus_PDAF','PDAF_shift','PDAF_error'])
-    SAVE_DATA.extend(['track_focus_PDAF','PDAF_shift','PDAF_error'])
-    INITIAL_VALUES.update({'track_focus_PDAF':False,'PDAF_shift':float('nan'),'PDAF_error':float('nan')})
-
-if VOLUMETRIC_IMAGING:
-    # to add variables to save
-    pass
-
-assert INTERNAL_STATE_VARIABLES == list(INITIAL_VALUES.keys()), "Variable mismatch: One or more state variables may not be initialized"
 
 # MCU Command Set
 SET_NUMBER_OF_PLANES_PER_VOLUME = 10
@@ -249,7 +151,6 @@ STOP_TRIGGER_GENERATION = 15
 
 # Volumetric imaging
 VOLUMETRIC_IMAGING_NUMBER_OF_PLANES_PER_VOLUME_DEFAULT = 20
-
 
 class CMD_EXECUTION_STATUS:
     COMPLETED_WITHOUT_ERRORS = 0
@@ -318,3 +219,101 @@ LED_MATRIX_R_FACTOR = 0
 LED_MATRIX_G_FACTOR = 0
 LED_MATRIX_B_FACTOR = 1
 
+##################################################
+#### Default Configurations - to be overriden ####
+##################################################
+STAGE_MOVEMENT_SIGN_X = 1
+STAGE_MOVEMENT_SIGN_Y = 1
+STAGE_MOVEMENT_SIGN_THETA = 1
+X_ENCODER_SIGN = 1
+Y_ENCODER_SIGN = 1
+THETA_ENCODER_SIGN = 1
+TWO_CAMERA_PDAF = True
+VOLUMETRIC_IMAGING = True
+USE_SEPARATE_TRIGGER_CONTROLLER = False
+TRIGGERCONTROLLER_SERIAL_NUMBER = None
+CAMERAS = {'DF1':{'make':'Daheng','serial':'FW0200050063','px_format':(2560,2048),'color_format':'GRAY8','fps': 60,'is_color':False,'rotate image angle':0,'flip image':'Horizental','sensor':'IMX226'},\
+           'DF2':{'make':'Daheng','serial':'FW0200050068','px_format':(2560,2048),'color_format':'GRAY8','fps': 60,'is_color':False,'rotate image angle':0,'flip image':'Horizental','sensor':'IMX226'}, \
+           'volumetric imaging':{'make':'Daheng','serial':'FW0200050061','px_format':(600,600),'color_format':'GRAY8','fps':30,'is_color':False,'rotate image angle':0,'flip image':'Horizental','sensor':'PYTHON300'}}
+TUBE_LENS_MM = {'DF1':50,'DF2':50,'volumetric imaging':75}
+DEFAULT_OBJECTIVE = '4x'
+
+# print('-------------------')
+# print(CAMERA_PIXEL_SIZE_UM[CAMERAS['DF1']['sensor']])
+
+##########################################################
+#### start of loading machine specific configurations ####
+##########################################################
+config_files = glob.glob('.' + '/' + 'configuration*.txt')
+if config_files:
+    print('load machine-specific configuration')
+    exec(open(config_files[0]).read())
+
+########################################################
+#### end of loading machine specific configurations ####
+########################################################
+
+FPS = {'display':{'min':1, 'max':30, 'default':15}, 
+        'trigger_hardware':{'min':1, 'max':CAMERAS[TRACKING]['fps'], 
+            'default':50}, 
+        'trigger_software':{'min':1, 'max':120, 'default':15}, 
+        'save':{'min':1, 'max':100, 'default':10}}
+
+if TRACKING_CONFIG == 'XTheta_Y':
+    INTERNAL_STATE_VARIABLES = ['Time', 'X', 'Y', 'Z', 'X_stage', 'Y_stage',
+        'Theta_stage', 'X_image', 'Z_image', 'image_tracking_enabled','enable_image_tracking_from_hardware_button', 'track_focus', 'stage_tracking_enabled', 
+        'Acquisition', 'homing_status',  'Zero_stage', 'optical_path', 
+        'imaging channels', 'Objective', 'basePath', 'experimentID']
+    # Based on the number of imaging channels, there will also be 1 or more image names saved.
+    SAVE_DATA = ['Time', 'X', 'Y', 'Z', 'Theta_stage', 'X_image', 
+        'Z_image', 'track_focus', 'stage_tracking_enabled']
+    # MOTION_COMMANDS = ['X_order', 'Y_order', 'Theta_order']
+    # SEND_DATA = ['liquidLens_Freq', 'track_focus', 'image_tracking_enabled' , 'X_order', 'Y_order', 'Theta_order', 'Zero_stage']
+    READINGS_FROM_MCU = ['FocusPhase', 'X_stage', 'Y_stage', 'Theta_stage', 'enable_image_tracking_from_hardware_button', 'stage_tracking_enabled', 'homing_status']
+    INITIAL_VALUES = {'Time':0, 'X':0, 'Y':0, 'Z':0, 'X_stage':0.0, 'Y_stage':0.0,
+        'Theta_stage':0.0, 'X_image':0, 'Z_image':0, 'image_tracking_enabled':False, 'enable_image_tracking_from_hardware_button':False, 'track_focus':False, 
+        'stage_tracking_enabled':True, 'Acquisition':False, 'homing_status': 'not-complete', 'Zero_stage':0, 'optical_path': None, 
+        'imaging channels': list(CAMERAS.keys()),  'Objective':DEFAULT_OBJECTIVE, 'basePath':'/', 'experimentID':'track'}
+    PLOT_VARIABLES = {'X':'X','Y':'Y', 'Z':'Z', 'Theta':'Theta_stage'}
+    PLOT_COLORS = {'X':'r','Y':'g', 'Z':'b', 'Theta':'c'}
+    PLOT_UNITS = {'X':'mm','Y':'mm', 'Z':'mm', 'Theta':'radians'}
+    assert list(PLOT_VARIABLES.keys()) == list(PLOT_COLORS.keys())
+    assert list(PLOT_VARIABLES.keys()) == list(PLOT_UNITS.keys())
+    DEFAULT_PLOTS = ['X', 'Z']
+elif TRACKING_CONFIG == 'XY_Z':
+    INTERNAL_STATE_VARIABLES = ['Time', 'X', 'Y', 'Z', 'X_stage', 'Y_stage',
+        'Z_stage', 'X_image', 'Y_image', 'image_tracking_enabled','enable_image_tracking_from_hardware_button', 'track_focus', 'stage_tracking_enabled', 
+        'Acquisition', 'homing_status',  'Zero_stage', 'optical_path', 
+        'imaging channels', 'Objective', 'basePath', 'experimentID']
+    # Based on the number of imaging channels, there will also be 1 or more image names saved.
+    SAVE_DATA = ['Time', 'X_stage', 'Y_stage', 'Z_stage', 'X_image', 
+        'Y_image', 'track_focus', 'stage_tracking_enabled']
+    # MOTION_COMMANDS = ['X_order', 'Y_order', 'Z_order']
+    # SEND_DATA = ['liquidLens_Freq', 'track_focus' , 'image_tracking_enabled' , 'X_order', 'Y_order', 'Z_order', 'Zero_stage']
+    READINGS_FROM_MCU = ['X_stage', 'Y_stage', 'Z_stage']
+    INITIAL_VALUES = {'Time':0, 'X':0, 'Y':0, 'Z':0, 'X_stage':0, 'Y_stage':0,
+        'Z_stage':0, 'X_image':0, 'Y_image':0, 'image_tracking_enabled':False, 'enable_image_tracking_from_hardware_button':False, 'track_focus':False, 
+        'stage_tracking_enabled':True, 'Acquisition':False, 'homing_status': 'not-complete', 'Zero_stage':0, 'optical_path': None, 
+        'imaging channels': list(CAMERAS.keys()),  'Objective':DEFAULT_OBJECTIVE, 'basePath':'/', 'experimentID':'track'}
+    PLOT_VARIABLES = {'X':'X','Y':'Y', 'Z':'Z'}
+    PLOT_UNITS = {'X':'mm','Y':'mm', 'Z':'mm'}
+    DEFAULT_PLOTS = ['X', 'Y']
+# changes 9/12/2021
+# X_objStage -> X
+# Y_objStage -> Y
+# Z_objStage -> Z
+# track_obj_stage -> stage_tracking_enabled
+# track_obj_image -> image_tracking_enabled
+# track_obj_image_hrdware -> enable_image_tracking_from_hardware_button
+
+
+if TWO_CAMERA_PDAF:
+    INTERNAL_STATE_VARIABLES.extend(['track_focus_PDAF','PDAF_shift','PDAF_error'])
+    SAVE_DATA.extend(['track_focus_PDAF','PDAF_shift','PDAF_error'])
+    INITIAL_VALUES.update({'track_focus_PDAF':False,'PDAF_shift':float('nan'),'PDAF_error':float('nan')})
+
+if VOLUMETRIC_IMAGING:
+    # to add variables to save
+    pass
+
+assert INTERNAL_STATE_VARIABLES == list(INITIAL_VALUES.keys()), "Variable mismatch: One or more state variables may not be initialized"
