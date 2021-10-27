@@ -258,41 +258,25 @@ class StreamHandler(QObject):
         # send image to display
         time_now = time.time()
         if time_now - self.timestamp_last_display >= 1/self.fps_display:
-
-            if camera.is_color:
-                image_resized = cv2.cvtColor(image_resized,cv2.COLOR_RGB2BGR)
-
-            # print('Displaying image for {} channel'.format(self.imaging_channel))
-            
             self.image_to_display.emit(image_resized, self.imaging_channel)
-            
             if(self.imaging_channel == TRACKING):
                 # Send thresholded image to display (only for tracking stream)
                 self.thresh_image_to_display.emit(image_thresh)
                 self.signal_working_resolution.emit(round(self.image_width*self.working_resolution_scaling))
-            
             self.timestamp_last_display = time_now
-
             self.get_real_display_fps()
-
             
         # send image to write
         time_now = time.time()
         if self.save_image_flag and time_now-self.timestamp_last_save >= 1/self.fps_save:
             if camera.is_color:
                 image = cv2.cvtColor(image,cv2.COLOR_RGB2BGR)
-            
-            print('Sending image for save')
             self.packet_image_to_write.emit(image, camera.frame_ID, self.camera.timestamp)
-            
             self.fps_save_real = round(1/(time_now - self.timestamp_last_save),1)
              # Send the real display FPS to the live Controller widget.
             self.signal_fps_save.emit(self.imaging_channel, self.fps_save_real)
-            
             self.counter_save = 0
-
             self.timestamp_last_save = time_now
-
         else:
             self.counter_save += 1
 
