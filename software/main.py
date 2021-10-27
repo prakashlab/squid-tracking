@@ -14,9 +14,7 @@ from qtpy.QtGui import *
 from aqua.qsshelper import QSSHelper
 
 # app specific libraries
-#import control.gui as gui
-#import control.gui_2cameras_async as gui
-import control.gui_gravitymachine as gui
+import control.gui_tracking as gui
 
 parser = argparse.ArgumentParser()
 parser.add_argument("--simulation", help="Run the GUI with simulated image streams.", action = 'store_true')
