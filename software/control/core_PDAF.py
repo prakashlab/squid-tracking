@@ -74,7 +74,7 @@ class PDAFController(QObject):
         self.image2 = np.copy(image)
         if PDAF_FLIPUD: 
             self.image2 = np.flipud(self.image2)
-        else:
+        if PDAF_FLIPLR:
             self.image2 = np.fliplr(self.image2)
         self.image2_received = True
         if(self.image1_received):
@@ -108,6 +108,11 @@ class PDAFController(QObject):
                 # print(self.image1.shape)
                 # print((self.h,self.w))
                 # print('---')
+                # convert image to mono if the image is color:
+                if len(self.image1.shape) > 2:
+                    self.image1 = cv2.cvtColor(self.image1, cv2.COLOR_BGR2GRAY)
+                    self.image2 = cv2.cvtColor(self.image2, cv2.COLOR_BGR2GRAY)
+
                 if self.image1.shape[0] > 0.9*self.h*self.scale_factor and self.image1.shape[1] > 0.9*self.w*self.scale_factor and self.image1.shape == self.image2.shape and self.PDAF_calculation_enable:
                     # calculate shift
                     shift, error = self._compute_shift_from_image_pair()
@@ -152,7 +157,7 @@ class PDAFController(QObject):
         # method 2: use skimage.registration.phase_cross_correlation
         shifts,error,phasediff = skimage.registration.phase_cross_correlation(self.image1,self.image2,upsample_factor=self.registration_upsample_factor,space='real')
         print('shift: ' + str(shifts) + ', error: ' + "{:.2f}".format(error) ) # for debugging
-        if PDAF_FLIPUD:
+        if PDAF_SHIFT_AXIS == 'X':
             return shifts[1], error # shift[0] vs shift[1] depends on camera orientation
         else:
             return shifts[0], error # shift[0] vs shift[1] depends on camera orientation

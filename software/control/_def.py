@@ -215,8 +215,8 @@ HOMING_ENABLED_THETA = False
 
 SLEEP_TIME_S = 0.005
 
-LED_MATRIX_R_FACTOR = 0
-LED_MATRIX_G_FACTOR = 0
+LED_MATRIX_R_FACTOR = 1
+LED_MATRIX_G_FACTOR = 1
 LED_MATRIX_B_FACTOR = 1
 
 ##################################################
@@ -228,10 +228,16 @@ STAGE_MOVEMENT_SIGN_THETA = 1
 X_ENCODER_SIGN = 1
 Y_ENCODER_SIGN = 1
 THETA_ENCODER_SIGN = 1
+
 TWO_CAMERA_PDAF = True
+PDAF_FLIPUD = False
+PDAF_FLIPLR = False
+PDAF_SHIFT_AXIS = 'X' #'X' or 'Y'
+
 VOLUMETRIC_IMAGING = True
 USE_SEPARATE_TRIGGER_CONTROLLER = False
 TRIGGERCONTROLLER_SERIAL_NUMBER = None
+
 CAMERAS = {'DF1':{'make':'Daheng','serial':'FW0200050063','px_format':(2560,2048),'color_format':'GRAY8','fps': 60,'is_color':False,'rotate image angle':0,'flip image':'Horizental','sensor':'IMX226'},\
            'DF2':{'make':'Daheng','serial':'FW0200050068','px_format':(2560,2048),'color_format':'GRAY8','fps': 60,'is_color':False,'rotate image angle':0,'flip image':'Horizental','sensor':'IMX226'}, \
            'volumetric imaging':{'make':'Daheng','serial':'FW0200050061','px_format':(600,600),'color_format':'GRAY8','fps':30,'is_color':False,'rotate image angle':0,'flip image':'Horizental','sensor':'PYTHON300'}}
