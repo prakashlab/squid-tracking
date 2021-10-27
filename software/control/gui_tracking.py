@@ -218,6 +218,11 @@ class GUI(QMainWindow):
 				# to do: add a tigger timer in the simulation camera object for simulating hardware trigger
 				self.volumetricImagingController.signal_trigger_mode.connect(self.cameraSettingsWidget['volumetric imaging'].set_trigger_mode)
 			self.volumetricImagingStreamHandler.signal_defocus.connect(self.volumetricImagingWidget.display_defocus.display)
+			self.streamHandler['volumetric imaging'].signal_new_frame_received.connect(self.liveController[channel].on_new_frame)
+			self.streamHandler['volumetric imaging'].image_to_display.connect(self.imageDisplayWindow[channel].display_image)
+			self.streamHandler['volumetric imaging'].packet_image_to_write.connect(self.imageSaver[channel].enqueue)
+			self.imageSaver['volumetric imaging'].imageName.connect(self.trackingDataSaver.setImageName)
+			self.streamHandler['volumetric imaging'].signal_fps_save.connect(self.recordingControlWidget.update_save_fps)
 
 		#-----------------------------------------------------
 		# Layout widgets
