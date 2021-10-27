@@ -25,7 +25,7 @@ import control.core_tracking as core_tracking
 import control.core_volumetric_imaging as core_volumetric_imaging
 import control.microcontroller as microcontroller
 
-class GravityMachine_GUI(QMainWindow):
+class GUI(QMainWindow):
 
 	def __init__(self, simulation = False, *args, **kwargs):
 		super().__init__(*args, **kwargs)

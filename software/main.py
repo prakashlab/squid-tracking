@@ -28,9 +28,9 @@ if __name__ == "__main__":
 	
 	# Main GUI window
 	if(args.simulation):
-		win = gui.GravityMachine_GUI(simulation = True)
+		win = gui.GUI(simulation = True)
 	else:
-		win = gui.GravityMachine_GUI()
+		win = gui.GUI()
 
 	# Style sheet
 	qss = QSSHelper.open_qss(os.path.join('aqua', 'aqua.qss'))
