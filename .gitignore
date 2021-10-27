@@ -114,3 +114,5 @@ venv.bak/
 
 # configuration files
 *.txt
+*.pyc 
+*.xml

@@ -27,7 +27,6 @@ class optotune_lens:
 		self.offset = offset
 
 		# Scale factor to translate an amplitude (in microns) to a lower and upper value of current (in 12 bit int -4096 to 4096)
-		self.currentScaleFactor = liquidLens['currentScaleFactor'] 	# inverse of Change in WD (mm) per change in current (12 bit int)
 		self.current_to_code_scalling_factor = 292.84/4095 # 292.84 mA for code 4095
 		self.current_range_min = -250
 		self.current_range_max = 250
@@ -68,7 +67,6 @@ class optotune_lens:
 				self.freq = freq
 				self.amp = amp
 				self.offset = offset
-				self.getCurrentLimits()
 
 			else:
 				warnings.warn("Connection to lens driver not successful")
@@ -125,30 +123,6 @@ class optotune_lens:
 		# HIGH Byte, LOW Byte
 		return int(number) >> 8, int(number)% 256
 
-	def getCurrentLimits(self):
-		self.upper_curr = int((self.offset + self.amp)*self.currentScaleFactor)
-		self.lower_curr = int((self.offset - self.amp)*self.currentScaleFactor)
-
-	def start(self):
-		print('Starting liquid lens sweep')
-		self.mode = "Sinusoid"
-		self.sendMode()
-		self.getCurrentLimits()
-		self.sendProperty("UpperCurr",self.upper_curr)
-		self.sendProperty("LowerCurr",self.lower_curr)
-		self.sendProperty("Freq",self.freq)
-
-	def stop(self):
-		print('Stopping liquid lens sweep')
-		# Stop sweeping the lens
-		self.mode = "DC"
-		# This change of amplitude is not necessary
-		# self.amp = 0
-		self.sendMode()
-		self.changeOffset(0)
-		# self.getCurrentLimits()
-		# self.sendProperty("UpperCurr",self.upper_curr)
-		# self.sendProperty("LowerCurr",self.lower_curr)
 
 	# new function - 2021
 	def start_scanning(self,current_mA_min,current_mA_max,frequency_Hz):
@@ -179,29 +153,12 @@ class optotune_lens:
 		self.sendProperty("Freq",self.freq)
 		print('set new freq of liquid lens: {}'.format(self.freq))
 
-	def set_Amp(self, amp):
-		self.amp = amp
-		self.getCurrentLimits()
-		self.sendProperty("UpperCurr",self.upper_curr)
-		self.sendProperty("LowerCurr",self.lower_curr)
-		print('set new amplitude of liquid lens:low {}, high {}'.format(self.lower_curr, self.upper_curr))
-
 	def set_Amp_mA(self, amp_mA):
 		self.upper_curr = int((amp_mA/2)/self.current_to_code_scalling_factor)
 		self.lower_curr = -int((amp_mA/2)/self.current_to_code_scalling_factor)
 		self.sendProperty("UpperCurr",self.upper_curr)
 		self.sendProperty("LowerCurr",self.lower_curr)
 		print('set new amplitude of liquid lens:low {}, high {}'.format(self.lower_curr, self.upper_curr))
-
-	def changeOffset(self, offset):
-		self.offset = offset
-		self.getCurrentLimits()
-		self.sendProperty("UpperCurr",self.upper_curr)
-		self.sendProperty("LowerCurr",self.lower_curr)
-
-	def changeCurrs(self, lower_curr, upper_curr):
-		self.lower_curr = lower_curr
-		self.upper_curr = upper_curr
 
 	def sendMode(self):
 		cmd = bytearray(4) # Data array 

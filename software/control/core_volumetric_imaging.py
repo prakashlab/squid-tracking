@@ -295,12 +295,12 @@ class VolumetricImagingStreamHandler(QObject):
                 print('defocus: ' + str(self.defocus) + ' sum of focus measure: ' + str(np.sum(self.focus_measure)) )
                 # focus tracking
                 if self.flag_focus_tracking:
-                    pass
                     self.tracking_controller.track_focus = True
-                    self.tracking_controller.y_error = self.defocus*(-1)
+                    self.tracking_controller.focus_error = self.defocus*(-1)
                     # to do: add an adjustable scaling factor - this scaling factor depends on the liquid lens scan amplitude and objective being used
                 else:
                     self.tracking_controller.track_focus = False
+                    self.tracking_controller.focus_error = 0
 
         # check if camera has registered requested number of frames
         if self.flag_volumetric_imaging_started and self.number_of_requested_frames!=0 and self.frame_ID>=(self.number_of_requested_frames-1):

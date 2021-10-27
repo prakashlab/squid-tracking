@@ -3,23 +3,48 @@ import serial
 import serial.tools.list_ports
 import time
 import numpy as np
+import threading
 
 from control._def import *
 
+from qtpy.QtCore import *
+from qtpy.QtWidgets import *
+from qtpy.QtGui import *
+
 # add user to the dialout group to avoid the need to use sudo
 
-class Microcontroller():
+# done (7/20/2021) - remove the time.sleep in all functions (except for __init__) to 
+# make all callable functions nonblocking, instead, user should check use is_busy() to
+# check if the microcontroller has finished executing the more recent command
+
+# to do (7/28/2021) - add functions for configuring the stepper motors
+
+class Microcontroller():    
     def __init__(self,parent=None):
         self.serial = None
         self.platform_name = platform.system()
         self.tx_buffer_length = MicrocontrollerDef.CMD_LENGTH
         self.rx_buffer_length = MicrocontrollerDef.MSG_LENGTH
 
-        # AUTO-DETECT the Arduino! By Deepak
+        self._cmd_id = 0
+        self._cmd_id_mcu = None # command id of mcu's last received command 
+        self._cmd_execution_status = None
+        self.mcu_cmd_execution_in_progress = False
+
+        self.x_pos = 0 # unit: microstep or encoder resolution
+        self.y_pos = 0 # unit: microstep or encoder resolution
+        self.z_pos = 0 # unit: microstep or encoder resolution
+        self.theta_pos = 0 # unit: microstep or encoder resolution
+        self.button_and_switch_state = 0
+        self.joystick_button_pressed = 0
+        self.signal_joystick_button_pressed_event = False
+        self.switch_state = 0
+
+        # AUTO-DETECT the Arduino! Based on Deepak's code
         arduino_ports = [
                 p.device
                 for p in serial.tools.list_ports.comports()
-                if 'Arduino' in p.description]
+                if 'Arduino Due' == p.description]
         if not arduino_ports:
             raise IOError("No Arduino found")
         if len(arduino_ports) > 1:
@@ -32,408 +57,655 @@ class Microcontroller():
         time.sleep(0.2)
         print('Serial Connection Open')
 
+        self.new_packet_callback_external = None
+        self.terminate_reading_received_packet_thread = False
+        self.thread_read_received_packet = threading.Thread(target=self.read_received_packet, daemon=True)
+        self.thread_read_received_packet.start()
+        
     def close(self):
+        self.terminate_reading_received_packet_thread = True
+        self.thread_read_received_packet.join()
         self.serial.close()
 
-    def toggle_LED(self,state):
+    def turn_on_illumination(self):
         cmd = bytearray(self.tx_buffer_length)
-        cmd[0] = 3
-        cmd[1] = state
-        self.serial.write(cmd)
-    
-    def toggle_laser(self,state):
-        cmd = bytearray(self.tx_buffer_length)
-        cmd[0] = 4
-        cmd[1] = state
-        self.serial.write(cmd)
+        cmd[1] = CMD_SET.TURN_ON_ILLUMINATION
+        self.send_command(cmd)
 
+    def turn_off_illumination(self):
+        cmd = bytearray(self.tx_buffer_length)
+        cmd[1] = CMD_SET.TURN_OFF_ILLUMINATION
+        self.send_command(cmd)
+
+    def set_illumination(self,illumination_source,intensity,r=None,g=None,b=None):
+        cmd = bytearray(self.tx_buffer_length)
+        cmd[1] = CMD_SET.SET_ILLUMINATION
+        cmd[2] = illumination_source
+        cmd[3] = int((intensity/100)*65535) >> 8
+        cmd[4] = int((intensity/100)*65535) & 0xff
+        self.send_command(cmd)
+
+    def set_illumination_led_matrix(self,illumination_source,r,g,b):
+        cmd = bytearray(self.tx_buffer_length)
+        cmd[1] = CMD_SET.SET_ILLUMINATION_LED_MATRIX
+        cmd[2] = illumination_source
+        cmd[3] = min(int(r*255),255)
+        cmd[4] = min(int(g*255),255)
+        cmd[5] = min(int(b*255),255)
+        self.send_command(cmd)
+
+    '''
     def move_x(self,delta):
         direction = int((np.sign(delta)+1)/2)
-        n_microsteps = abs(delta*Motion.STEPS_PER_MM_X*Motion.MAX_MICROSTEPS)
+        n_microsteps = abs(delta*Motion.STEPS_PER_MM_XY)
         if n_microsteps > 65535:
             n_microsteps = 65535
         cmd = bytearray(self.tx_buffer_length)
-        cmd[0] = 0
+        cmd[0] = CMD_SET.MOVE_X
         cmd[1] = direction
-        cmd[2] = round(n_microsteps) >> 8
-        cmd[3] = round(n_microsteps) & 0xff
+        cmd[2] = int(n_microsteps) >> 8
+        cmd[3] = int(n_microsteps) & 0xff
         self.serial.write(cmd)
-        # time.sleep(WaitTime.BASE + WaitTime.X*abs(delta))
-        print('Moving  x stage')
-        print('X command sent to uController: {} {}'.format(np.sign(delta),n_microsteps))
+    '''
 
+    def move_x_usteps(self,usteps):
+        direction = STAGE_MOVEMENT_SIGN_X*np.sign(usteps)
+        n_microsteps_abs = abs(usteps)
+        # if n_microsteps_abs exceed the max value that can be sent in one go
+        while n_microsteps_abs >= (2**32)/2:
+            n_microsteps_partial_abs = (2**32)/2 - 1
+            n_microsteps_partial = direction*n_microsteps_partial_abs
+            payload = self._int_to_payload(n_microsteps_partial,4)
+            cmd = bytearray(self.tx_buffer_length)
+            cmd[1] = CMD_SET.MOVE_X
+            cmd[2] = payload >> 24
+            cmd[3] = (payload >> 16) & 0xff
+            cmd[4] = (payload >> 8) & 0xff
+            cmd[5] = payload & 0xff
+            self.send_command(cmd)
+            # while self.mcu_cmd_execution_in_progress == True:
+            #     time.sleep(self._motion_status_checking_interval)
+            n_microsteps_abs = n_microsteps_abs - n_microsteps_partial_abs
+
+        n_microsteps = direction*n_microsteps_abs
+        payload = self._int_to_payload(n_microsteps,4)
+        cmd = bytearray(self.tx_buffer_length)
+        cmd[1] = CMD_SET.MOVE_X
+        cmd[2] = payload >> 24
+        cmd[3] = (payload >> 16) & 0xff
+        cmd[4] = (payload >> 8) & 0xff
+        cmd[5] = payload & 0xff
+        self.send_command(cmd)
+        # while self.mcu_cmd_execution_in_progress == True:
+        #     time.sleep(self._motion_status_checking_interval)
+
+    def move_x_to_usteps(self,usteps):
+        payload = self._int_to_payload(STAGE_MOVEMENT_SIGN_X*usteps,4)
+        cmd = bytearray(self.tx_buffer_length)
+        cmd[1] = CMD_SET.MOVETO_X
+        cmd[2] = payload >> 24
+        cmd[3] = (payload >> 16) & 0xff
+        cmd[4] = (payload >> 8) & 0xff
+        cmd[5] = payload & 0xff
+        self.send_command(cmd)
+
+    '''
     def move_y(self,delta):
         direction = int((np.sign(delta)+1)/2)
-        n_microsteps = abs(delta*Motion.STEPS_PER_MM_Y*Motion.MAX_MICROSTEPS)
+        n_microsteps = abs(delta*Motion.STEPS_PER_MM_XY)
         if n_microsteps > 65535:
             n_microsteps = 65535
         cmd = bytearray(self.tx_buffer_length)
-        cmd[0] = 1
+        cmd[0] = CMD_SET.MOVE_Y
         cmd[1] = direction
-        cmd[2] = round(n_microsteps) >> 8
-        cmd[3] = round(n_microsteps) & 0xff
+        cmd[2] = int(n_microsteps) >> 8
+        cmd[3] = int(n_microsteps) & 0xff
         self.serial.write(cmd)
-        # time.sleep(WaitTime.BASE + WaitTime.Y*abs(delta))
-        print('Moving  y stage')
-        print('Y command sent to uController: {} {}'.format(np.sign(delta),n_microsteps))
+    '''
 
+    def move_y_usteps(self,usteps):
+        direction = STAGE_MOVEMENT_SIGN_Y*np.sign(usteps)
+        n_microsteps_abs = abs(usteps)
+        # if n_microsteps_abs exceed the max value that can be sent in one go
+        while n_microsteps_abs >= (2**32)/2:
+            n_microsteps_partial_abs = (2**32)/2 - 1
+            n_microsteps_partial = direction*n_microsteps_partial_abs
+            payload = self._int_to_payload(n_microsteps_partial,4)
+            cmd = bytearray(self.tx_buffer_length)
+            cmd[1] = CMD_SET.MOVE_Y
+            cmd[2] = payload >> 24
+            cmd[3] = (payload >> 16) & 0xff
+            cmd[4] = (payload >> 8) & 0xff
+            cmd[5] = payload & 0xff
+            self.send_command(cmd)
+            # while self.mcu_cmd_execution_in_progress == True:
+            #     time.sleep(self._motion_status_checking_interval)
+            n_microsteps_abs = n_microsteps_abs - n_microsteps_partial_abs
+
+        n_microsteps = direction*n_microsteps_abs
+        payload = self._int_to_payload(n_microsteps,4)
+        cmd = bytearray(self.tx_buffer_length)
+        cmd[1] = CMD_SET.MOVE_Y
+        cmd[2] = payload >> 24
+        cmd[3] = (payload >> 16) & 0xff
+        cmd[4] = (payload >> 8) & 0xff
+        cmd[5] = payload & 0xff
+        self.send_command(cmd)
+        # while self.mcu_cmd_execution_in_progress == True:
+        #     time.sleep(self._motion_status_checking_interval)
+    
+    def move_y_to_usteps(self,usteps):
+        payload = self._int_to_payload(STAGE_MOVEMENT_SIGN_Y*usteps,4)
+        cmd = bytearray(self.tx_buffer_length)
+        cmd[1] = CMD_SET.MOVETO_Y
+        cmd[2] = payload >> 24
+        cmd[3] = (payload >> 16) & 0xff
+        cmd[4] = (payload >> 8) & 0xff
+        cmd[5] = payload & 0xff
+        self.send_command(cmd)
+
+    '''
     def move_z(self,delta):
         direction = int((np.sign(delta)+1)/2)
-        n_microsteps = abs(delta*Motion.STEPS_PER_MM_Z*Motion.MAX_MICROSTEPS)
+        n_microsteps = abs(delta*Motion.STEPS_PER_MM_Z)
         if n_microsteps > 65535:
             n_microsteps = 65535
         cmd = bytearray(self.tx_buffer_length)
-        cmd[0] = 2
-        cmd[1] = 1-direction
-        cmd[2] = round(n_microsteps) >> 8
-        cmd[3] = round(n_microsteps) & 0xff
-        self.serial.write(cmd)
-        # time.sleep(WaitTime.BASE + WaitTime.Z*abs(delta))
-        print('Z command sent to uController: {} {}'.format(np.sign(delta),n_microsteps))
-
-    def move_theta(self,delta):
-        direction = int((np.sign(delta)+1)/2)
-        n_microsteps = abs(delta*Motion.STEPS_PER_REV_THETA_SHAFT*Motion.MAX_MICROSTEPS/(2*np.pi))
-        if n_microsteps > 65535:
-            n_microsteps = 65535
-        cmd = bytearray(self.tx_buffer_length)
-        cmd[0] = 3
-        cmd[1] = 1-direction
-        cmd[2] = round(n_microsteps) >> 8
-        cmd[3] = round(n_microsteps) & 0xff
-        self.serial.write(cmd)
-        # time.sleep(WaitTime.BASE + WaitTime.Z*abs(delta))
-        print('Theta command sent to uController: {} {}'.format(np.sign(delta),n_microsteps))
-
-    def move_x_nonblocking(self,delta):
-        direction = int((np.sign(delta)+1)/2)
-        n_microsteps = abs(delta*Motion.MAX_MICROSTEPS)
-        if n_microsteps > 65535:
-            n_microsteps = 65535
-        cmd = bytearray(self.tx_buffer_length)
-        cmd[0] = 0
-        cmd[1] = direction
-        cmd[2] = int(n_microsteps) >> 8
-        cmd[3] = int(n_microsteps) & 0xff
-        self.serial.write(cmd)
-        # print('x non-blocking command sent to uController: {}'.format(n_microsteps))
-
-    def move_y_nonblocking(self,delta):
-        direction = int((np.sign(delta)+1)/2)
-        n_microsteps = abs(delta*Motion.MAX_MICROSTEPS)
-        if n_microsteps > 65535:
-            n_microsteps = 65535
-        cmd = bytearray(self.tx_buffer_length)
-        cmd[0] = 1
-        cmd[1] = direction
-        cmd[2] = int(n_microsteps) >> 8
-        cmd[3] = int(n_microsteps) & 0xff
-        self.serial.write(cmd)
-        # print('y non-blocking command sent to uController: {}'.format(n_microsteps))
-
-    def move_z_nonblocking(self,delta):
-        direction = int((np.sign(delta)+1)/2)
-        n_microsteps = abs(delta)
-        if n_microsteps > 65535:
-            n_microsteps = 65535
-        cmd = bytearray(self.tx_buffer_length)
-        cmd[0] = 2
+        cmd[0] = CMD_SET.MOVE_Z
         cmd[1] = 1-direction
         cmd[2] = int(n_microsteps) >> 8
         cmd[3] = int(n_microsteps) & 0xff
         self.serial.write(cmd)
+    '''
 
-    def move_theta_nonblocking(self,delta):
-        direction = int((np.sign(delta)+1)/2)
-        n_microsteps = abs(delta*Motion.MAX_MICROSTEPS)
-        if n_microsteps > 65535:
-            n_microsteps = 65535
+    def move_z_usteps(self,usteps):
+        direction = STAGE_MOVEMENT_SIGN_Z*np.sign(usteps)
+        n_microsteps_abs = abs(usteps)
+        # if n_microsteps_abs exceed the max value that can be sent in one go
+        while n_microsteps_abs >= (2**32)/2:
+            n_microsteps_partial_abs = (2**32)/2 - 1
+            n_microsteps_partial = direction*n_microsteps_partial_abs
+            payload = self._int_to_payload(n_microsteps_partial,4)
+            cmd = bytearray(self.tx_buffer_length)
+            cmd[1] = CMD_SET.MOVE_Z
+            cmd[2] = payload >> 24
+            cmd[3] = (payload >> 16) & 0xff
+            cmd[4] = (payload >> 8) & 0xff
+            cmd[5] = payload & 0xff
+            self.send_command(cmd)
+            # while self.mcu_cmd_execution_in_progress == True:
+            #     time.sleep(self._motion_status_checking_interval)
+            n_microsteps_abs = n_microsteps_abs - n_microsteps_partial_abs
+
+        n_microsteps = direction*n_microsteps_abs
+        payload = self._int_to_payload(n_microsteps,4)
         cmd = bytearray(self.tx_buffer_length)
-        cmd[0] = 3
-        cmd[1] = 1-direction
-        cmd[2] = int(n_microsteps) >> 8
-        cmd[3] = int(n_microsteps) & 0xff
-        self.serial.write(cmd)
-        # print('Theta non-blocking command sent to uController: {}'.format(n_microsteps))
+        cmd[1] = CMD_SET.MOVE_Z
+        cmd[2] = payload >> 24
+        cmd[3] = (payload >> 16) & 0xff
+        cmd[4] = (payload >> 8) & 0xff
+        cmd[5] = payload & 0xff
+        self.send_command(cmd)
+        # while self.mcu_cmd_execution_in_progress == True:
+        #     time.sleep(self._motion_status_checking_interval)
 
-
-    # Convert below functions to be compatible with squid/octopi serial interface.
-    def send_tracking_command(self, tracking_flag):
+    def move_z_to_usteps(self,usteps):
+        payload = self._int_to_payload(STAGE_MOVEMENT_SIGN_Z*usteps,4)
         cmd = bytearray(self.tx_buffer_length)
-        cmd[0] = 4
-        cmd[1] = tracking_flag
+        cmd[1] = CMD_SET.MOVETO_Z
+        cmd[2] = payload >> 24
+        cmd[3] = (payload >> 16) & 0xff
+        cmd[4] = (payload >> 8) & 0xff
+        cmd[5] = payload & 0xff
+        self.send_command(cmd)
 
-        self.serial.write(cmd)
+    def move_theta_usteps(self,usteps):
+        direction = STAGE_MOVEMENT_SIGN_THETA*np.sign(usteps)
+        n_microsteps_abs = abs(usteps)
+        # if n_microsteps_abs exceed the max value that can be sent in one go
+        while n_microsteps_abs >= (2**32)/2:
+            n_microsteps_partial_abs = (2**32)/2 - 1
+            n_microsteps_partial = direction*n_microsteps_partial_abs
+            payload = self._int_to_payload(n_microsteps_partial,4)
+            cmd = bytearray(self.tx_buffer_length)
+            cmd[1] = CMD_SET.MOVE_THETA
+            cmd[2] = payload >> 24
+            cmd[3] = (payload >> 16) & 0xff
+            cmd[4] = (payload >> 8) & 0xff
+            cmd[5] = payload & 0xff
+            self.send_command(cmd)
+            # while self.mcu_cmd_execution_in_progress == True:
+            #     time.sleep(self._motion_status_checking_interval)
+            n_microsteps_abs = n_microsteps_abs - n_microsteps_partial_abs
 
-    def send_homing_command(self):
+        n_microsteps = direction*n_microsteps_abs
+        payload = self._int_to_payload(n_microsteps,4)
         cmd = bytearray(self.tx_buffer_length)
-        cmd[0] = 5
-        cmd[1] = 1
+        cmd[1] = CMD_SET.MOVE_THETA
+        cmd[2] = payload >> 24
+        cmd[3] = (payload >> 16) & 0xff
+        cmd[4] = (payload >> 8) & 0xff
+        cmd[5] = payload & 0xff
+        self.send_command(cmd)
+        # while self.mcu_cmd_execution_in_progress == True:
+        #     time.sleep(self._motion_status_checking_interval)
 
-        self.serial.write(cmd)
-
-    def send_stage_zero_command(self, stage):
+    def home_x(self):
         cmd = bytearray(self.tx_buffer_length)
-        cmd[0] = 6
-        cmd[1] = stage
+        cmd[1] = CMD_SET.HOME_OR_ZERO
+        cmd[2] = AXIS.X
+        cmd[3] = int((STAGE_MOVEMENT_SIGN_X+1)/2) # "move backward" if SIGN is 1, "move forward" if SIGN is -1
+        self.send_command(cmd)
+        # while self.mcu_cmd_execution_in_progress == True:
+        #     time.sleep(self._motion_status_checking_interval)
+        #     # to do: add timeout
 
-        self.serial.write(cmd)
-
-    def send_focus_tracking_command(self, focus_tracking_flag):
+    def home_y(self):
         cmd = bytearray(self.tx_buffer_length)
-        cmd[0] = 7
-        cmd[1] = focus_tracking_flag
+        cmd[1] = CMD_SET.HOME_OR_ZERO
+        cmd[2] = AXIS.Y
+        cmd[3] = int((STAGE_MOVEMENT_SIGN_Y+1)/2) # "move backward" if SIGN is 1, "move forward" if SIGN is -1
+        self.send_command(cmd)
+        # while self.mcu_cmd_execution_in_progress == True:
+        #     sleep(self._motion_status_checking_interval)
+        #     # to do: add timeout
 
-        self.serial.write(cmd)
-
-    def send_liquid_lens_freq(self, freq):
+    def home_z(self):
         cmd = bytearray(self.tx_buffer_length)
-        cmd[0] = 8
-        cmd[1] = 0
-        cmd[2], cmd[3] = split_int_2byte(round(freq*100)) 
+        cmd[1] = CMD_SET.HOME_OR_ZERO
+        cmd[2] = AXIS.Z
+        cmd[3] = int((STAGE_MOVEMENT_SIGN_Z+1)/2) # "move backward" if SIGN is 1, "move forward" if SIGN is -1
+        self.send_command(cmd)
+        # while self.mcu_cmd_execution_in_progress == True:
+        #     time.sleep(self._motion_status_checking_interval)
+        #     # to do: add timeout
 
-        self.serial.write(cmd)
-
-    def send_liquid_lens_amp(self, amp):
+    def home_theta(self):
         cmd = bytearray(self.tx_buffer_length)
-        cmd[0] = 8
-        cmd[1] = 1
-        cmd[2], cmd[3] = split_int_2byte(round(amp*100)) 
+        cmd[1] = CMD_SET.HOME_OR_ZERO
+        cmd[2] = 3
+        cmd[3] = int((STAGE_MOVEMENT_SIGN_THETA+1)/2) # "move backward" if SIGN is 1, "move forward" if SIGN is -1
+        self.send_command(cmd)
+        # while self.mcu_cmd_execution_in_progress == True:
+        #     time.sleep(self._motion_status_checking_interval)
+        #     # to do: add timeout
 
-        self.serial.write(cmd)
-
-    def send_liquid_lens_offset(self, offset):
+    def home_xy(self):
         cmd = bytearray(self.tx_buffer_length)
-        cmd[0] = 8
-        cmd[1] = 2
-        cmd[2], cmd[3] = split_int_2byte(round(offset*100)) 
+        cmd[1] = CMD_SET.HOME_OR_ZERO
+        cmd[2] = AXIS.XY
+        cmd[3] = int((STAGE_MOVEMENT_SIGN_X+1)/2) # "move backward" if SIGN is 1, "move forward" if SIGN is -1
+        cmd[4] = int((STAGE_MOVEMENT_SIGN_Y+1)/2) # "move backward" if SIGN is 1, "move forward" if SIGN is -1
+        self.send_command(cmd)
 
-        self.serial.write(cmd)
-
-    def send_hardware_trigger_command(self, trigger_state):
+    def zero_x(self):
         cmd = bytearray(self.tx_buffer_length)
-        cmd[0] = 9
-        cmd[1] = trigger_state
+        cmd[1] = CMD_SET.HOME_OR_ZERO
+        cmd[2] = AXIS.X
+        cmd[3] = HOME_OR_ZERO.ZERO
+        self.send_command(cmd)
+        # while self.mcu_cmd_execution_in_progress == True:
+        #     time.sleep(self._motion_status_checking_interval)
+        #     # to do: add timeout
 
-        self.serial.write(cmd)
-
-    def set_number_of_planes_per_volume(self,value):
+    def zero_y(self):
         cmd = bytearray(self.tx_buffer_length)
-        cmd[0] = SET_NUMBER_OF_PLANES_PER_VOLUME
-        cmd[1] = value >> 8
-        cmd[2] = value & 0xff
-        self.serial.write(cmd)
+        cmd[1] = CMD_SET.HOME_OR_ZERO
+        cmd[2] = AXIS.Y
+        cmd[3] = HOME_OR_ZERO.ZERO
+        self.send_command(cmd)
+        # while self.mcu_cmd_execution_in_progress == True:
+        #     sleep(self._motion_status_checking_interval)
+        #     # to do: add timeout
 
-    def set_number_of_requested_volumes(self,value):
+    def zero_z(self):
         cmd = bytearray(self.tx_buffer_length)
-        cmd[0] = SET_NUMBER_OF_REQUESTED_VOLUMES
-        cmd[1] = value >> 16
-        cmd[2] = (value >> 8) & 0xff
-        cmd[3] = value & 0xff
-        self.serial.write(cmd)
+        cmd[1] = CMD_SET.HOME_OR_ZERO
+        cmd[2] = AXIS.Z
+        cmd[3] = HOME_OR_ZERO.ZERO
+        self.send_command(cmd)
+        # while self.mcu_cmd_execution_in_progress == True:
+        #     time.sleep(self._motion_status_checking_interval)
+        #     # to do: add timeout
 
-    def set_frequency_Hz(self,value):
+    def zero_theta(self):
         cmd = bytearray(self.tx_buffer_length)
-        cmd[0] = SET_FREQUENCY_HZ
-        cmd[1] = int(value*1000) >> 8
-        cmd[2] = int(value*1000) & 0xff
-        self.serial.write(cmd)
+        cmd[1] = CMD_SET.HOME_OR_ZERO
+        cmd[2] = AXIS.THETA
+        cmd[3] = HOME_OR_ZERO.ZERO
+        self.send_command(cmd)
+        # while self.mcu_cmd_execution_in_progress == True:
+        #     time.sleep(self._motion_status_checking_interval)
+        #     # to do: add timeout
 
-    def set_phase_delay(self,value):
+    def ack_joystick_button_pressed(self):
         cmd = bytearray(self.tx_buffer_length)
-        cmd[0] = SET_PHASE_DELAY
-        value = int((value/90)*65535.0)
-        cmd[1] = int(value) >> 8
-        cmd[2] = int(value) & 0xff
-        self.serial.write(cmd)
+        cmd[1] = CMD_SET.ACK_JOYSTICK_BUTTON_PRESSED
+        self.send_command(cmd)
 
-    def start_trigger_generation(self):
+    def analog_write_onboard_DAC(self,dac,value):
         cmd = bytearray(self.tx_buffer_length)
-        cmd[0] = START_TRIGGER_GENERATION
-        self.serial.write(cmd)
-
-    def stop_trigger_generation(self):
-        cmd = bytearray(self.tx_buffer_length)
-        cmd[0] = STOP_TRIGGER_GENERATION
-        self.serial.write(cmd)
+        cmd[1] = CMD_SET.ANALOG_WRITE_ONBOARD_DAC
+        cmd[2] = dac
+        cmd[3] = (value >> 8) & 0xff
+        cmd[4] = value & 0xff
+        self.send_command(cmd)
 
     def send_command(self,command):
-        cmd = bytearray(self.tx_buffer_length)
-        '''
-        cmd[0],cmd[1] = self.split_int_2byte(round(command[0]*100))                #liquid_lens_freq
-        # cmd[2],cmd[3]=self.split_int_2byte(round(command[1]*1000))               #liquid_lens_ampl
-        # cmd[4],cmd[5]=self.split_int_2byte(round(command[2]*100))                #liquidLens_offset
-        cmd[2] = int(command[1])                                                   # Focus-Tracking ON or OFF
-        cmd[3] = int(command[2])                                                   #Homing
-        cmd[4] = int(command[3])                                                   #tracking
-        cmd[5],cmd[6] = self.split_signed_int_2byte(round(command[4]*100))         #Xerror
-        cmd[7],cmd[8] = self.split_signed_int_2byte(round(command[5]*100))         #Yerror                           
-        cmd[9],cmd[10] = self.split_signed_int_2byte(round(command[6]*100))        #Zerror
-        cmd[11],cmd[12] = self.split_int_2byte(round(0))#command[9]*10))               #averageDt (millisecond with two digit after coma) BUG
-        cmd[13] = int(command[8])                                               # LED intensity
-        # Adding Trigger flag for other Video Streams (Boolean)
-        # print('Trigger command sent {}'.format(command[9]))
-        cmd[14] = int(command[9])
-        # Adding Sampling Interval for other Video Streams
-        # Minimum 10 ms (0.01 s) Maximum: 3600 s (1 hour)
-        # Min value: 1 to 360000 
-        # print('Interval command sent {}'.format(command[10]))
-        cmd[15], cmd[16] = self.split_int_2byte(round(100*command[10]))
-        '''
-        self.serial.write(cmd)
+        self._cmd_id = (self._cmd_id + 1)%256
+        command[0] = self._cmd_id
+        # command[self.tx_buffer_length-1] = self._calculate_CRC(command)
+        self.serial.write(command)
+        self.mcu_cmd_execution_in_progress = True
 
     def read_received_packet(self):
-        # wait to receive data
-        while self.serial.in_waiting==0:
-            pass
-        while self.serial.in_waiting % self.rx_buffer_length != 0:
-            pass
+        while self.terminate_reading_received_packet_thread == False:
+            # wait to receive data
+            if self.serial.in_waiting==0:
+                continue
+            if self.serial.in_waiting % self.rx_buffer_length != 0:
+                continue
+            
+            # get rid of old data
+            num_bytes_in_rx_buffer = self.serial.in_waiting
+            if num_bytes_in_rx_buffer > self.rx_buffer_length:
+                # print('getting rid of old data')
+                for i in range(num_bytes_in_rx_buffer-self.rx_buffer_length):
+                    self.serial.read()
+            
+            # read the buffer
+            msg=[]
+            for i in range(self.rx_buffer_length):
+                msg.append(ord(self.serial.read()))
 
-        num_bytes_in_rx_buffer = self.serial.in_waiting
+            # parse the message
+            '''
+            - command ID (1 byte)
+            - execution status (1 byte)
+            - X pos (4 bytes)
+            - Y pos (4 bytes)
+            - Z pos (4 bytes)
+            - Theta (4 bytes)
+            - buttons and switches (1 byte)
+            - reserved (4 bytes)
+            - CRC (1 byte)
+            '''
+            self._cmd_id_mcu = msg[0]
+            self._cmd_execution_status = msg[1]
+            if (self._cmd_id_mcu == self._cmd_id) and (self._cmd_execution_status == CMD_EXECUTION_STATUS.COMPLETED_WITHOUT_ERRORS):
+                if self.mcu_cmd_execution_in_progress == True:
+                    self.mcu_cmd_execution_in_progress = False
+                    print('   mcu command ' + str(self._cmd_id) + ' complete')
 
-        # get rid of old data
-        if num_bytes_in_rx_buffer > self.rx_buffer_length:
-            # print('getting rid of old data')
-            for i in range(num_bytes_in_rx_buffer-self.rx_buffer_length):
-                self.serial.read()
-        
-        # read the buffer
-        data=[]
-        for i in range(self.rx_buffer_length):
-            data.append(ord(self.serial.read()))
+            # print('command id ' + str(self._cmd_id) + '; mcu command ' + str(self._cmd_id_mcu) + ' status: ' + str(msg[1]) )
 
-        '''
-        YfocusPhase = self.data2byte_to_int(data[0],data[1])*2*np.pi/65535.
-        Xpos_arduino = data[3]*2**24 + data[4]*2**16+data[5]*2**8 + data[6]
-        if data[2]==1:
-            Xpos_arduino =-Xpos_arduino
-        Ypos_arduino = data[8]*2**24 + data[9]*2**16+data[10]*2**8 + data[11]
-        if data[7]==1:
-            Ypos_arduino =-Ypos_arduino
-        Zpos_arduino = data[13]*2**24 + data[14]*2**16+data[15]*2**8 + data[16]
-        if data[12]==1:
-            Zpos_arduino =-Zpos_arduino
-        manualMode = data[17]
-        LED_measured = self.data2byte_to_int(data[18], data[19])
-        timeStamp = data[20]*2**24 + data[21]*2**16+data[22]*2**8 + data[23]
-        tracking_triggered = bool(data[24])
-        trigger_FL = bool(data[25])
-        return [YfocusPhase,Xpos_arduino,Ypos_arduino,Zpos_arduino, LED_measured, tracking_triggered],manualMode
-        '''
-        return data
+            self.x_pos = self._payload_to_int(msg[2:6],MicrocontrollerDef.N_BYTES_POS) # unit: microstep or encoder resolution
+            self.y_pos = self._payload_to_int(msg[6:10],MicrocontrollerDef.N_BYTES_POS) # unit: microstep or encoder resolution
+            self.z_pos = self._payload_to_int(msg[10:14],MicrocontrollerDef.N_BYTES_POS) # unit: microstep or encoder resolution
+            self.theta_pos = self._payload_to_int(msg[14:18],MicrocontrollerDef.N_BYTES_POS) # unit: microstep or encoder resolution
+            
+            self.button_and_switch_state = msg[18]
+            # joystick button
+            tmp = self.button_and_switch_state & (1 << BIT_POS_JOYSTICK_BUTTON)
+            joystick_button_pressed = tmp > 0
+            if self.joystick_button_pressed == False and joystick_button_pressed == True:
+                self.signal_joystick_button_pressed_event = True
+                self.ack_joystick_button_pressed()
+            self.joystick_button_pressed = joystick_button_pressed
+            # switch
+            tmp = self.button_and_switch_state & (1 << BIT_POS_SWITCH)
+            self.switch_state = tmp > 0
 
-    def read_received_packet_nowait(self):
-        # wait to receive data
-        if self.serial.in_waiting==0:
-            return None
-        if self.serial.in_waiting % self.rx_buffer_length != 0:
-            return None
-        
-        # get rid of old data
-        num_bytes_in_rx_buffer = self.serial.in_waiting
-        if num_bytes_in_rx_buffer > self.rx_buffer_length:
-            # print('getting rid of old data')
-            for i in range(num_bytes_in_rx_buffer-self.rx_buffer_length):
-                self.serial.read()
-        
-        # read the buffer
-        data=[]
-        for i in range(self.rx_buffer_length):
-            data.append(ord(self.serial.read()))
-        return data
+            if self.new_packet_callback_external is not None:
+                self.new_packet_callback_external(self)
+
+    def get_pos(self):
+        return self.x_pos, self.y_pos, self.z_pos, self.theta_pos
+
+    def get_button_and_switch_state(self):
+        return self.button_and_switch_state
+
+    def is_busy(self):
+        return self.mcu_cmd_execution_in_progress
+
+    def set_callback(self,function):
+        self.new_packet_callback_external = function
+
+    def _int_to_payload(self,signed_int,number_of_bytes):
+        if signed_int >= 0:
+            payload = signed_int
+        else:
+            payload = 2**(8*number_of_bytes) + signed_int # find two's completement
+        return payload
+
+    def _payload_to_int(self,payload,number_of_bytes):
+        signed = 0
+        for i in range(number_of_bytes):
+            signed = signed + int(payload[i])*(256**(number_of_bytes-1-i))
+        if signed >= 256**number_of_bytes/2:
+            signed = signed - 256**number_of_bytes
+        return signed
 
 class Microcontroller_Simulation():
     def __init__(self,parent=None):
-        pass
+        self.serial = None
+        self.platform_name = platform.system()
+        self.tx_buffer_length = MicrocontrollerDef.CMD_LENGTH
+        self.rx_buffer_length = MicrocontrollerDef.MSG_LENGTH
+
+        self._cmd_id = 0
+        self._cmd_id_mcu = None # command id of mcu's last received command 
+        self._cmd_execution_status = None
+        self.mcu_cmd_execution_in_progress = False
+
+        self.x_pos = 0 # unit: microstep or encoder resolution
+        self.y_pos = 0 # unit: microstep or encoder resolution
+        self.z_pos = 0 # unit: microstep or encoder resolution
+        self.theta_pos = 0 # unit: microstep or encoder resolution
+        self.button_and_switch_state = 0
+        self.joystick_button_pressed = 0
+        self.signal_joystick_button_pressed_event = False
+        self.switch_state = 0
+
+         # for simulation
+        self.timestamp_last_command = time.time() # for simulation only
+        self._mcu_cmd_execution_status = None
+        self.timer_update_command_execution_status = QTimer()
+        self.timer_update_command_execution_status.timeout.connect(self._simulation_update_cmd_execution_status)
+
+        self.new_packet_callback_external = None
+        self.terminate_reading_received_packet_thread = False
+        self.thread_read_received_packet = threading.Thread(target=self.read_received_packet, daemon=True)
+        self.thread_read_received_packet.start()
 
     def close(self):
-        pass
+        self.terminate_reading_received_packet_thread = True
+        self.thread_read_received_packet.join()
 
-    def toggle_LED(self,state):
-        pass
-    
-    def toggle_laser(self,state):
-        pass
+    def move_x_usteps(self,usteps):
+        self.x_pos = self.x_pos + STAGE_MOVEMENT_SIGN_X*usteps
+        cmd = bytearray(self.tx_buffer_length)
+        self.send_command(cmd)
+        print('   mcu command ' + str(self._cmd_id) + ': move x')
 
-    def move_x(self,delta):
-        pass
+    def move_x_to_usteps(self,usteps):
+        self.x_pos = STAGE_MOVEMENT_SIGN_X*usteps
+        cmd = bytearray(self.tx_buffer_length)
+        self.send_command(cmd)
+        print('   mcu command ' + str(self._cmd_id) + ': move x to')
 
-    def move_y(self,delta):
-        pass
+    def move_y_usteps(self,usteps):
+        self.y_pos = self.y_pos + STAGE_MOVEMENT_SIGN_Y*usteps
+        cmd = bytearray(self.tx_buffer_length)
+        self.send_command(cmd)
+        print('   mcu command ' + str(self._cmd_id) + ': move y')
 
-    def move_x_nonblocking(self,delta):
-        pass
+    def move_y_to_usteps(self,usteps):
+        self.y_pos = STAGE_MOVEMENT_SIGN_Y*usteps
+        cmd = bytearray(self.tx_buffer_length)
+        self.send_command(cmd)
+        print('   mcu command ' + str(self._cmd_id) + ': move y to')
 
-    def move_y_nonblocking(self,delta):
-        pass
+    def move_z_usteps(self,usteps):
+        self.z_pos = self.z_pos + STAGE_MOVEMENT_SIGN_Z*usteps
+        cmd = bytearray(self.tx_buffer_length)
+        self.send_command(cmd)
+        print('   mcu command ' + str(self._cmd_id) + ': move z')
 
-    def move_z_nonblocking(self,delta):
-        pass
+    def move_z_to_usteps(self,usteps):
+        self.z_pos = STAGE_MOVEMENT_SIGN_Z*usteps
+        cmd = bytearray(self.tx_buffer_length)
+        self.send_command(cmd)
+        print('   mcu command ' + str(self._cmd_id) + ': move z to')
 
-    def move_theta_nonblocking(self,delta):
-        pass
-        
-    def move_z(self,delta):
-        pass
+    def move_theta_usteps(self,usteps):
+        self.theta_pos = self.theta_pos + usteps
+        cmd = bytearray(self.tx_buffer_length)
+        self.send_command(cmd)
 
-    def send_focus_tracking_command(self,focus_tracking_flag):
-        pass
+    def home_x(self):
+        self.x_pos = 0
+        cmd = bytearray(self.tx_buffer_length)
+        self.send_command(cmd)
+        print('   mcu command ' + str(self._cmd_id) + ': home x')
 
-    def send_command(self,command):
-        pass
+    def home_y(self):
+        self.y_pos = 0
+        cmd = bytearray(self.tx_buffer_length)
+        self.send_command(cmd)
+        print('   mcu command ' + str(self._cmd_id) + ': home y')
+
+    def home_z(self):
+        self.z_pos = 0
+        cmd = bytearray(self.tx_buffer_length)
+        self.send_command(cmd)
+        print('   mcu command ' + str(self._cmd_id) + ': home z')
+
+    def home_xy(self):
+        self.x_pos = 0
+        self.y_pos = 0
+        cmd = bytearray(self.tx_buffer_length)
+        self.send_command(cmd)
+        print('   mcu command ' + str(self._cmd_id) + ': home xy')
+
+    def home_theta(self):
+        self.theta_pos = 0
+        cmd = bytearray(self.tx_buffer_length)
+        self.send_command(cmd)
+
+    def zero_x(self):
+        self.x_pos = 0
+        cmd = bytearray(self.tx_buffer_length)
+        self.send_command(cmd)
+        print('   mcu command ' + str(self._cmd_id) + ': zero x')
+
+    def zero_y(self):
+        self.y_pos = 0
+        cmd = bytearray(self.tx_buffer_length)
+        self.send_command(cmd)
+        print('   mcu command ' + str(self._cmd_id) + ': zero y')
+
+    def zero_z(self):
+        self.z_pos = 0
+        cmd = bytearray(self.tx_buffer_length)
+        self.send_command(cmd)
+        print('   mcu command ' + str(self._cmd_id) + ': zero z')
+
+    def zero_theta(self):
+        self.theta_pos = 0
+        cmd = bytearray(self.tx_buffer_length)
+        self.send_command(cmd)
+
+    def analog_write_onboard_DAC(self,dac,value):
+        cmd = bytearray(self.tx_buffer_length)
+        cmd[1] = CMD_SET.ANALOG_WRITE_ONBOARD_DAC
+        cmd[2] = dac
+        cmd[3] = (value >> 8) & 0xff
+        cmd[4] = value & 0xff
+        self.send_command(cmd)
 
     def read_received_packet(self):
-        pass
+        while self.terminate_reading_received_packet_thread == False:
+            # only for simulation - update the command execution status
+            if time.time() - self.timestamp_last_command > 0.05: # in the simulation, assume all the operation takes 0.05s to complete
+                if self._mcu_cmd_execution_status !=  CMD_EXECUTION_STATUS.COMPLETED_WITHOUT_ERRORS:
+                    self._mcu_cmd_execution_status = CMD_EXECUTION_STATUS.COMPLETED_WITHOUT_ERRORS
+                    print('   mcu command ' + str(self._cmd_id) + ' complete')
 
-    def read_received_packet_nowait(self):
-        return None
+            # read and parse message
+            msg=[]
+            for i in range(self.rx_buffer_length):
+                msg.append(0)
 
-    def set_number_of_planes_per_volume(self,value):
-        pass
+            msg[0] = self._cmd_id
+            msg[1] = self._mcu_cmd_execution_status
 
-    def set_number_of_requested_volumes(self,value):
-        pass
+            self._cmd_id_mcu = msg[0]
+            self._cmd_execution_status = msg[1]
+            if (self._cmd_id_mcu == self._cmd_id) and (self._cmd_execution_status == CMD_EXECUTION_STATUS.COMPLETED_WITHOUT_ERRORS):
+                self.mcu_cmd_execution_in_progress = False
+            # print('mcu_cmd_execution_in_progress: ' + str(self.mcu_cmd_execution_in_progress))
+            
+            # self.x_pos = utils.unsigned_to_signed(msg[2:6],MicrocontrollerDef.N_BYTES_POS) # unit: microstep or encoder resolution
+            # self.y_pos = utils.unsigned_to_signed(msg[6:10],MicrocontrollerDef.N_BYTES_POS) # unit: microstep or encoder resolution
+            # self.z_pos = utils.unsigned_to_signed(msg[10:14],MicrocontrollerDef.N_BYTES_POS) # unit: microstep or encoder resolution
+            # self.theta_pos = utils.unsigned_to_signed(msg[14:18],MicrocontrollerDef.N_BYTES_POS) # unit: microstep or encoder resolution
+            
+            self.button_and_switch_state = msg[18]
 
-    def set_frequency_Hz(self,value):
-        pass
+            if self.new_packet_callback_external is not None:
+                self.new_packet_callback_external(self)
 
-    def set_phase_delay(self,value):
-        pass
+            time.sleep(0.005) # simulate MCU packet transmission interval
 
-    def start_trigger_generation(self):
-        pass
+    def turn_on_illumination(self):
+        cmd = bytearray(self.tx_buffer_length)
+        self.send_command(cmd)
+        print('   mcu command ' + str(self._cmd_id) + ': turn on illumination')
 
-    def stop_trigger_generation(self):
-        pass
+    def turn_off_illumination(self):
+        cmd = bytearray(self.tx_buffer_length)
+        self.send_command(cmd)
+        print('   mcu command ' + str(self._cmd_id) + ': turn off illumination')
 
-    def send_hardware_trigger_command(self, trigger_state):
-        pass
+    def set_illumination(self,illumination_source,intensity):
+        cmd = bytearray(self.tx_buffer_length)
+        self.send_command(cmd)
+        print('   mcu command ' + str(self._cmd_id) + ': set illumination')
 
-# from Gravity machine
-def split_int_2byte(number):
-    return int(number)% 256,int(number) >> 8
+    def set_illumination_led_matrix(self,illumination_source,r,g,b):
+        cmd = bytearray(self.tx_buffer_length)
+        self.send_command(cmd)
+        print('   mcu command ' + str(self._cmd_id) + ': set illumination (led matrix)')
 
-def split_signed_int_2byte(number):
-    if abs(number) > 32767:
-        number = np.sign(number)*32767
+    def get_pos(self):
+        return self.x_pos, self.y_pos, self.z_pos, self.theta_pos
 
-    if number!=abs(number):
-        number=65536+number
-    return int(number)% 256,int(number) >> 8
+    def get_button_and_switch_state(self):
+        return self.button_and_switch_state
 
-def split_int_3byte(number):
-    return int(number)%256, int(number) >> 8, int(number) >> 16
+    def set_callback(self,function):
+        self.new_packet_callback_external = function
 
-def data2byte_to_int(a,b):
-    return a + 256*b
+    def is_busy(self):
+        return self.mcu_cmd_execution_in_progress
 
-def data2byte_to_signed_int(a,b):
-    nb= a+256*b
-    if nb>32767:
-        nb=nb-65536
-    return nb
+    def send_command(self,command):
+        self._cmd_id = (self._cmd_id + 1)%256
+        command[0] = self._cmd_id
+        # command[self.tx_buffer_length-1] = self._calculate_CRC(command)
+        self.mcu_cmd_execution_in_progress = True
+        # for simulation
+        self._mcu_cmd_execution_status = CMD_EXECUTION_STATUS.IN_PROGRESS
+        # self.timer_update_command_execution_status.setInterval(2000)
+        # self.timer_update_command_execution_status.start()
+        # print('start timer')
+        # timer cannot be started from another thread
+        self.timestamp_last_command = time.time()
 
-def data4byte_to_int(a,b,c,d):
-    return a + (256)*b + (65536)*c + (16777216)*d
-
+    def _simulation_update_cmd_execution_status(self):
+        # print('simulation - MCU command execution finished')
+        # self._mcu_cmd_execution_status = CMD_EXECUTION_STATUS.COMPLETED_WITHOUT_ERRORS
+        # self.timer_update_command_execution_status.stop()
+        pass # timer cannot be started from another thread
 

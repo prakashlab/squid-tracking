@@ -58,14 +58,6 @@ class TrackingControllerWidget(QFrame):
 		self.btn_track.setDefault(False)
 		self.btn_track.setIcon(QIcon('icon/track_white.png'))
 
-		self.checkbox_enable_stage_tracking = QCheckBox(' Enable Stage Tracking')
-		if USE_HARDWARE_SWITCH:
-			self.checkbox_enable_stage_tracking.setEnabled(False)
-		else:
-			self.checkbox_enable_stage_tracking.setEnabled(True)
-			self.checkbox_enable_stage_tracking.setChecked(True)
-		self.checkbox_enable_stage_tracking.stateChanged.connect(self.toggle_stage_tracking)
-
 		# Image Tracker Dropdown
 		self.dropdown_TrackerSelection = QComboBox()
 		self.dropdown_TrackerSelection.addItems(TRACKERS)
@@ -78,9 +70,7 @@ class TrackingControllerWidget(QFrame):
 
 		self.tracking_init_threshold = QRadioButton("Threshold")
 		self.tracking_init_roi = QRadioButton("ROI")
-		self.tracking_init_threshold.setChecked(False)
-		if DEFAULT_INIT_METHOD:
-			self.tracking_init_roi.setChecked(True)
+		self.tracking_init_threshold.setChecked(True)
 
 		# Layout
 		self.tracking_init_group = QGroupBox('Tracking init method')
@@ -172,18 +162,28 @@ class TrackingControllerWidget(QFrame):
 
 		# Overall layout
 		groupbox_track_layout = QGridLayout()
-		groupbox_track_layout.addWidget(self.btn_track, 0,0,2,2)
+		groupbox_track_layout.addWidget(self.btn_track, 0,0,1,1)
 		# groupbox_track_layout.addWidget(self.dropdown_TrackerSelection, 0,1,1,1)
-		groupbox_track_layout.addLayout(tracking_group_layout,2,0)
-		groupbox_track_layout.addWidget(self.tracking_init_group,3,0)
-		groupbox_track_layout.addWidget(self.checkbox_enable_stage_tracking,2,1)
-		groupbox_track_layout.addWidget(self.tracking_setPoint_group,3,1)
-		groupbox_track_layout.addWidget(self.group_sliders,4,0,1,2)
+		groupbox_track_layout.addLayout(tracking_group_layout,0,1,1,1)
+		groupbox_track_layout.addWidget(self.tracking_setPoint_group,1,0,1,1)
+		groupbox_track_layout.addWidget(self.tracking_init_group,1,1,1,1)
+		groupbox_track_layout.addWidget(self.group_sliders,2,0,1,2)
 		self.setLayout(groupbox_track_layout)
+
+	def trigger_track_button(self):
+		if self.btn_track.isChecked():
+			pass
+		else:
+			self.btn_track.setChecked(True)
+			self.do_track_button_tasks()
 
 	def do_track_button_tasks(self):
 		if self.btn_track.isChecked():
+			# Start a new track. If 'Acquire' is true this also creates a track file.
+			# Internal state is changed after creating this file.
+				# Update the internal_state to indicate that object should be tracked using image proc
 			self.internal_state.data['image_tracking_enabled'] = True
+			print('Set image_tracking_enabled to : {}'.format(self.internal_state.data['image_tracking_enabled']))
 			if(self.tracking_init_roi.isChecked()):
 				self.trackingController.update_roi_bbox()
 			self.trackingController.reset_track()
@@ -196,15 +196,9 @@ class TrackingControllerWidget(QFrame):
 			self.internal_state.data['image_tracking_enabled'] = False
 			print('stop tracking')
 
-	def slot_start_tracking(self):
-		# called after start recording is pressed
-		if self.btn_track.isChecked():
-			pass
-		else:
-			self.btn_track.setChecked(True)
-			self.do_track_button_tasks()
-
-	def slot_joystick_button_pressed(self):
+	# This function is connected to the signal from tracking Controller triggered by 
+	# hardware start-tracking input.
+	def handle_hardware_track_signal(self):
 		self.btn_track.toggle()
 		self.do_track_button_tasks()
 
@@ -256,12 +250,50 @@ class TrackingControllerWidget(QFrame):
 		self.btn_track.setChecked(False) # note that this will not cause the clicked signal to emit
 		self.btn_track.setText('Start Tracking')
 
-	def slot_update_stage_tracking_status(self):
-		self.checkbox_enable_stage_tracking.setChecked(self.internal_state.data['stage_tracking_enabled'])
+class StageCalibrationWidget(QFrame):
+	def __init__(self, internal_state, microcontroller,  main=None, *args, **kwargs):
+		super().__init__(*args, **kwargs)
+		self.internal_state = internal_state
+		self.microcontroller = microcontroller
+		self.add_components()
+		self.setFrameStyle(QFrame.Panel | QFrame.Raised)
 
-	def toggle_stage_tracking(self,enabled):
-		self.internal_state.data['stage_tracking_enabled'] = enabled
+	def add_components(self):
+		# Stage zeroing buttons
+		self.zero_X = QPushButton('Zero X-stage')
+		self.zero_Y = QPushButton('Zero Y-stage')
+		self.zero_Theta = QPushButton('Zero Theta-stage')
+		
+		# Homing Button
+		self.homing_button = QPushButton('Run Homing')
+		stage_control = QGridLayout()
+		stage_control.addWidget(self.homing_button,0,0)
+		stage_control.addWidget(self.zero_X,0,1)
+		stage_control.addWidget(self.zero_Y,1,1)
+		stage_control.addWidget(self.zero_Theta,2,1)
+		self.setLayout(stage_control)
 
+		# Connections
+		self.zero_X.clicked.connect(self.zero_X_stage)
+		self.zero_Y.clicked.connect(self.zero_Y_stage)
+		self.zero_Theta.clicked.connect(self.zero_Theta_stage)
+		self.homing_button.clicked.connect(self.homing_button_click)
+
+	def zero_X_stage(self):
+		self.microcontroller.send_stage_zero_command(0)
+	
+	def zero_Y_stage(self):
+		self.microcontroller.send_stage_zero_command(1)
+
+	def zero_Theta_stage(self):
+		self.microcontroller.send_stage_zero_command(3)
+
+	def homing_button_click(self):
+		# Send homing command to microcontroller
+		self.microcontroller.send_homing_command()
+
+	def update_homing_state():
+		self.homing_button.setText(self.internal_state.data['homing-state'])
 
 class NavigationWidget(QFrame):
 	def __init__(self, navigationController, main=None, *args, **kwargs):
@@ -283,11 +315,6 @@ class NavigationWidget(QFrame):
 		self.btn_moveX_forward.setDefault(False)
 		self.btn_moveX_backward = QPushButton('Backward')
 		self.btn_moveX_backward.setDefault(False)
-		self.btn_home_X = QPushButton('Home')
-		self.btn_home_X.setDefault(False)
-		self.btn_home_X.setEnabled(HOMING_ENABLED_X)
-		self.btn_zero_X = QPushButton('Zero')
-		self.btn_zero_X.setDefault(False)
 		
 		self.label_Ypos = QLabel()
 		self.label_Ypos.setNum(0)
@@ -301,11 +328,6 @@ class NavigationWidget(QFrame):
 		self.btn_moveY_forward.setDefault(False)
 		self.btn_moveY_backward = QPushButton('Backward')
 		self.btn_moveY_backward.setDefault(False)
-		self.btn_home_Y = QPushButton('Home')
-		self.btn_home_Y.setDefault(False)
-		self.btn_home_Y.setEnabled(HOMING_ENABLED_Y)
-		self.btn_zero_Y = QPushButton('Zero')
-		self.btn_zero_Y.setDefault(False)
 
 		self.label_Zpos = QLabel()
 		self.label_Zpos.setNum(0)
@@ -319,11 +341,6 @@ class NavigationWidget(QFrame):
 		self.btn_moveZ_forward.setDefault(False)
 		self.btn_moveZ_backward = QPushButton('Backward')
 		self.btn_moveZ_backward.setDefault(False)
-		self.btn_home_Z = QPushButton('Home')
-		self.btn_home_Z.setDefault(False)
-		self.btn_home_Z.setEnabled(HOMING_ENABLED_Z)
-		self.btn_zero_Z = QPushButton('Zero')
-		self.btn_zero_Z.setDefault(False)
 
 		self.label_Thetapos = QLabel()
 		self.label_Thetapos.setNum(0)
@@ -337,11 +354,6 @@ class NavigationWidget(QFrame):
 		self.btn_moveTheta_forward.setDefault(False)
 		self.btn_moveTheta_backward = QPushButton('Backward')
 		self.btn_moveTheta_backward.setDefault(False)
-		self.btn_home_Theta = QPushButton('Home')
-		self.btn_home_Theta.setDefault(False)
-		self.btn_home_Theta.setEnabled(HOMING_ENABLED_THETA)
-		self.btn_zero_Theta = QPushButton('Zero')
-		self.btn_zero_Theta.setDefault(False)
 		
 		grid_line0 = QGridLayout()
 		grid_line0.addWidget(QLabel('X (mm)'), 0,0)
@@ -349,8 +361,6 @@ class NavigationWidget(QFrame):
 		grid_line0.addWidget(self.entry_dX, 0,2)
 		grid_line0.addWidget(self.btn_moveX_forward, 0,3)
 		grid_line0.addWidget(self.btn_moveX_backward, 0,4)
-		grid_line0.addWidget(self.btn_home_X, 0,5)
-		grid_line0.addWidget(self.btn_zero_X, 0,6)
 
 		grid_line1 = QGridLayout()
 		grid_line1.addWidget(QLabel('Y (mm)'), 0,0)
@@ -358,8 +368,6 @@ class NavigationWidget(QFrame):
 		grid_line1.addWidget(self.entry_dY, 0,2)
 		grid_line1.addWidget(self.btn_moveY_forward, 0,3)
 		grid_line1.addWidget(self.btn_moveY_backward, 0,4)
-		grid_line1.addWidget(self.btn_home_Y, 0,5)
-		grid_line1.addWidget(self.btn_zero_Y, 0,6)
 
 		if TRACKING_CONFIG == 'XTheta_Y':
 			grid_line2 = QGridLayout()
@@ -368,8 +376,6 @@ class NavigationWidget(QFrame):
 			grid_line2.addWidget(self.entry_dTheta, 0,2)
 			grid_line2.addWidget(self.btn_moveTheta_forward, 0,3)
 			grid_line2.addWidget(self.btn_moveTheta_backward, 0,4)
-			grid_line2.addWidget(self.btn_home_Theta, 0,5)
-			grid_line2.addWidget(self.btn_zero_Theta, 0,6)
 		else:
 			grid_line2 = QGridLayout()
 			grid_line2.addWidget(QLabel('Z (mm)'), 0,0)
@@ -377,8 +383,6 @@ class NavigationWidget(QFrame):
 			grid_line2.addWidget(self.entry_dZ, 0,2)
 			grid_line2.addWidget(self.btn_moveZ_forward, 0,3)
 			grid_line2.addWidget(self.btn_moveZ_backward, 0,4)
-			grid_line2.addWidget(self.btn_home_Z, 0,5)
-			grid_line2.addWidget(self.btn_zero_Z, 0,6)
 
 		self.grid = QGridLayout()
 		self.grid.addLayout(grid_line0,0,0)
@@ -390,19 +394,8 @@ class NavigationWidget(QFrame):
 		self.btn_moveX_backward.clicked.connect(self.move_x_backward)
 		self.btn_moveY_forward.clicked.connect(self.move_y_forward)
 		self.btn_moveY_backward.clicked.connect(self.move_y_backward)
-		self.btn_moveZ_forward.clicked.connect(self.move_z_forward)
-		self.btn_moveZ_backward.clicked.connect(self.move_z_backward)
 		self.btn_moveTheta_forward.clicked.connect(self.move_theta_forward)
 		self.btn_moveTheta_backward.clicked.connect(self.move_theta_backward)
-
-		self.btn_home_X.clicked.connect(self.home_x)
-		self.btn_home_Y.clicked.connect(self.home_y)
-		self.btn_home_Z.clicked.connect(self.home_z)
-		self.btn_home_Theta.clicked.connect(self.home_theta)
-		self.btn_zero_X.clicked.connect(self.zero_x)
-		self.btn_zero_Y.clicked.connect(self.zero_y)
-		self.btn_zero_Z.clicked.connect(self.zero_z)
-		self.btn_zero_Theta.clicked.connect(self.zero_theta)
 
 		self.navigationController.signal_x_mm.connect(self.update_x_display)
 		self.navigationController.signal_y_mm.connect(self.update_y_display)
@@ -417,28 +410,6 @@ class NavigationWidget(QFrame):
 		dx_mm = self.entry_dX.value()
 		dx_usteps = dx_mm/(SCREW_PITCH_X_MM/(self.navigationController.x_microstepping*FULLSTEPS_PER_REV_X))
 		self.navigationController.move_x_usteps(-STAGE_MOVEMENT_SIGN_X*dx_usteps)
-	def home_x(self):
-		msg = QMessageBox()
-		msg.setIcon(QMessageBox.Information)
-		msg.setText("Confirm your action")
-		msg.setInformativeText("Click OK to run homing")
-		msg.setWindowTitle("Confirmation")
-		msg.setStandardButtons(QMessageBox.Ok | QMessageBox.Cancel)
-		msg.setDefaultButton(QMessageBox.Cancel)
-		retval = msg.exec_()
-		if QMessageBox.Ok == retval:
-			self.navigationController.home_x()
-	def zero_x(self):
-		msg = QMessageBox()
-		msg.setIcon(QMessageBox.Information)
-		msg.setText("Confirm your action")
-		msg.setInformativeText("Click OK to zero")
-		msg.setWindowTitle("Confirmation")
-		msg.setStandardButtons(QMessageBox.Ok | QMessageBox.Cancel)
-		msg.setDefaultButton(QMessageBox.Cancel)
-		retval = msg.exec_()
-		if QMessageBox.Ok == retval:
-			self.navigationController.zero_x()
 	
 	def move_y_forward(self):
 		dy_mm = self.entry_dY.value()
@@ -454,34 +425,6 @@ class NavigationWidget(QFrame):
 			self.navigationController.move_y_usteps(-STAGE_MOVEMENT_SIGN_Y*dy_usteps)
 		else:
 			self.navigationController.move_z_usteps(-STAGE_MOVEMENT_SIGN_Y*dy_usteps)
-	def home_y(self):
-		msg = QMessageBox()
-		msg.setIcon(QMessageBox.Information)
-		msg.setText("Confirm your action")
-		msg.setInformativeText("Click OK to run homing")
-		msg.setWindowTitle("Confirmation")
-		msg.setStandardButtons(QMessageBox.Ok | QMessageBox.Cancel)
-		msg.setDefaultButton(QMessageBox.Cancel)
-		retval = msg.exec_()
-		if QMessageBox.Ok == retval:
-			if TRACKING_CONFIG == 'XY_Z':
-				self.navigationController.home_y()
-			else:
-				self.navigationController.home_z() # y is the focus axis (driver stack z)
-	def zero_y(self):
-		msg = QMessageBox()
-		msg.setIcon(QMessageBox.Information)
-		msg.setText("Confirm your action")
-		msg.setInformativeText("Click OK to zero")
-		msg.setWindowTitle("Confirmation")
-		msg.setStandardButtons(QMessageBox.Ok | QMessageBox.Cancel)
-		msg.setDefaultButton(QMessageBox.Cancel)
-		retval = msg.exec_()
-		if QMessageBox.Ok == retval:
-			if TRACKING_CONFIG == 'XY_Z':
-				self.navigationController.zero_y()
-			else:
-				self.navigationController.zero_z() # y is the focus axis (driver stack z)
 
 	def move_z_forward(self):
 		dz_mm = self.entry_dZ.value()
@@ -497,34 +440,6 @@ class NavigationWidget(QFrame):
 			self.navigationController.move_z_usteps(-STAGE_MOVEMENT_SIGN_Z*dz_usteps)
 		elif TRACKING_CONFIG == 'XZ_Y':
 			self.navigationController.move_y_usteps(-STAGE_MOVEMENT_SIGN_Z*dz_usteps)
-	def home_z(self):
-		msg = QMessageBox()
-		msg.setIcon(QMessageBox.Information)
-		msg.setText("Confirm your action")
-		msg.setInformativeText("Click OK to run homing")
-		msg.setWindowTitle("Confirmation")
-		msg.setStandardButtons(QMessageBox.Ok | QMessageBox.Cancel)
-		msg.setDefaultButton(QMessageBox.Cancel)
-		retval = msg.exec_()
-		if QMessageBox.Ok == retval:
-			if TRACKING_CONFIG == 'XY_Z':
-				self.navigationController.home_z()
-			else:
-				self.navigationController.home_y() # z is the in-plane axis (driver stack y)
-	def zero_z(self):
-		msg = QMessageBox()
-		msg.setIcon(QMessageBox.Information)
-		msg.setText("Confirm your action")
-		msg.setInformativeText("Click OK to zero")
-		msg.setWindowTitle("Confirmation")
-		msg.setStandardButtons(QMessageBox.Ok | QMessageBox.Cancel)
-		msg.setDefaultButton(QMessageBox.Cancel)
-		retval = msg.exec_()
-		if QMessageBox.Ok == retval:
-			if TRACKING_CONFIG == 'XY_Z':
-				self.navigationController.zero_z()
-			else:
-				self.navigationController.zero_y() # z is the in-plane axis (driver stack y)
 
 	def move_theta_forward(self):
 		dTheta_degree = self.entry_dTheta.value()
@@ -536,28 +451,6 @@ class NavigationWidget(QFrame):
 		dTheta_rad = (dTheta_degree/360)*2*np.pi
 		dTheta_usteps = dTheta_rad/((2*np.pi)/(FULLSTEPS_PER_REV_THETA*self.navigationController.theta_microstepping*GEAR_RATIO_THETA))
 		self.navigationController.move_y_usteps(-STAGE_POS_SIGN_THETA*dTheta_usteps)
-	def home_theta(self):
-		msg = QMessageBox()
-		msg.setIcon(QMessageBox.Information)
-		msg.setText("Confirm your action")
-		msg.setInformativeText("Click OK to run homing")
-		msg.setWindowTitle("Confirmation")
-		msg.setStandardButtons(QMessageBox.Ok | QMessageBox.Cancel)
-		msg.setDefaultButton(QMessageBox.Cancel)
-		retval = msg.exec_()
-		if QMessageBox.Ok == retval:
-			self.navigationController.home_y() # theta is the in-plane axis (driver stack y)
-	def zero_theta(self):
-		msg = QMessageBox()
-		msg.setIcon(QMessageBox.Information)
-		msg.setText("Confirm your action")
-		msg.setInformativeText("Click OK to zero")
-		msg.setWindowTitle("Confirmation")
-		msg.setStandardButtons(QMessageBox.Ok | QMessageBox.Cancel)
-		msg.setDefaultButton(QMessageBox.Cancel)
-		retval = msg.exec_()
-		if QMessageBox.Ok == retval:
-			self.navigationController.zero_y() # theta is the in-plane axis (driver stack y)
 
 	def update_x_display(self,value):
 		self.label_Xpos.setText('{:.03f}'.format(value))
@@ -833,4 +726,4 @@ class PDAFControllerWidget(QFrame):
 			self.PDAFController.enable_tracking(True)
 		else:
 			self.PDAFController.enable_tracking(False)
-			
+
