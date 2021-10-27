@@ -78,7 +78,9 @@ class TrackingControllerWidget(QFrame):
 
 		self.tracking_init_threshold = QRadioButton("Threshold")
 		self.tracking_init_roi = QRadioButton("ROI")
-		self.tracking_init_threshold.setChecked(True)
+		self.tracking_init_threshold.setChecked(False)
+		if DEFAULT_INIT_METHOD:
+			self.tracking_init_roi.setChecked(True)
 
 		# Layout
 		self.tracking_init_group = QGroupBox('Tracking init method')

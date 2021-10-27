@@ -70,7 +70,7 @@ class Tracking:
     BBOX_SCALE_FACTOR = 1.2
     DEFAULT_TRACKER = "csrt"
     INIT_METHODS = ["threshold", "roi"]
-    DEFAULT_INIT_METHOD = "threshold"
+    DEFAULT_INIT_METHOD = "roi"
 
 class MicrocontrollerDef:
     MSG_LENGTH = 24
@@ -122,12 +122,10 @@ DEFAULT_SAVE_FOLDER = os.path.join(os.environ['HOME'], 'GravityMachine')
 if(not os.path.exists(DEFAULT_SAVE_FOLDER)):
     os.makedirs(DEFAULT_SAVE_FOLDER)
 
-
-# Width of Image used for Pixel Size Calibration. 
-CALIB_IMG_WIDTH = 1920
 WORKING_RES_DEFAULT = 0.5
 TRACKERS = ['nearest-nbr', 'csrt', 'kcf', 'mil', 'tld', 'medianflow','mosse','daSiamRPN']
-DEFAULT_TRACKER = 'nearest-nbr'
+DEFAULT_TRACKER = 'csrt'
+DEFAULT_INIT_METHOD = 'roi'
 CROPPED_IMG_RATIO = 10
 
 CAMERA_PIXEL_SIZE_UM = {'IMX226':1.85,'IMX250':3.45,'IMX252':3.45,'PYTHON300':4.8,'IMX178':2.4}

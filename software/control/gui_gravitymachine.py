@@ -39,10 +39,9 @@ class GUI(QMainWindow):
 		#------------------------------------------------------------------
 		self.imageDisplayWindow = {}
 		for key in self.imaging_channels:
-			if(CAMERAS[key]['make']=='TIS'):
-				self.imageDisplayWindow[key] = core.ImageDisplayWindow(key + ' Display', DrawCrossHairs = True) 
-			elif (CAMERAS[key]['make']=='Daheng'):
-				self.imageDisplayWindow[key] = core.ImageDisplayWindow(key + ' Display', DrawCrossHairs = True) 		
+			self.imageDisplayWindow[key] = core.ImageDisplayWindow(key + ' Display', DrawCrossHairs = True)
+			if key == TRACKING:
+				self.imageDisplayWindow[key].toggle_ROI_selector(True)
 		self.imageDisplayWindow_ThresholdedImage = core.ImageDisplayWindow('Thresholded Image')
 		
 		#------------------------------------------------------------------
