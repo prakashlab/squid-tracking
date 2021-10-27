@@ -90,6 +90,7 @@ class GUI(QMainWindow):
 		self.PID_Group_Widget = widgets_tracking.PID_Group_Widget(self.trackingController)
 		self.recordingControlWidget = widgets.RecordingWidget(self.streamHandler,self.imageSaver, self.internal_state, self.trackingDataSaver, self.imaging_channels)			
 		self.plotWidget = widgets.dockAreaPlot(self.internal_state)
+		self.ledMatrixControlWidget = widgets.LEDMatrixControlWidget(self.microcontroller)
 		
 		self.liveSettings_Tab = QTabWidget()
 		self.liveSettings_Tab.addTab(self.liveControlWidget, 'Live controller')
@@ -234,6 +235,7 @@ class GUI(QMainWindow):
 		if VOLUMETRIC_IMAGING:
 			self.SettingsTab.addTab(self.volumetricImagingWidget, 'Volumetric Imaging')
 		self.SettingsTab.addTab(self.navigationWidget, 'Stage Control')
+		self.SettingsTab.addTab(self.ledMatrixControlWidget, 'LED Matrix')
 		self.SettingsTab.addTab(self.plotWidget, 'Plots')
 
 		layout_left = QVBoxLayout()

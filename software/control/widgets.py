@@ -28,7 +28,7 @@ class CameraSettingsWidget(QFrame):
 		self.fps_trigger = FPS['trigger_software']['default']
 
 		# add components to self.grid
-		self.add_components()        
+		self.add_components()		
 		# set frame style
 		self.setFrameStyle(QFrame.Panel | QFrame.Raised)
 
@@ -561,7 +561,7 @@ class RecordingWidget(QGroupBox):
 
 '''
 #%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-#                            Plot widget
+#                              Plot widget
 #%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 '''
 class dockAreaPlot(dock.DockArea):
@@ -632,3 +632,127 @@ class PlotWidget(pg.GraphicsLayoutWidget):
 		self.Ord=[]
 		self.label = PLOT_UNITS[self.title]
 		self.curve.setData(self.Abs,self.Ord)
+
+class LEDMatrixControlWidget(QFrame):
+
+	def __init__(self,microcontroller):
+		super().__init__()
+		self.microcontroller = microcontroller
+		self.led_matrix_r_factor = LED_MATRIX_R_FACTOR
+		self.led_matrix_g_factor = LED_MATRIX_G_FACTOR
+		self.led_matrix_b_factor = LED_MATRIX_B_FACTOR
+		self.intensity = 20
+		self.illumination_source = LED_MATRIX_PATTERN['LED matrix left half']
+		self.add_components()		
+		self.setFrameStyle(QFrame.Panel | QFrame.Raised)
+
+	def add_components(self):
+		self.dropdown_LED_matrix_pattern = QComboBox()
+		for pattern in LED_MATRIX_PATTERN.keys():
+			self.dropdown_LED_matrix_pattern.addItems([pattern])
+		self.dropdown_LED_matrix_pattern.setCurrentText('LED matrix left half')
+
+		self.slider_R = QSlider(Qt.Horizontal)
+		self.slider_R.setTickPosition(QSlider.TicksBelow)
+		self.slider_R.setMinimum(0)
+		self.slider_R.setMaximum(100)
+		self.slider_R.setSingleStep(1)
+		self.slider_R.setValue(LED_MATRIX_R_FACTOR*100)
+		self.entry_R = QDoubleSpinBox()
+		self.entry_R.setMinimum(0) 
+		self.entry_R.setMaximum(1) 
+		self.entry_R.setSingleStep(0.01)
+		self.entry_R.setValue(LED_MATRIX_R_FACTOR)
+
+		self.slider_G = QSlider(Qt.Horizontal)
+		self.slider_G.setTickPosition(QSlider.TicksBelow)
+		self.slider_G.setMinimum(0)
+		self.slider_G.setMaximum(100)
+		self.slider_G.setSingleStep(1)
+		self.slider_G.setValue(LED_MATRIX_G_FACTOR*100)
+		self.entry_G = QDoubleSpinBox()
+		self.entry_G.setMinimum(0) 
+		self.entry_G.setMaximum(1) 
+		self.entry_G.setSingleStep(0.01)
+		self.entry_G.setValue(LED_MATRIX_G_FACTOR)
+
+		self.slider_B = QSlider(Qt.Horizontal)
+		self.slider_B.setTickPosition(QSlider.TicksBelow)
+		self.slider_B.setMinimum(0)
+		self.slider_B.setMaximum(100)
+		self.slider_B.setSingleStep(1)
+		self.slider_B.setValue(LED_MATRIX_B_FACTOR*100)
+		self.entry_B = QDoubleSpinBox()
+		self.entry_B.setMinimum(0) 
+		self.entry_B.setMaximum(100) 
+		self.entry_B.setSingleStep(0.01)
+		self.entry_B.setValue(LED_MATRIX_B_FACTOR)
+
+		self.slider_intensity = QSlider(Qt.Horizontal)
+		self.slider_intensity.setTickPosition(QSlider.TicksBelow)
+		self.slider_intensity.setMinimum(0)
+		self.slider_intensity.setMaximum(100)
+		self.slider_intensity.setSingleStep(1)
+		self.slider_intensity.setValue(20)
+		self.entry_intensity = QDoubleSpinBox()
+		self.entry_intensity.setMinimum(0) 
+		self.entry_intensity.setMaximum(100) 
+		self.entry_intensity.setSingleStep(1)
+		self.entry_intensity.setValue(20)
+
+		self.btn_toggle = QPushButton('LED Matrix On/Off')
+		self.btn_toggle.setCheckable(True)
+		self.btn_toggle.setDefault(False)
+
+		grid = QGridLayout()
+		grid.addWidget(QLabel('LED matrix pattern'),0,0)
+		grid.addWidget(self.dropdown_LED_matrix_pattern,0,1,1,2)
+		grid.addWidget(QLabel('LED matrix R'),1,0)
+		grid.addWidget(self.slider_R,1,1)
+		grid.addWidget(self.entry_R,1,2)
+		grid.addWidget(QLabel('LED matrix G'),2,0)
+		grid.addWidget(self.slider_G,2,1)
+		grid.addWidget(self.entry_G,2,2)
+		grid.addWidget(QLabel('LED matrix B'),3,0)
+		grid.addWidget(self.slider_B,3,1)
+		grid.addWidget(self.entry_B,3,2)
+		grid.addWidget(QLabel('Intensity'),4,0)
+		grid.addWidget(self.slider_intensity,4,1)
+		grid.addWidget(self.entry_intensity,4,2)
+		grid.addWidget(self.btn_toggle,5,0,1,3)
+		grid.setRowStretch(grid.rowCount(), 1)
+
+		self.setLayout(grid)
+
+		# connections
+		self.slider_R.valueChanged.connect(lambda x: self.entry_R.setValue(x/100.0))
+		self.entry_R.valueChanged.connect(lambda x: self.slider_R.setValue(x*100))
+		self.entry_R.valueChanged.connect(self.update_illumination)
+		self.slider_G.valueChanged.connect(lambda x: self.entry_G.setValue(x/100.0))
+		self.entry_G.valueChanged.connect(lambda x: self.slider_G.setValue(x*100))
+		self.entry_G.valueChanged.connect(self.update_illumination)
+		self.slider_B.valueChanged.connect(lambda x: self.entry_B.setValue(x/100.0))
+		self.entry_B.valueChanged.connect(lambda x: self.slider_B.setValue(x*100))
+		self.entry_B.valueChanged.connect(self.update_illumination)
+		self.slider_intensity.valueChanged.connect(self.entry_intensity.setValue)
+		self.entry_intensity.valueChanged.connect(self.slider_intensity.setValue)
+		self.entry_intensity.valueChanged.connect(self.update_illumination)
+		self.btn_toggle.clicked.connect(self.toggle_illumination)
+
+	def toggle_illumination(self,on):
+		if on == True:
+			self.microcontroller.turn_on_illumination()
+		else:
+			self.microcontroller.turn_off_illumination()
+
+	def set_illumination_pattern(self):
+		self.illumination_source = LED_MATRIX_PATTERN[self.dropdown_LED_matrix_pattern.currentText()]
+
+	def update_illumination(self):
+		if self.illumination_source < 10: # LED matrix
+			self.microcontroller.set_illumination_led_matrix(self.illumination_source,
+				r=(self.intensity/100.0)*(self.entry_R.value()),
+				g=(self.intensity/100.0)*(self.entry_G.value()),
+				b=(self.intensity/100.0)*(self.entry_B.value()))
+		else:
+			self.microcontroller.set_illumination(self.illumination_source,self.intensity)
