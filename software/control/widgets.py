@@ -638,10 +638,6 @@ class LEDMatrixControlWidget(QFrame):
 	def __init__(self,microcontroller):
 		super().__init__()
 		self.microcontroller = microcontroller
-		self.led_matrix_r_factor = LED_MATRIX_R_FACTOR
-		self.led_matrix_g_factor = LED_MATRIX_G_FACTOR
-		self.led_matrix_b_factor = LED_MATRIX_B_FACTOR
-		self.intensity = 20
 		self.illumination_source = LED_MATRIX_PATTERN['LED matrix left half']
 		self.add_components()		
 		self.setFrameStyle(QFrame.Panel | QFrame.Raised)
@@ -698,7 +694,7 @@ class LEDMatrixControlWidget(QFrame):
 		self.entry_intensity.setMinimum(0) 
 		self.entry_intensity.setMaximum(100) 
 		self.entry_intensity.setSingleStep(1)
-		self.entry_intensity.setValue(20)
+		self.entry_intensity.setValue(10)
 
 		self.btn_toggle = QPushButton('LED Matrix On/Off')
 		self.btn_toggle.setCheckable(True)
@@ -751,8 +747,8 @@ class LEDMatrixControlWidget(QFrame):
 	def update_illumination(self):
 		if self.illumination_source < 10: # LED matrix
 			self.microcontroller.set_illumination_led_matrix(self.illumination_source,
-				r=(self.intensity/100.0)*(self.entry_R.value()),
-				g=(self.intensity/100.0)*(self.entry_G.value()),
-				b=(self.intensity/100.0)*(self.entry_B.value()))
+				r=(self.entry_intensity.value()/100.0)*(self.entry_R.value()),
+				g=(self.entry_intensity.value()/100.0)*(self.entry_G.value()),
+				b=(self.entry_intensity.value()/100.0)*(self.entry_B.value()))
 		else:
 			self.microcontroller.set_illumination(self.illumination_source,self.intensity)
