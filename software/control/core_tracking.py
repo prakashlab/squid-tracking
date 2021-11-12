@@ -517,21 +517,19 @@ class TrackingDataSaver(QObject):
 		# Update internal state
 		self.internal_state.data['base_path'] = path
 
-	def start_new_experiment(self,experiment_ID):
+	def start_new_experiment(self):
 		'''
 		This is called when a new Acquisition is started.
 		'''
-		 # @@@ Testing
 		print('Starting new experiment...')
 		# generate unique experiment ID
 		if(self.internal_state.data['Acquisition']==True):
-			 # @@@ Testing
 			print('Creating folders...')
-			self.experiment_ID = experiment_ID + '_' + datetime.now().strftime('%Y-%m-%d %H-%M-%-S')
-			self.internal_state.data['experiment_ID'] = self.experiment_ID
+			self.experiment_ID_with_timestamp = self.experiment_ID + '_' + datetime.now().strftime('%Y-%m-%d %H-%M-%-S')
+			self.internal_state.data['experimentID_with_timestamp'] = self.experiment_ID_with_timestamp
 			# create a new folder to hold current experiment data
 			try:
-				os.mkdir(os.path.join(self.base_path, self.experiment_ID))
+				os.mkdir(os.path.join(self.base_path, self.experiment_ID_with_timestamp))
 				self.exp_folder_created = True
 			except:
 				pass
@@ -543,8 +541,8 @@ class TrackingDataSaver(QObject):
 
 	def update_experiment_ID(self,experiment_ID):
 		# temporary solution for the volumetric recording to use the experiment ID entered in the GUI
-		self.experiment_ID = experiment_ID + '_' + datetime.now().strftime('%Y-%m-%d %H-%M-%-S')
-		self.internal_state.data['experiment_ID'] = self.experiment_ID
+		self.experiment_ID = experiment_ID
+		self.internal_state.data['experimentID'] = self.experiment_ID
 		print('[update the experiment ID to ' + self.experiment_ID + ']')
 
 	def start_new_track(self):
@@ -560,7 +558,7 @@ class TrackingDataSaver(QObject):
 		self.csv_register.close()
 
 		if(self.internal_state.data['Acquisition']==True and self.exp_folder_created):
-			file_name = os.path.join(self.base_path, self.experiment_ID, 'track{:03d}.csv'.format(self.track_counter))
+			file_name = os.path.join(self.base_path, self.experiment_ID_with_timestamp, 'track{:03d}.csv'.format(self.track_counter))
 			print(file_name)
 			#Update the track counter
 			self.track_counter += 1
@@ -577,9 +575,9 @@ class TrackingDataSaver(QObject):
 			pass
 
 	def create_metadata_file(self):
-		config_file = os.path.join(self.base_path, self.experiment_ID, 'metadata.csv')
+		config_file = os.path.join(self.base_path, self.experiment_ID_with_timestamp, 'metadata.csv')
 		df = pd.DataFrame({'Objective':[self.internal_state.data['Objective']], 
-					'PixelPermm':[OBJECTIVES[self.internal_state.data['Objective']]['PixelPermm']],'Local time':[datetime.now().strftime('%Y-%m-%d, %H:%M:%S.%f')]})
+					       'Local time':[datetime.now().strftime('%Y-%m-%d, %H:%M:%S.%f')]})
 		df.to_csv(config_file)
 
 	# Function sets the image names for all the imaging channels    
@@ -648,7 +646,7 @@ class ImageSaver(QObject):
 				file_ID = self.counter
 				# create a new folder (base_path/imaging_channel/subFolderID/fileID)
 				if file_ID == 0 or int(self.counter%self.max_num_image_per_folder)==0:
-					folder_images = os.path.join(self.base_path, self.experiment_ID, self.imaging_channel, '{:05d}'.format(folder_ID))
+					folder_images = os.path.join(self.base_path, self.experiment_ID_with_timestamp, self.imaging_channel, '{:05d}'.format(folder_ID))
 					os.mkdir(folder_images)
 				
 				image_file_name = '{:07d}'.format(file_ID) + self.image_format
@@ -712,25 +710,20 @@ class ImageSaver(QObject):
 		else:
 			self.base_path = self.internal_state.data['base_path']
 
-	def start_saving_images(self, experiment_ID = None):
+	def start_saving_images(self):
 		self.counter = 0
 		self.folder_counter = 0
 		self.recording_start_time = 0
 		self.recording_time_limit = -1
 
 		# Creates the folders for storing images
-		if(experiment_ID is not None):
-			# generate unique experiment ID
-			self.experiment_ID = experiment_ID + '_' + datetime.now().strftime('%Y-%m-%d %H-%M-%-S')
-			self.internal_state.data['experiment_ID'] = self.experiment_ID			
-		else:
-			self.experiment_ID = self.internal_state.data['experiment_ID'] 
+		self.experiment_ID_with_timestamp = self.internal_state.data['experimentID_with_timestamp']
 
 		print(self.base_path)
-		print(self.experiment_ID)
+		print(self.experiment_ID_with_timestamp)
 		print(self.imaging_channel)
 		# create a new folder for each imaging channel
-		os.makedirs(os.path.join(self.base_path, self.experiment_ID, self.imaging_channel))
+		os.makedirs(os.path.join(self.base_path, self.experiment_ID_with_timestamp, self.imaging_channel))
 		print('Created folder for {} channel'.format(self.imaging_channel))
 
 	def set_recording_time_limit(self,time_limit):

@@ -450,6 +450,7 @@ class RecordingWidget(QGroupBox):
 
 		for row, channel in enumerate(self.imaging_channels):
 			if channel == 'volumetric imaging':
+				self.checkbox[channel].setChecked(False)
 				continue # skip volumetric imaging acquisition control in this widget as it's controlled separately
 			box_layout.addWidget(self.checkbox[channel], row+1, 0, 1, 1)
 			box_layout.addWidget(self.entry_saveFPS[channel], row+1, 1, 1, 1)
@@ -514,13 +515,13 @@ class RecordingWidget(QGroupBox):
 			self.internal_state.data['Acquisition'] = True
 			self.lineEdit_experimentID.setEnabled(False)
 			self.btn_setSavingDir.setEnabled(False)
-
 			for channel in self.imaging_channels:
 				self.checkbox[channel].setEnabled(False)
-			
+
+			self.trackingDataSaver.start_new_experiment()
+
 			if(self.trackingDataSaver is not None and self.recordingOnly_flag==False):
 				self.start_tracking_signal.emit()
-				self.trackingDataSaver.start_new_experiment(self.lineEdit_experimentID.text())
 			else:
 				pass
 
