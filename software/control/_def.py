@@ -2,9 +2,9 @@ import os
 import glob
 import numpy as np
 
-# TRACKING_CONFIG = 'XY_Z'
+TRACKING_CONFIG = 'XY_Z'
 # TRACKING_CONFIG = 'XZ_Y'
-TRACKING_CONFIG = 'XTheta_Y'
+# TRACKING_CONFIG = 'XTheta_Y'
 
 USE_HARDWARE_SWITCH = False # for switching on/off stage tracking
 
