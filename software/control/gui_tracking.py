@@ -69,8 +69,15 @@ class GUI(QMainWindow):
 		self.imageSaver = {}
 		for key in self.imaging_channels:
 			# load stream handler
+			if 'is_polarization' in CAMERAS[key]:
+				if CAMERAS[key]['is_polarization']:
+					is_polarization = True
+				else:
+					is_polarization = False
+			else:
+				is_polarization = False
 			self.streamHandler[key] = core.StreamHandler(camera = self.camera[key], crop_width = CAMERAS[key]['px_format'][0], crop_height= CAMERAS[key]['px_format'][1], imaging_channel = key, 
-                rotate_image_angle = CAMERAS[key]['rotate image angle'], flip_image = CAMERAS[key]['flip image'])
+                rotate_image_angle = CAMERAS[key]['rotate image angle'], flip_image = CAMERAS[key]['flip image'], is_polarization_camera = is_polarization)
 			# load image saver
 			self.imageSaver[key] = core_tracking.ImageSaver(self.internal_state, imaging_channel = key, image_format = '.tif', rotate_image_angle = 180)
 
