@@ -1,11 +1,3 @@
-'''
-core objects that run the back-end of the GUI.
-Key objects:
-
-    1. StreamHandler
-
-'''
-
 # set QT_API environment variable
 import os, sys
 os.environ["QT_API"] = "pyqt5"
@@ -18,9 +10,8 @@ from qtpy.QtGui import *
 
 from control._def import *
 import control.tracking as tracking
-
 import control.utils.image_processing as image_processing
-
+import control.utils.pol2color as pol2color
 
 from queue import Queue
 from threading import Thread, Lock
@@ -54,7 +45,7 @@ class StreamHandler(QObject):
     Slots
     '''
 
-    def __init__(self, camera = None , crop_width=2000,crop_height=2000, working_resolution_scaling = WORKING_RES_DEFAULT, imaging_channel = TRACKING, rotate_image_angle = 0, flip_image = None ):
+    def __init__(self, camera = None , crop_width=2000,crop_height=2000, working_resolution_scaling = WORKING_RES_DEFAULT, imaging_channel = TRACKING, rotate_image_angle = 0, flip_image = None, is_polarization_camera = False ):
         QObject.__init__(self)
         self.fps_display = FPS['display']['default']
         self.fps_save = 1
@@ -72,18 +63,13 @@ class StreamHandler(QObject):
 
         self.rotate_image_angle = rotate_image_angle
         self.flip_image = flip_image
-
         self.camera = camera
-
         self.save_image_flag = False
 
         # If current image stream is used for tracking.
         self.imaging_channel = imaging_channel
-
         self.track_flag = False
-
         self.invert_image_flag = False
-
         self.handler_busy = False
 
         # for fps measurement
@@ -98,11 +84,11 @@ class StreamHandler(QObject):
         self.fps_save_real = 0
         self.counter_save = 0
 
+        self.is_polarization_camera = is_polarization_camera
+
         # Image thresholding parameters
         self.lower_HSV = np.array([0, 0, 100],dtype='uint8') 
         self.upper_HSV = np.array([255, 255, 255],dtype='uint8') 
-
-       
 
     def start_recording(self):
         self.save_image_flag = True
@@ -228,30 +214,21 @@ class StreamHandler(QObject):
         
         self.get_real_stream_fps()
 
-        
-        # image = camera.current_frame
-
-        # save a copy of full-res image for saving (make sure to do a deep copy)
-        # @@@@@@@@@
-
+        # resize the image (convert to psuedocolor if the image is from a polarization camera)
+        if is_polarization_camera:
+            image_pol_pseudo_color = pol2color.pol2color(image)
+            image_resized = imutils.resize(image_pol_pseudo_color, round(self.image_width*self.working_resolution_scaling))
+        else:
+            image_resized = imutils.resize(image, round(self.image_width*self.working_resolution_scaling))
         
         if(self.imaging_channel == TRACKING):
-            # image_resized = cv2.resize(image,(round(self.crop_width*self.working_resolution_scaling), round(self.crop_height*self.working_resolution_scaling)),cv2.INTER_LINEAR)
-            image_resized = imutils.resize(image, round(self.image_width*self.working_resolution_scaling))
-
-            # Threshold the image based on the color-thresholds
+            # Threshold the image
             image_thresh = 255*np.array(self.threshold_image(image_resized, color = camera.is_color), dtype = 'uint8')
-
-        else:
-            # image_resized = np.copy(image)
-            image_resized = imutils.resize(image, round(self.image_width*self.working_resolution_scaling))
         
-        # Deepak: For now tracking with every image from camera
+        # send image to track
         time_now = time.time() 
         if self.track_flag and self.imaging_channel == TRACKING:
             # track is a blocking operation - it needs to be
-            # @@@ will cropping before emitting the signal lead to speedup?
-
             self.packet_image_for_tracking.emit(image_resized, image_thresh)
             self.timestamp_last_track = time_now
 
