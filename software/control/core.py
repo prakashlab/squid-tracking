@@ -215,7 +215,7 @@ class StreamHandler(QObject):
         self.get_real_stream_fps()
 
         # resize the image (convert to psuedocolor if the image is from a polarization camera)
-        if is_polarization_camera:
+        if self.is_polarization_camera:
             image_pol_pseudo_color = pol2color.pol2color(image)
             image_resized = imutils.resize(image_pol_pseudo_color, round(self.image_width*self.working_resolution_scaling))
         else:
