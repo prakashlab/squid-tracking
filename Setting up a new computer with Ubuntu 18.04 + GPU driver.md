@@ -1,4 +1,4 @@
-**Step 1**: Download the image for Ubuntu 18.04 and create a bootable USB following the official instruction ([for Mac](https://ubuntu.com/tutorials/create-a-usb-stick-on-macos#1-overview), [for Windows](https://ubuntu.com/tutorials/create-a-usb-stick-on-windows#1-overview), [for Ubuntu](https://ubuntu.com/tutorials/create-a-usb-stick-on-ubuntu#1-overview)) 
+**Step 1**: Download the image for Ubuntu 18.04.5 ([ubuntu-18.04.5-desktop-amd64.iso](https://old-releases.ubuntu.com/releases/18.04.5/ubuntu-18.04.5-desktop-amd64.iso)) and create a bootable USB following the official instruction ([for Mac](https://ubuntu.com/tutorials/create-a-usb-stick-on-macos#1-overview), [for Windows](https://ubuntu.com/tutorials/create-a-usb-stick-on-windows#1-overview), [for Ubuntu](https://ubuntu.com/tutorials/create-a-usb-stick-on-ubuntu#1-overview)).
 
 **Step 2**: Insert the bootable USB drive to the new computer. Power on the computer. If you're using a MSI computer, press and hold the Del key to enter the BIOS manu. Set boot priority such that the computer boots from the inserted USB drive.
 
