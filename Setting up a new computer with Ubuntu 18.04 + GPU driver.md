@@ -1,3 +1,25 @@
+## Instructions from 11/19/2021, on MSI Aegis RS 10TD-213US (i7-10700K, RTX2070)
+
+**Step 1**: Download the image for Ubuntu 18.04.5 ([ubuntu-18.04.5-desktop-amd64.iso](https://old-releases.ubuntu.com/releases/18.04.5/ubuntu-18.04.5-desktop-amd64.iso)) and create a bootable USB following the official instruction ([for Mac](https://ubuntu.com/tutorials/create-a-usb-stick-on-macos#1-overview), [for Windows](https://ubuntu.com/tutorials/create-a-usb-stick-on-windows#1-overview), [for Ubuntu](https://ubuntu.com/tutorials/create-a-usb-stick-on-ubuntu#1-overview)).
+
+**Step 2**: Insert the bootable USB drive to the new computer. Power on the computer. If you're using a MSI computer, press and hold the Del key to enter the BIOS manu. Set boot priority such that the computer boots from the inserted USB drive.
+
+**Step 3**: Follow the instructions to finish installing Ubuntu. Make sure you check "Install third-party software ...". You can keep the windows installation for dual boot. If the computer has both a SSD and a mechanical drive, make sure install to the SSD. If you are having issue adjusting the windows partition size, you'll need to stop the installation, boot into windows, then use disk management -> shrink volumes (you may run into the error "The Volume You Have Selected to Shrink May Be Corrupted", to resolve it, right click on the disk -> properties -> Tools -> Check -> Scan Drive -> Repair Drive -> Repair now).
+
+**Step 4**: After Ubuntu is successfully installed, you will still boot into windows by default. To fix this, press the Delete key on booting to enter the BIOS menu, then Boot -> UEFI Hard Disk Drive BBS Priorities and make Ubuntu the first option.
+
+**Step 5**: Install the GPU driver
+```
+sudo apt-get update
+sudo apt install nvidia-driver-470
+```
+Reboot, and check if the driver is successfully installed
+```
+nvidia-smi
+```
+
+## Instructions from 6/10/2021, on MSI computers from 2019 (i7-9700K, RTX2070 and RTX2080)
+
 **Step 1**: Download the image for Ubuntu 18.04.5 ([ubuntu-18.04.5-desktop-amd64.iso](https://old-releases.ubuntu.com/releases/18.04.5/ubuntu-18.04.5-desktop-amd64.iso)) and create a bootable USB following the official instruction ([for Mac](https://ubuntu.com/tutorials/create-a-usb-stick-on-macos#1-overview), [for Windows](https://ubuntu.com/tutorials/create-a-usb-stick-on-windows#1-overview), [for Ubuntu](https://ubuntu.com/tutorials/create-a-usb-stick-on-ubuntu#1-overview)).
 
 **Step 2**: Insert the bootable USB drive to the new computer. Power on the computer. If you're using a MSI computer, press and hold the Del key to enter the BIOS manu. Set boot priority such that the computer boots from the inserted USB drive.
