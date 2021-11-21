@@ -12,6 +12,8 @@ pip3 install --upgrade setuptools pip
 pip3 install opencv-python==4.4.0.46 opencv-contrib-python==4.4.0.46
 pip3 install qtpy pyserial lxml imutils scipy==1.1.0 pandas tifffile scikit-image
 pip3 install torch==1.8.1+cu111 torchvision==0.9.1+cu111 torchaudio==0.8.1 -f https://download.pytorch.org/whl/torch_stable.html
+pip3 install git+https://github.com/elerac/polanalyser
+pip3 install numba
 ```
 Note that desipte CUDA 11.2 is installed with nvidia-driver-460, the above pytorch installation still works. For up-to-date pytorch release, check https://pytorch.org/get-started/locally/.
 
