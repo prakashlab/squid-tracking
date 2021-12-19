@@ -338,7 +338,7 @@ class StateUpdater(QObject):
 		# assign the readings to the correct axes and convert the unit to mm or rad
 		# x axis is the same across configurations
 		if USE_ENCODER_X:
-			x_pos_mm = x_pos*STAGE_POS_SIGN_X*ENCODER_STEP_SIZE_X_MM
+			x_pos_mm = x_pos*ENCODER_SIGN_X*ENCODER_STEP_SIZE_X_MM
 		else:
 			x_pos_mm = x_pos*STAGE_POS_SIGN_X*(SCREW_PITCH_X_MM/(self.navigationController.x_microstepping*FULLSTEPS_PER_REV_X))
 		self.internal_state.data['X_stage'] = x_pos_mm
@@ -349,14 +349,14 @@ class StateUpdater(QObject):
 		if TRACKING_CONFIG == 'XY_Z':
 			# Y axis
 			if USE_ENCODER_Y:
-				y_pos_mm = y_pos*STAGE_POS_SIGN_Y*ENCODER_STEP_SIZE_Y_MM
+				y_pos_mm = y_pos*ENCODER_SIGN_Y*ENCODER_STEP_SIZE_Y_MM
 			else:
 				y_pos_mm = y_pos*STAGE_POS_SIGN_Y*(SCREW_PITCH_Y_MM/(self.navigationController.y_microstepping*FULLSTEPS_PER_REV_Y))
 			self.internal_state.data['Y_stage'] = y_pos_mm
 			self.navigationController.signal_y_mm.emit(y_pos_mm)
 			# Z axis (focus axis)
 			if USE_ENCODER_Z:
-				z_pos_mm = z_pos*STAGE_POS_SIGN_Z*ENCODER_STEP_SIZE_Z_MM
+				z_pos_mm = z_pos*ENCODER_SIGN_Z*ENCODER_STEP_SIZE_Z_MM
 			else:
 				z_pos_mm = z_pos*STAGE_POS_SIGN_Z*(SCREW_PITCH_Z_MM/(self.navigationController.z_microstepping*FULLSTEPS_PER_REV_Z))
 			self.internal_state.data['Z_stage'] = z_pos_mm
@@ -365,14 +365,14 @@ class StateUpdater(QObject):
 		elif TRACKING_CONFIG == 'XZ_Y':
 			# Z axis
 			if USE_ENCODER_Z: # microcontroller y-axis is connected to the z-stage
-				z_pos_mm = y_pos*STAGE_POS_SIGN_Z*ENCODER_STEP_SIZE_Z_MM 
+				z_pos_mm = y_pos*ENCODER_SIGN_Z*ENCODER_STEP_SIZE_Z_MM 
 			else:
 				z_pos_mm = y_pos*STAGE_POS_SIGN_Z*(SCREW_PITCH_Z_MM/(self.navigationController.z_microstepping*FULLSTEPS_PER_REV_Z))
 			self.internal_state.data['Z_stage'] = z_pos_mm
 			self.navigationController.signal_z_mm.emit(z_pos_mm)
 			# Y axis (focus axis)
 			if USE_ENCODER_Y: # microcontroller z-axis is connected to the y-stage
-				y_pos_mm = z_pos*STAGE_POS_SIGN_Y*ENCODER_STEP_SIZE_Y_MM
+				y_pos_mm = z_pos*ENCODER_SIGN_Y*ENCODER_STEP_SIZE_Y_MM
 			else:
 				y_pos_mm = z_pos*STAGE_POS_SIGN_Y*(SCREW_PITCH_Y_MM/(self.navigationController.y_microstepping*FULLSTEPS_PER_REV_Y))
 			self.internal_state.data['Y_stage'] = y_pos_mm
@@ -381,14 +381,14 @@ class StateUpdater(QObject):
 		elif TRACKING_CONFIG == 'XTheta_Y':
 			# Y axis (focus axis)
 			if USE_ENCODER_Y: # microcontroller z-axis is connected to the y-stage
-				y_pos_mm = z_pos*STAGE_POS_SIGN_Y*ENCODER_STEP_SIZE_Y_MM
+				y_pos_mm = z_pos*ENCODER_SIGN_Y*ENCODER_STEP_SIZE_Y_MM
 			else:
 				y_pos_mm = z_pos*STAGE_POS_SIGN_Y*(SCREW_PITCH_Y_MM/(self.navigationController.y_microstepping*FULLSTEPS_PER_REV_Y))
 			self.internal_state.data['Y_stage'] = y_pos_mm
 			self.navigationController.signal_y_mm.emit(y_pos_mm)
 			# Theta axis
 			if USE_ENCODER_THETA:
-				theta_pos_rad = y_pos*STAGE_POS_SIGN_THETA*ENCODER_STEP_SIZE_THETA/GEAR_RATIO_THETA
+				theta_pos_rad = y_pos*ENCODER_SIGN_THETA*ENCODER_STEP_SIZE_THETA/GEAR_RATIO_THETA
 			else:
 				theta_pos_rad = y_pos*STAGE_POS_SIGN_THETA*(2*np.pi)/(FULLSTEPS_PER_REV_THETA*self.navigationController.theta_microstepping*GEAR_RATIO_THETA)
 			self.internal_state.data['Theta_stage'] = theta_pos_rad
