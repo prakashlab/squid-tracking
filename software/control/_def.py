@@ -88,6 +88,15 @@ class CMD_SET:
     SET_ILLUMINATION = 12
     SET_ILLUMINATION_LED_MATRIX = 13
     ACK_JOYSTICK_BUTTON_PRESSED = 14
+    ANALOG_WRITE_ONBOARD_DAC = 15
+    MOVETO_X = 6
+    MOVETO_Y = 7
+    MOVETO_Z = 8
+    SET_LIM = 9
+    SET_LIM_SWITCH_POLARITY = 20
+    CONFIGURE_STEPPER_DRIVER = 21
+    SET_MAX_VELOCITY_ACCELERATION = 22
+    SET_LEAD_SCREW_PITCH = 23
 
 BIT_POS_JOYSTICK_BUTTON = 0
 BIT_POS_SWITCH = 1
@@ -103,6 +112,7 @@ class AXIS:
     Y = 1 # in plane axis 1 (actual y or actual z or actual theta - depending on the configuration)
     Z = 2 # focus axis (actual z or actual y, depending on the configuration)
     THETA = 3 # not used
+    XY = 4
 
 class PID_parameters:
     MAX_DISTANCE = 2 # Max distance (in mm) for truncating PID command
@@ -115,6 +125,19 @@ class PDAF:
     x_offset_default = 31
     y_offset_default = -41
     shift_to_distance_um_default = -5.0
+
+class LIMIT_CODE:
+    X_POSITIVE = 0
+    X_NEGATIVE = 1
+    Y_POSITIVE = 2
+    Y_NEGATIVE = 3
+    Z_POSITIVE = 4
+    Z_NEGATIVE = 5
+
+class LIMIT_SWITCH_POLARITY:
+    ACTIVE_LOW = 0
+    ACTIVE_HIGH = 1
+    DISABLED = 2
 
 class ILLUMINATION_CODE:
     ILLUMINATION_SOURCE_LED_ARRAY_FULL = 0;
@@ -172,6 +195,16 @@ class CMD_EXECUTION_STATUS:
     CMD_EXECUTION_ERROR = 4
     ERROR_CODE_EMPTYING_THE_FLUDIIC_LINE_FAILED = 100
 
+SLEEP_TIME_S = 0.005
+
+LED_MATRIX_R_FACTOR = 1
+LED_MATRIX_G_FACTOR = 1
+LED_MATRIX_B_FACTOR = 1
+
+##################################################
+#### Default Configurations - to be overriden ####
+##################################################
+# note that these correspond to the actual axes
 STAGE_MOVEMENT_SIGN_X = -1
 STAGE_MOVEMENT_SIGN_Y = 1
 STAGE_MOVEMENT_SIGN_Z = 1
@@ -182,19 +215,22 @@ STAGE_POS_SIGN_Y = STAGE_MOVEMENT_SIGN_Y
 STAGE_POS_SIGN_Z = STAGE_MOVEMENT_SIGN_Z
 STAGE_POS_SIGN_THETA = STAGE_MOVEMENT_SIGN_THETA
 
+# note that these correspond to the actual axes
 TRACKING_MOVEMENT_SIGN_X = 1
 TRACKING_MOVEMENT_SIGN_Y = 1
 TRACKING_MOVEMENT_SIGN_Z = 1
 
+# note that these correspond to the actual axes
 USE_ENCODER_X = False
 USE_ENCODER_Y = False
 USE_ENCODER_Z = False
 USE_ENCODER_THETA = False
 
-ENCODER_POS_SIGN_X = 1
-ENCODER_POS_SIGN_Y = 1
-ENCODER_POS_SIGN_Z = 1
-ENCODER_POS_SIGN_THETA = 1
+# note that these correspond to the actual axes
+ENCODER_SIGN_X = 1
+ENCODER_SIGN_Y = 1
+ENCODER_SIGN_Z = 1
+ENCODER_SIGN_THETA = 1
 
 ENCODER_STEP_SIZE_X_MM = 100e-6
 ENCODER_STEP_SIZE_Y_MM = 100e-6
@@ -206,6 +242,8 @@ FULLSTEPS_PER_REV_Y = 200
 FULLSTEPS_PER_REV_Z = 200
 FULLSTEPS_PER_REV_THETA = 200
 
+# beginning of actuator specific configurations
+# note that here X corresponds to the in-plane axis 1, Y corresponds to the in-plane axis 2, Z corresponds to the focus axis
 SCREW_PITCH_X_MM = 1
 SCREW_PITCH_Y_MM = 1
 SCREW_PITCH_Z_MM = 0.012*25.4
@@ -214,32 +252,39 @@ GEAR_RATIO_THETA = 99+(1044.0/2057.0)
 MICROSTEPPING_DEFAULT_X = 8
 MICROSTEPPING_DEFAULT_Y = 8
 MICROSTEPPING_DEFAULT_Z = 8
-MICROSTEPPING_DEFAULT_THETA = 8
+MICROSTEPPING_DEFAULT_THETA = 8 # not used, to be removed
+
+X_MOTOR_RMS_CURRENT_mA = 490
+Y_MOTOR_RMS_CURRENT_mA = 490
+Z_MOTOR_RMS_CURRENT_mA = 490
+
+X_MOTOR_I_HOLD = 0.5
+Y_MOTOR_I_HOLD = 0.5
+Z_MOTOR_I_HOLD = 0.5
+
+MAX_VELOCITY_X_mm = 20
+MAX_VELOCITY_Y_mm = 20
+MAX_VELOCITY_Z_mm = 2
+
+MAX_ACCELERATION_X_mm = 500
+MAX_ACCELERATION_Y_mm = 500
+MAX_ACCELERATION_Z_mm = 20
+
+# end of actuator specific configurations
 
 SCAN_STABILIZATION_TIME_MS_X = 160
 SCAN_STABILIZATION_TIME_MS_Y = 160
 SCAN_STABILIZATION_TIME_MS_Z = 20
 
+# limit switch
+X_HOME_SWITCH_POLARITY = LIMIT_SWITCH_POLARITY.DISABLED
+Y_HOME_SWITCH_POLARITY = LIMIT_SWITCH_POLARITY.DISABLED
+Z_HOME_SWITCH_POLARITY = LIMIT_SWITCH_POLARITY.DISABLED
+
 HOMING_ENABLED_X = False
 HOMING_ENABLED_Y = False
 HOMING_ENABLED_Z = False
 HOMING_ENABLED_THETA = False
-
-SLEEP_TIME_S = 0.005
-
-LED_MATRIX_R_FACTOR = 1
-LED_MATRIX_G_FACTOR = 1
-LED_MATRIX_B_FACTOR = 1
-
-##################################################
-#### Default Configurations - to be overriden ####
-##################################################
-STAGE_MOVEMENT_SIGN_X = 1
-STAGE_MOVEMENT_SIGN_Y = 1
-STAGE_MOVEMENT_SIGN_THETA = 1
-X_ENCODER_SIGN = 1
-Y_ENCODER_SIGN = 1
-THETA_ENCODER_SIGN = 1
 
 TWO_CAMERA_PDAF = True
 PDAF_FLIPUD = False
@@ -264,12 +309,17 @@ DEFAULT_OBJECTIVE = '4x'
 ##########################################################
 config_files = glob.glob('.' + '/' + 'configuration*.txt')
 if config_files:
+    if len(config_files) > 1:
+        print('multiple machine configuration files found, the program will exit')
+        exit()
     print('load machine-specific configuration')
     exec(open(config_files[0]).read())
-
-########################################################
-#### end of loading machine specific configurations ####
-########################################################
+else:
+    print('machine-specifc configuration not present, the program will exit')
+    exit()
+##########################################################
+##### end of loading machine specific configurations #####
+##########################################################
 
 FPS = {'display':{'min':1, 'max':30, 'default':15}, 
         'trigger_hardware':{'min':1, 'max':CAMERAS[TRACKING]['fps'], 
@@ -336,3 +386,4 @@ if VOLUMETRIC_IMAGING:
     pass
 
 assert INTERNAL_STATE_VARIABLES == list(INITIAL_VALUES.keys()), "Variable mismatch: One or more state variables may not be initialized"
+

@@ -65,6 +65,8 @@ class GUI(QMainWindow):
 				self.camera[key].open()
 			self.microcontroller = microcontroller.Microcontroller()
 
+		microcontroller.configure_actuators()
+
 		self.streamHandler = {}
 		self.imageSaver = {}
 		for key in self.imaging_channels:

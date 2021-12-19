@@ -40,6 +40,9 @@ class Microcontroller():
         self.signal_joystick_button_pressed_event = False
         self.switch_state = 0
 
+        self.last_command = None
+        self.timeout_counter = 0
+
         # AUTO-DETECT the Arduino! Based on Deepak's code
         arduino_ports = [
                 p.device
@@ -378,6 +381,78 @@ class Microcontroller():
         #     time.sleep(self._motion_status_checking_interval)
         #     # to do: add timeout
 
+    def set_lim(self,limit_code,usteps):
+        cmd = bytearray(self.tx_buffer_length)
+        cmd[1] = CMD_SET.SET_LIM
+        cmd[2] = limit_code
+        payload = self._int_to_payload(usteps,4)
+        cmd[3] = payload >> 24
+        cmd[4] = (payload >> 16) & 0xff
+        cmd[5] = (payload >> 8) & 0xff
+        cmd[6] = payload & 0xff
+        self.send_command(cmd)
+
+    def set_limit_switch_polarity(self,axis,polarity):
+        cmd = bytearray(self.tx_buffer_length)
+        cmd[1] = CMD_SET.SET_LIM_SWITCH_POLARITY
+        cmd[2] = axis
+        cmd[3] = polarity
+        self.send_command(cmd)
+
+    def configure_motor_driver(self,axis,microstepping,current_rms,I_hold):
+        # current_rms in mA
+        # I_hold 0.0-1.0
+        cmd = bytearray(self.tx_buffer_length)
+        cmd[1] = CMD_SET.CONFIGURE_STEPPER_DRIVER
+        cmd[2] = axis
+        if microstepping == 1:
+            cmd[3] = 0
+        else:
+            cmd[3] = microstepping
+        cmd[4] = current_rms >> 8
+        cmd[5] = current_rms & 0xff
+        cmd[6] = int(I_hold*255)
+        self.send_command(cmd)
+
+    def set_max_velocity_acceleration(self,axis,velocity,acceleration):
+        # velocity: max 65535/100 mm/s
+        # acceleration: max 65535/10 mm/s^2
+        cmd = bytearray(self.tx_buffer_length)
+        cmd[1] = CMD_SET.SET_MAX_VELOCITY_ACCELERATION
+        cmd[2] = axis
+        cmd[3] = int(velocity*100) >> 8
+        cmd[4] = int(velocity*100) & 0xff
+        cmd[5] = int(acceleration*10) >> 8
+        cmd[6] = int(acceleration*10) & 0xff
+        self.send_command(cmd)
+
+    def set_leadscrew_pitch(self,axis,pitch_mm):
+        # pitch: max 65535/1000 = 65.535 (mm)
+        cmd = bytearray(self.tx_buffer_length)
+        cmd[1] = CMD_SET.SET_LEAD_SCREW_PITCH
+        cmd[2] = axis
+        cmd[3] = int(pitch_mm*1000) >> 8
+        cmd[4] = int(pitch_mm*1000) & 0xff
+        self.send_command(cmd)
+
+    def configure_actuators(self):
+        # lead screw pitch
+        self.set_leadscrew_pitch(AXIS.X,SCREW_PITCH_X_MM)
+        self.set_leadscrew_pitch(AXIS.Y,SCREW_PITCH_Y_MM)
+        self.set_leadscrew_pitch(AXIS.Z,SCREW_PITCH_Z_MM)
+        # stepper driver (microstepping,rms current and I_hold)
+        self.configure_motor_driver(AXIS.X,MICROSTEPPING_DEFAULT_X,X_MOTOR_RMS_CURRENT_mA,X_MOTOR_I_HOLD)
+        self.configure_motor_driver(AXIS.Y,MICROSTEPPING_DEFAULT_Y,Y_MOTOR_RMS_CURRENT_mA,Y_MOTOR_I_HOLD)
+        self.configure_motor_driver(AXIS.Z,MICROSTEPPING_DEFAULT_Z,Z_MOTOR_RMS_CURRENT_mA,Z_MOTOR_I_HOLD)
+        # max velocity and acceleration
+        self.set_max_velocity_acceleration(AXIS.X,MAX_VELOCITY_X_mm,MAX_ACCELERATION_X_mm)
+        self.set_max_velocity_acceleration(AXIS.Y,MAX_VELOCITY_X_mm,MAX_ACCELERATION_Y_mm)
+        self.set_max_velocity_acceleration(AXIS.Z,MAX_VELOCITY_X_mm,MAX_ACCELERATION_Z_mm)
+        # home switch
+        self.set_limit_switch_polarity(AXIS.X,X_HOME_SWITCH_POLARITY)
+        self.set_limit_switch_polarity(AXIS.Y,Y_HOME_SWITCH_POLARITY)
+        self.set_limit_switch_polarity(AXIS.Z,Z_HOME_SWITCH_POLARITY)
+
     def ack_joystick_button_pressed(self):
         cmd = bytearray(self.tx_buffer_length)
         cmd[1] = CMD_SET.ACK_JOYSTICK_BUTTON_PRESSED
@@ -397,6 +472,13 @@ class Microcontroller():
         # command[self.tx_buffer_length-1] = self._calculate_CRC(command)
         self.serial.write(command)
         self.mcu_cmd_execution_in_progress = True
+        self.last_command = command
+        self.timeout_counter = 0
+
+    def resend_last_command(self):
+        self.serial.write(self.last_command)
+        self.mcu_cmd_execution_in_progress = True
+        self.timeout_counter = 0
 
     def read_received_packet(self):
         while self.terminate_reading_received_packet_thread == False:
@@ -436,7 +518,11 @@ class Microcontroller():
                 if self.mcu_cmd_execution_in_progress == True:
                     self.mcu_cmd_execution_in_progress = False
                     print('   mcu command ' + str(self._cmd_id) + ' complete')
-
+                elif self._cmd_id_mcu != self._cmd_id and self.last_command != None:
+                    self.timeout_counter = self.timeout_counter + 1
+                    if self.timeout_counter > 10:
+                        self.resend_last_command()
+                        print('      *** resend the last command')
             # print('command id ' + str(self._cmd_id) + '; mcu command ' + str(self._cmd_id_mcu) + ' status: ' + str(msg[1]) )
 
             self.x_pos = self._payload_to_int(msg[2:6],MicrocontrollerDef.N_BYTES_POS) # unit: microstep or encoder resolution
@@ -615,6 +701,71 @@ class Microcontroller_Simulation():
         self.theta_pos = 0
         cmd = bytearray(self.tx_buffer_length)
         self.send_command(cmd)
+
+    def set_lim(self,limit_code,usteps):
+        cmd = bytearray(self.tx_buffer_length)
+        self.send_command(cmd)
+
+    def configure_motor_driver(self,axis,microstepping,current_rms,I_hold):
+        # current_rms in mA
+        # I_hold 0.0-1.0
+        cmd = bytearray(self.tx_buffer_length)
+        cmd[1] = CMD_SET.CONFIGURE_STEPPER_DRIVER
+        cmd[2] = axis
+        if microstepping == 1:
+            cmd[3] = 0
+        else:
+            cmd[3] = microstepping
+        cmd[4] = current_rms >> 8
+        cmd[5] = current_rms & 0xff
+        cmd[6] = int(I_hold*255)
+        self.send_command(cmd)
+
+    def set_max_velocity_acceleration(self,axis,velocity,acceleration):
+        # velocity: max 65535/100 mm/s
+        # acceleration: max 65535/10 mm/s^2
+        cmd = bytearray(self.tx_buffer_length)
+        cmd[1] = CMD_SET.SET_MAX_VELOCITY_ACCELERATION
+        cmd[2] = axis
+        cmd[3] = int(velocity*100) >> 8
+        cmd[4] = int(velocity*100) & 0xff
+        cmd[5] = int(acceleration*10) >> 8
+        cmd[6] = int(acceleration*10) & 0xff
+        self.send_command(cmd)
+
+    def set_leadscrew_pitch(self,axis,pitch_mm):
+        # pitch: max 65535/1000 = 65.535 (mm)
+        cmd = bytearray(self.tx_buffer_length)
+        cmd[1] = CMD_SET.SET_LEAD_SCREW_PITCH
+        cmd[2] = axis
+        cmd[3] = int(pitch_mm*1000) >> 8
+        cmd[4] = int(pitch_mm*1000) & 0xff
+        self.send_command(cmd)
+
+    def set_limit_switch_polarity(self,axis,polarity):
+        cmd = bytearray(self.tx_buffer_length)
+        cmd[1] = CMD_SET.SET_LIM_SWITCH_POLARITY
+        cmd[2] = axis
+        cmd[3] = polarity
+        self.send_command(cmd)
+
+    def configure_actuators(self):
+        # lead screw pitch
+        self.set_leadscrew_pitch(AXIS.X,SCREW_PITCH_X_MM)
+        self.set_leadscrew_pitch(AXIS.Y,SCREW_PITCH_Y_MM)
+        self.set_leadscrew_pitch(AXIS.Z,SCREW_PITCH_Z_MM)
+        # stepper driver (microstepping,rms current and I_hold)
+        self.configure_motor_driver(AXIS.X,MICROSTEPPING_DEFAULT_X,X_MOTOR_RMS_CURRENT_mA,X_MOTOR_I_HOLD)
+        self.configure_motor_driver(AXIS.Y,MICROSTEPPING_DEFAULT_Y,Y_MOTOR_RMS_CURRENT_mA,Y_MOTOR_I_HOLD)
+        self.configure_motor_driver(AXIS.Z,MICROSTEPPING_DEFAULT_Z,Z_MOTOR_RMS_CURRENT_mA,Z_MOTOR_I_HOLD)
+        # max velocity and acceleration
+        self.set_max_velocity_acceleration(AXIS.X,MAX_VELOCITY_X_mm,MAX_ACCELERATION_X_mm)
+        self.set_max_velocity_acceleration(AXIS.Y,MAX_VELOCITY_X_mm,MAX_ACCELERATION_Y_mm)
+        self.set_max_velocity_acceleration(AXIS.Z,MAX_VELOCITY_X_mm,MAX_ACCELERATION_Z_mm)
+        # home switch
+        self.set_limit_switch_polarity(AXIS.X,X_HOME_SWITCH_POLARITY)
+        self.set_limit_switch_polarity(AXIS.Y,Y_HOME_SWITCH_POLARITY)
+        self.set_limit_switch_polarity(AXIS.Z,Z_HOME_SWITCH_POLARITY)
 
     def analog_write_onboard_DAC(self,dac,value):
         cmd = bytearray(self.tx_buffer_length)
