@@ -262,6 +262,7 @@ class Microcontroller():
         cmd[5] = payload & 0xff
         self.send_command(cmd)
 
+    '''
     def move_theta_usteps(self,usteps):
         direction = STAGE_MOVEMENT_SIGN_THETA*np.sign(usteps)
         n_microsteps_abs = abs(usteps)
@@ -292,6 +293,7 @@ class Microcontroller():
         self.send_command(cmd)
         # while self.mcu_cmd_execution_in_progress == True:
         #     time.sleep(self._motion_status_checking_interval)
+    '''
 
     def home_x(self):
         cmd = bytearray(self.tx_buffer_length)
@@ -323,6 +325,7 @@ class Microcontroller():
         #     time.sleep(self._motion_status_checking_interval)
         #     # to do: add timeout
 
+    '''
     def home_theta(self):
         cmd = bytearray(self.tx_buffer_length)
         cmd[1] = CMD_SET.HOME_OR_ZERO
@@ -332,6 +335,7 @@ class Microcontroller():
         # while self.mcu_cmd_execution_in_progress == True:
         #     time.sleep(self._motion_status_checking_interval)
         #     # to do: add timeout
+    '''
 
     def home_xy(self):
         cmd = bytearray(self.tx_buffer_length)
@@ -371,6 +375,7 @@ class Microcontroller():
         #     time.sleep(self._motion_status_checking_interval)
         #     # to do: add timeout
 
+    '''
     def zero_theta(self):
         cmd = bytearray(self.tx_buffer_length)
         cmd[1] = CMD_SET.HOME_OR_ZERO
@@ -380,6 +385,7 @@ class Microcontroller():
         # while self.mcu_cmd_execution_in_progress == True:
         #     time.sleep(self._motion_status_checking_interval)
         #     # to do: add timeout
+    '''
 
     def set_lim(self,limit_code,usteps):
         cmd = bytearray(self.tx_buffer_length)
@@ -528,7 +534,8 @@ class Microcontroller():
             self.x_pos = self._payload_to_int(msg[2:6],MicrocontrollerDef.N_BYTES_POS) # unit: microstep or encoder resolution
             self.y_pos = self._payload_to_int(msg[6:10],MicrocontrollerDef.N_BYTES_POS) # unit: microstep or encoder resolution
             self.z_pos = self._payload_to_int(msg[10:14],MicrocontrollerDef.N_BYTES_POS) # unit: microstep or encoder resolution
-            self.theta_pos = self._payload_to_int(msg[14:18],MicrocontrollerDef.N_BYTES_POS) # unit: microstep or encoder resolution
+            # self.theta_pos = self._payload_to_int(msg[14:18],MicrocontrollerDef.N_BYTES_POS) # unit: microstep or encoder resolution
+            # right now only use 3 axes
             
             self.button_and_switch_state = msg[18]
             # joystick button
@@ -644,10 +651,12 @@ class Microcontroller_Simulation():
         self.send_command(cmd)
         print('   mcu command ' + str(self._cmd_id) + ': move z to')
 
+    '''
     def move_theta_usteps(self,usteps):
         self.theta_pos = self.theta_pos + usteps
         cmd = bytearray(self.tx_buffer_length)
         self.send_command(cmd)
+    '''
 
     def home_x(self):
         self.x_pos = 0
@@ -674,10 +683,12 @@ class Microcontroller_Simulation():
         self.send_command(cmd)
         print('   mcu command ' + str(self._cmd_id) + ': home xy')
 
+    '''
     def home_theta(self):
         self.theta_pos = 0
         cmd = bytearray(self.tx_buffer_length)
         self.send_command(cmd)
+    '''
 
     def zero_x(self):
         self.x_pos = 0
@@ -697,10 +708,12 @@ class Microcontroller_Simulation():
         self.send_command(cmd)
         print('   mcu command ' + str(self._cmd_id) + ': zero z')
 
+    '''
     def zero_theta(self):
         self.theta_pos = 0
         cmd = bytearray(self.tx_buffer_length)
         self.send_command(cmd)
+    '''
 
     def set_lim(self,limit_code,usteps):
         cmd = bytearray(self.tx_buffer_length)
