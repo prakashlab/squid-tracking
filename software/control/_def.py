@@ -204,7 +204,9 @@ LED_MATRIX_B_FACTOR = 1
 ##################################################
 #### Default Configurations - to be overriden ####
 ##################################################
-# note that these correspond to the actual axes
+# note that these no longer correspond to the actual axes (starting 12/22/2021)
+# note that here X corresponds to the in-plane axis 1, Y corresponds to the in-plane axis 2, Z corresponds to the focus axis
+
 STAGE_MOVEMENT_SIGN_X = -1
 STAGE_MOVEMENT_SIGN_Y = 1
 STAGE_MOVEMENT_SIGN_Z = 1
