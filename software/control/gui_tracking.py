@@ -65,7 +65,7 @@ class GUI(QMainWindow):
 				self.camera[key].open()
 			self.microcontroller = microcontroller.Microcontroller()
 
-		microcontroller.configure_actuators()
+		self.microcontroller.configure_actuators()
 
 		self.streamHandler = {}
 		self.imageSaver = {}
@@ -305,7 +305,7 @@ class GUI(QMainWindow):
 			if TWO_CAMERA_PDAF:
 				self.imageDisplayWindow['PDAF_image1'].close()
 				self.imageDisplayWindow['PDAF_image2'].close()
-			if USE_SEPARATE_TRIGGER_CONTROLLER:
+			if VOLUMETRIC_IMAGING and USE_SEPARATE_TRIGGER_CONTROLLER:
 				self.trigger_controller.close()
 			if VOLUMETRIC_IMAGING:
 				self.focusMeasureDisplayWindow.close()
