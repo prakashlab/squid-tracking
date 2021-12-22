@@ -442,17 +442,19 @@ class NavigationWidget(QFrame):
 	
 	def move_y_forward(self):
 		dy_mm = self.entry_dY.value()
-		dy_usteps = dy_mm/(SCREW_PITCH_Y_MM/(self.navigationController.y_microstepping*FULLSTEPS_PER_REV_Y))
 		if TRACKING_CONFIG == 'XY_Z':
+			dy_usteps = dy_mm/(SCREW_PITCH_Y_MM/(self.navigationController.y_microstepping*FULLSTEPS_PER_REV_Y))
 			self.navigationController.move_y_usteps(STAGE_MOVEMENT_SIGN_Y*dy_usteps)
-		else:
-			self.navigationController.move_z_usteps(STAGE_MOVEMENT_SIGN_Y*dy_usteps)
+		else: # 'XZ_Y' or 'XTheta_Y'
+			dz_usteps = dy_mm/(SCREW_PITCH_Z_MM/(self.navigationController.z_microstepping*FULLSTEPS_PER_REV_Z))
+			self.navigationController.move_z_usteps(STAGE_MOVEMENT_SIGN_Y*dz_usteps)
 	def move_y_backward(self):
 		dy_mm = self.entry_dY.value()
-		dy_usteps = dy_mm/(SCREW_PITCH_Y_MM/(self.navigationController.y_microstepping*FULLSTEPS_PER_REV_Y))
 		if TRACKING_CONFIG == 'XY_Z':
+			dy_usteps = dy_mm/(SCREW_PITCH_Y_MM/(self.navigationController.y_microstepping*FULLSTEPS_PER_REV_Y))
 			self.navigationController.move_y_usteps(-STAGE_MOVEMENT_SIGN_Y*dy_usteps)
-		else:
+		else: # 'XZ_Y' or 'XTheta_Y'
+			dz_usteps = dy_mm/(SCREW_PITCH_Z_MM/(self.navigationController.z_microstepping*FULLSTEPS_PER_REV_Z))
 			self.navigationController.move_z_usteps(-STAGE_MOVEMENT_SIGN_Y*dy_usteps)
 	def home_y(self):
 		msg = QMessageBox()
@@ -485,18 +487,20 @@ class NavigationWidget(QFrame):
 
 	def move_z_forward(self):
 		dz_mm = self.entry_dZ.value()
-		dz_usteps = self.entry_dZ.value()/(SCREW_PITCH_Z_MM/(self.navigationController.z_microstepping*FULLSTEPS_PER_REV_Z))
 		if TRACKING_CONFIG == 'XY_Z':
+			dz_usteps = self.entry_dZ.value()/(SCREW_PITCH_Z_MM/(self.navigationController.z_microstepping*FULLSTEPS_PER_REV_Z))
 			self.navigationController.move_z_usteps(STAGE_MOVEMENT_SIGN_Z*dz_usteps)
 		elif TRACKING_CONFIG == 'XZ_Y':
-			self.navigationController.move_y_usteps(STAGE_MOVEMENT_SIGN_Z*dz_usteps)
+			dy_usteps = self.entry_dZ.value()/(SCREW_PITCH_Y_MM/(self.navigationController.y_microstepping*FULLSTEPS_PER_REV_Y))
+			self.navigationController.move_y_usteps(STAGE_MOVEMENT_SIGN_Z*dy_usteps)
 	def move_z_backward(self):
 		dz_mm = self.entry_dZ.value()
-		dz_usteps = self.entry_dZ.value()/(SCREW_PITCH_Z_MM/(self.navigationController.z_microstepping*FULLSTEPS_PER_REV_Z))
 		if TRACKING_CONFIG == 'XY_Z':
+			dz_usteps = self.entry_dZ.value()/(SCREW_PITCH_Z_MM/(self.navigationController.z_microstepping*FULLSTEPS_PER_REV_Z))
 			self.navigationController.move_z_usteps(-STAGE_MOVEMENT_SIGN_Z*dz_usteps)
 		elif TRACKING_CONFIG == 'XZ_Y':
-			self.navigationController.move_y_usteps(-STAGE_MOVEMENT_SIGN_Z*dz_usteps)
+			dy_usteps = self.entry_dZ.value()/(SCREW_PITCH_Y_MM/(self.navigationController.y_microstepping*FULLSTEPS_PER_REV_Y))
+			self.navigationController.move_y_usteps(-STAGE_MOVEMENT_SIGN_Z*dy_usteps)
 	def home_z(self):
 		msg = QMessageBox()
 		msg.setIcon(QMessageBox.Information)

@@ -364,30 +364,38 @@ class StateUpdater(QObject):
 		# XZ_Y
 		elif TRACKING_CONFIG == 'XZ_Y':
 			# Z axis
-			if USE_ENCODER_Z: # microcontroller y-axis is connected to the z-stage
+			if USE_ENCODER_Z: # microcontroller y-axis is connected to the z-stage; 
+				# right now encoder axis refers to the actual axis. May need to change it for it to match the motor axis naming.
+				# in the next update, to avoid confusion, use axis_1, axis_2 and axis_3 to refer these axes (for different configs)
 				z_pos_mm = y_pos*ENCODER_SIGN_Z*ENCODER_STEP_SIZE_Z_MM 
 			else:
-				z_pos_mm = y_pos*STAGE_POS_SIGN_Z*(SCREW_PITCH_Z_MM/(self.navigationController.z_microstepping*FULLSTEPS_PER_REV_Z))
+				z_pos_mm = y_pos*STAGE_POS_SIGN_Z*(SCREW_PITCH_Y_MM/(self.navigationController.y_microstepping*FULLSTEPS_PER_REV_Y))
 			self.internal_state.data['Z_stage'] = z_pos_mm
 			self.navigationController.signal_z_mm.emit(z_pos_mm)
 			# Y axis (focus axis)
 			if USE_ENCODER_Y: # microcontroller z-axis is connected to the y-stage
+				# right now encoder axis refers to the actual axis. May need to change it for it to match the motor axis naming.
+				# in the next update, to avoid confusion, use axis_1, axis_2 and axis_3 to refer these axes (for different configs)
 				y_pos_mm = z_pos*ENCODER_SIGN_Y*ENCODER_STEP_SIZE_Y_MM
 			else:
-				y_pos_mm = z_pos*STAGE_POS_SIGN_Y*(SCREW_PITCH_Y_MM/(self.navigationController.y_microstepping*FULLSTEPS_PER_REV_Y))
+				y_pos_mm = z_pos*STAGE_POS_SIGN_Y*(SCREW_PITCH_Z_MM/(self.navigationController.z_microstepping*FULLSTEPS_PER_REV_Z))
 			self.internal_state.data['Y_stage'] = y_pos_mm
 			self.navigationController.signal_y_mm.emit(y_pos_mm)
 		# XTheta_Y
 		elif TRACKING_CONFIG == 'XTheta_Y':
 			# Y axis (focus axis)
 			if USE_ENCODER_Y: # microcontroller z-axis is connected to the y-stage
+				# right now encoder axis refers to the actual axis. May need to change it for it to match the motor axis naming.
+				# in the next update, to avoid confusion, use axis_1, axis_2 and axis_3 to refer these axes (for different configs)
 				y_pos_mm = z_pos*ENCODER_SIGN_Y*ENCODER_STEP_SIZE_Y_MM
 			else:
-				y_pos_mm = z_pos*STAGE_POS_SIGN_Y*(SCREW_PITCH_Y_MM/(self.navigationController.y_microstepping*FULLSTEPS_PER_REV_Y))
+				y_pos_mm = z_pos*STAGE_POS_SIGN_Y*(SCREW_PITCH_Z_MM/(self.navigationController.z_microstepping*FULLSTEPS_PER_REV_Z))
 			self.internal_state.data['Y_stage'] = y_pos_mm
 			self.navigationController.signal_y_mm.emit(y_pos_mm)
 			# Theta axis
 			if USE_ENCODER_THETA:
+				# right now encoder axis refers to the actual axis. May need to change it for it to match the motor axis naming.
+				# in the next update, to avoid confusion, use axis_1, axis_2 and axis_3 to refer these axes (for different configs)
 				theta_pos_rad = y_pos*ENCODER_SIGN_THETA*ENCODER_STEP_SIZE_THETA/GEAR_RATIO_THETA
 			else:
 				theta_pos_rad = y_pos*STAGE_POS_SIGN_THETA*(2*np.pi)/(FULLSTEPS_PER_REV_THETA*self.navigationController.theta_microstepping*GEAR_RATIO_THETA)
