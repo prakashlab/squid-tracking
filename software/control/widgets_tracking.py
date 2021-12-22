@@ -267,6 +267,7 @@ class NavigationWidget(QFrame):
 	def __init__(self, navigationController, main=None, *args, **kwargs):
 		super().__init__(*args, **kwargs)
 		self.navigationController = navigationController
+		self.microcontroller = self.navigationController.microcontroller
 		self.add_components()
 		self.setFrameStyle(QFrame.Panel | QFrame.Raised)
 
@@ -342,6 +343,35 @@ class NavigationWidget(QFrame):
 		self.btn_home_Theta.setEnabled(HOMING_ENABLED_THETA)
 		self.btn_zero_Theta = QPushButton('Zero')
 		self.btn_zero_Theta.setDefault(False)
+
+		self.label_x_limit_pos = QLabel()
+		self.label_x_limit_pos.setFrameStyle(QFrame.Panel | QFrame.Sunken)
+		self.label_x_limit_pos.setText('+inf')
+		self.label_x_limit_neg = QLabel()
+		self.label_x_limit_neg.setFrameStyle(QFrame.Panel | QFrame.Sunken)
+		self.label_x_limit_neg.setText('-inf')
+		self.label_y_limit_pos = QLabel()
+		self.label_y_limit_pos.setFrameStyle(QFrame.Panel | QFrame.Sunken)
+		self.label_y_limit_pos.setText('+inf')
+		self.label_y_limit_neg = QLabel()
+		self.label_y_limit_neg.setFrameStyle(QFrame.Panel | QFrame.Sunken)
+		self.label_y_limit_neg.setText('-inf')
+		self.label_z_limit_pos = QLabel()
+		self.label_z_limit_pos.setFrameStyle(QFrame.Panel | QFrame.Sunken)
+		self.label_z_limit_pos.setText('+inf')
+		self.label_z_limit_neg = QLabel()
+		self.label_z_limit_neg.setFrameStyle(QFrame.Panel | QFrame.Sunken)
+		self.label_z_limit_neg.setText('-inf')
+
+		self.btn_set_x_limit_pos = QPushButton('Set X Limit +')
+		self.btn_set_x_limit_neg = QPushButton('Set X Limit -')
+		self.btn_set_y_limit_pos = QPushButton('Set Y Limit +')
+		self.btn_set_y_limit_neg = QPushButton('Set Y Limit -')
+		self.btn_set_z_limit_pos = QPushButton('Set Y Limit +')
+		self.btn_set_z_limit_neg = QPushButton('Set Y Limit -')
+		self.btn_clear_x_limits = QPushButton('Clear')
+		self.btn_clear_y_limits = QPushButton('Clear')
+		self.btn_clear_z_limits = QPushButton('Clear')
 		
 		grid_line0 = QGridLayout()
 		grid_line0.addWidget(QLabel('X (mm)'), 0,0)
@@ -380,10 +410,35 @@ class NavigationWidget(QFrame):
 			grid_line2.addWidget(self.btn_home_Z, 0,5)
 			grid_line2.addWidget(self.btn_zero_Z, 0,6)
 
+		grid_line4 = QGridLayout()
+		grid_line4.addWidget(QLabel('X Limit -'), 0,0)
+		grid_line4.addWidget(self.label_x_limit_neg, 0,1)
+		grid_line4.addWidget(QLabel('X Limit +'), 0,2)
+		grid_line4.addWidget(self.label_x_limit_pos, 0,3)
+		grid_line4.addWidget(self.btn_set_x_limit_neg, 0,4)
+		grid_line4.addWidget(self.btn_set_x_limit_pos, 0,5)
+		grid_line4.addWidget(self.btn_clear_x_limits, 0,6)
+		grid_line4.addWidget(QLabel('Y Limit -'), 1,0)
+		grid_line4.addWidget(self.label_y_limit_neg, 1,1)
+		grid_line4.addWidget(QLabel('Y Limit +'), 1,2)
+		grid_line4.addWidget(self.label_y_limit_pos, 1,3)
+		grid_line4.addWidget(self.btn_set_y_limit_neg, 1,4)
+		grid_line4.addWidget(self.btn_set_y_limit_pos, 1,5)
+		grid_line4.addWidget(self.btn_clear_y_limits, 1,6)
+		if TRACKING_CONFIG == 'XZ_Y' or TRACKING_CONFIG == 'XY_Z':
+			grid_line4.addWidget(QLabel('Z Limit -'), 2,0)
+			grid_line4.addWidget(self.label_z_limit_neg, 2,1)
+			grid_line4.addWidget(QLabel('Z Limit +'), 2,2)
+			grid_line4.addWidget(self.label_z_limit_pos, 2,3)
+			grid_line4.addWidget(self.btn_set_z_limit_neg, 2,4)
+			grid_line4.addWidget(self.btn_set_z_limit_pos, 2,5)
+			grid_line4.addWidget(self.btn_clear_z_limits, 2,6)
+
 		self.grid = QGridLayout()
 		self.grid.addLayout(grid_line0,0,0)
 		self.grid.addLayout(grid_line1,1,0)
 		self.grid.addLayout(grid_line2,2,0)
+		self.grid.addLayout(grid_line4,4,0)
 		self.setLayout(self.grid)
 
 		self.btn_moveX_forward.clicked.connect(self.move_x_forward)
@@ -408,15 +463,26 @@ class NavigationWidget(QFrame):
 		self.navigationController.signal_y_mm.connect(self.update_y_display)
 		self.navigationController.signal_z_mm.connect(self.update_z_display)
 		self.navigationController.signal_theta_degree.connect(self.update_theta_display)
+
+		self.btn_set_x_limit_neg.clicked.connect(self.set_x_limit_neg)
+		self.btn_set_x_limit_pos.clicked.connect(self.set_x_limit_pos)
+		self.btn_set_y_limit_neg.clicked.connect(self.set_y_limit_neg)
+		self.btn_set_y_limit_pos.clicked.connect(self.set_y_limit_pos)
+		self.btn_set_z_limit_neg.clicked.connect(self.set_z_limit_neg)
+		self.btn_set_z_limit_pos.clicked.connect(self.set_z_limit_pos)
+
+		self.btn_clear_x_limits.clicked.connect(self.clear_x_limits)
+		self.btn_clear_y_limits.clicked.connect(self.clear_y_limits)
+		self.btn_clear_z_limits.clicked.connect(self.clear_z_limits)
 		
 	def move_x_forward(self):
 		dx_mm = self.entry_dX.value()
 		dx_usteps = dx_mm/(SCREW_PITCH_X_MM/(self.navigationController.x_microstepping*FULLSTEPS_PER_REV_X))
-		self.navigationController.move_x_usteps(STAGE_MOVEMENT_SIGN_X*dx_usteps)
+		self.navigationController.move_x_usteps(dx_usteps)
 	def move_x_backward(self):
 		dx_mm = self.entry_dX.value()
 		dx_usteps = dx_mm/(SCREW_PITCH_X_MM/(self.navigationController.x_microstepping*FULLSTEPS_PER_REV_X))
-		self.navigationController.move_x_usteps(-STAGE_MOVEMENT_SIGN_X*dx_usteps)
+		self.navigationController.move_x_usteps(-dx_usteps)
 	def home_x(self):
 		msg = QMessageBox()
 		msg.setIcon(QMessageBox.Information)
@@ -444,18 +510,18 @@ class NavigationWidget(QFrame):
 		dy_mm = self.entry_dY.value()
 		if TRACKING_CONFIG == 'XY_Z':
 			dy_usteps = dy_mm/(SCREW_PITCH_Y_MM/(self.navigationController.y_microstepping*FULLSTEPS_PER_REV_Y))
-			self.navigationController.move_y_usteps(STAGE_MOVEMENT_SIGN_Y*dy_usteps)
+			self.navigationController.move_y_usteps(dy_usteps)
 		else: # 'XZ_Y' or 'XTheta_Y'
 			dz_usteps = dy_mm/(SCREW_PITCH_Z_MM/(self.navigationController.z_microstepping*FULLSTEPS_PER_REV_Z))
-			self.navigationController.move_z_usteps(STAGE_MOVEMENT_SIGN_Y*dz_usteps)
+			self.navigationController.move_z_usteps(dz_usteps)
 	def move_y_backward(self):
 		dy_mm = self.entry_dY.value()
 		if TRACKING_CONFIG == 'XY_Z':
 			dy_usteps = dy_mm/(SCREW_PITCH_Y_MM/(self.navigationController.y_microstepping*FULLSTEPS_PER_REV_Y))
-			self.navigationController.move_y_usteps(-STAGE_MOVEMENT_SIGN_Y*dy_usteps)
+			self.navigationController.move_y_usteps(-dy_usteps)
 		else: # 'XZ_Y' or 'XTheta_Y'
 			dz_usteps = dy_mm/(SCREW_PITCH_Z_MM/(self.navigationController.z_microstepping*FULLSTEPS_PER_REV_Z))
-			self.navigationController.move_z_usteps(-STAGE_MOVEMENT_SIGN_Y*dy_usteps)
+			self.navigationController.move_z_usteps(-dz_usteps)
 	def home_y(self):
 		msg = QMessageBox()
 		msg.setIcon(QMessageBox.Information)
@@ -489,18 +555,18 @@ class NavigationWidget(QFrame):
 		dz_mm = self.entry_dZ.value()
 		if TRACKING_CONFIG == 'XY_Z':
 			dz_usteps = self.entry_dZ.value()/(SCREW_PITCH_Z_MM/(self.navigationController.z_microstepping*FULLSTEPS_PER_REV_Z))
-			self.navigationController.move_z_usteps(STAGE_MOVEMENT_SIGN_Z*dz_usteps)
+			self.navigationController.move_z_usteps(dz_usteps)
 		elif TRACKING_CONFIG == 'XZ_Y':
 			dy_usteps = self.entry_dZ.value()/(SCREW_PITCH_Y_MM/(self.navigationController.y_microstepping*FULLSTEPS_PER_REV_Y))
-			self.navigationController.move_y_usteps(STAGE_MOVEMENT_SIGN_Z*dy_usteps)
+			self.navigationController.move_y_usteps(dy_usteps)
 	def move_z_backward(self):
 		dz_mm = self.entry_dZ.value()
 		if TRACKING_CONFIG == 'XY_Z':
 			dz_usteps = self.entry_dZ.value()/(SCREW_PITCH_Z_MM/(self.navigationController.z_microstepping*FULLSTEPS_PER_REV_Z))
-			self.navigationController.move_z_usteps(-STAGE_MOVEMENT_SIGN_Z*dz_usteps)
+			self.navigationController.move_z_usteps(-dz_usteps)
 		elif TRACKING_CONFIG == 'XZ_Y':
 			dy_usteps = self.entry_dZ.value()/(SCREW_PITCH_Y_MM/(self.navigationController.y_microstepping*FULLSTEPS_PER_REV_Y))
-			self.navigationController.move_y_usteps(-STAGE_MOVEMENT_SIGN_Z*dy_usteps)
+			self.navigationController.move_y_usteps(-dy_usteps)
 	def home_z(self):
 		msg = QMessageBox()
 		msg.setIcon(QMessageBox.Information)
@@ -534,12 +600,12 @@ class NavigationWidget(QFrame):
 		dTheta_degree = self.entry_dTheta.value()
 		dTheta_rad = (dTheta_degree/360)*2*np.pi
 		dTheta_usteps = dTheta_rad/((2*np.pi)/(FULLSTEPS_PER_REV_THETA*self.navigationController.theta_microstepping*GEAR_RATIO_THETA))
-		self.navigationController.move_y_usteps(STAGE_POS_SIGN_THETA*dTheta_usteps)
+		self.navigationController.move_y_usteps(dTheta_usteps)
 	def move_theta_backward(self):
 		dTheta_degree = self.entry_dTheta.value()
 		dTheta_rad = (dTheta_degree/360)*2*np.pi
 		dTheta_usteps = dTheta_rad/((2*np.pi)/(FULLSTEPS_PER_REV_THETA*self.navigationController.theta_microstepping*GEAR_RATIO_THETA))
-		self.navigationController.move_y_usteps(-STAGE_POS_SIGN_THETA*dTheta_usteps)
+		self.navigationController.move_y_usteps(dTheta_usteps)
 	def home_theta(self):
 		msg = QMessageBox()
 		msg.setIcon(QMessageBox.Information)
@@ -571,6 +637,102 @@ class NavigationWidget(QFrame):
 		self.label_Zpos.setText('{:.03f}'.format(value))
 	def update_theta_display(self,value):
 		self.label_Thetapos.setText('{:.03f}'.format(value))
+
+	def set_x_limit_neg(self):
+		if STAGE_MOVEMENT_SIGN_X > 0:
+			self.microcontroller.set_lim(LIMIT_CODE.X_NEGATIVE,self.microcontroller.x_pos)
+			print('x negative limit: ' + str(self.microcontroller.x_pos))
+		else:
+			self.microcontroller.set_lim(LIMIT_CODE.X_POSITIVE,self.microcontroller.x_pos)
+			print('x positive limit: ' + str(self.microcontroller.x_pos))
+		self.label_x_limit_neg.setNum(float(self.label_Xpos.text()))
+
+	def set_x_limit_pos(self):
+		if STAGE_MOVEMENT_SIGN_X > 0:
+			self.microcontroller.set_lim(LIMIT_CODE.X_POSITIVE,self.microcontroller.x_pos)
+			print('x positive limit: ' + str(self.microcontroller.x_pos))
+		else:
+			self.microcontroller.set_lim(LIMIT_CODE.X_NEGATIVE,self.microcontroller.x_pos)
+			print('x negative limit: ' + str(self.microcontroller.x_pos))
+		self.label_x_limit_pos.setNum(float(self.label_Xpos.text()))
+
+	def set_y_limit_neg(self):
+		if TRACKING_CONFIG == 'XY_Z':
+			if STAGE_MOVEMENT_SIGN_Y > 0:
+				self.microcontroller.set_lim(LIMIT_CODE.Y_NEGATIVE,self.microcontroller.y_pos)
+			else:
+				self.microcontroller.set_lim(LIMIT_CODE.Y_POSITIVE,self.microcontroller.y_pos)
+		else: # XZ_Y and XTheta_Y
+			if STAGE_MOVEMENT_SIGN_Z > 0:
+				self.microcontroller.set_lim(LIMIT_CODE.Z_NEGATIVE,self.microcontroller.z_pos)
+			else:
+				self.microcontroller.set_lim(LIMIT_CODE.Z_POSITIVE,self.microcontroller.z_pos)
+		self.label_y_limit_neg.setNum(float(self.label_Ypos.text()))
+
+	def set_y_limit_pos(self):
+		if TRACKING_CONFIG == 'XY_Z':
+			if STAGE_MOVEMENT_SIGN_Y > 0:
+				self.microcontroller.set_lim(LIMIT_CODE.Y_POSITIVE,self.microcontroller.y_pos)
+			else:
+				self.microcontroller.set_lim(LIMIT_CODE.Y_NEGATIVE,self.microcontroller.y_pos)
+		else: # XZ_Y and XTheta_Y
+			if STAGE_MOVEMENT_SIGN_Z > 0:
+				self.microcontroller.set_lim(LIMIT_CODE.Z_POSITIVE,self.microcontroller.z_pos)
+			else:
+				self.microcontroller.set_lim(LIMIT_CODE.Z_NEGATIVE,self.microcontroller.z_pos)
+		self.label_y_limit_pos.setNum(float(self.label_Ypos.text()))
+
+	def set_z_limit_neg(self):
+		if TRACKING_CONFIG == 'XY_Z':
+			if STAGE_MOVEMENT_SIGN_Z > 0:
+				self.microcontroller.set_lim(LIMIT_CODE.Z_NEGATIVE,self.microcontroller.z_pos)
+			else:
+				self.microcontroller.set_lim(LIMIT_CODE.Z_POSITIVE,self.microcontroller.z_pos)
+		else: # 'XZ_Y'
+			if STAGE_MOVEMENT_SIGN_Y > 0:
+				self.microcontroller.set_lim(LIMIT_CODE.Y_NEGATIVE,self.microcontroller.y_pos)
+			else:
+				self.microcontroller.set_lim(LIMIT_CODE.Y_POSITIVE,self.microcontroller.y_pos)
+		self.label_z_limit_neg.setNum(float(self.label_Zpos.text()))
+
+	def set_z_limit_pos(self):
+		if TRACKING_CONFIG == 'XY_Z':
+			if STAGE_MOVEMENT_SIGN_Z > 0:
+				self.microcontroller.set_lim(LIMIT_CODE.Z_POSITIVE,self.microcontroller.z_pos)
+			else:
+				self.microcontroller.set_lim(LIMIT_CODE.Z_NEGATIVE,self.microcontroller.z_pos)
+		else:
+			if STAGE_MOVEMENT_SIGN_Y > 0:
+				self.microcontroller.set_lim(LIMIT_CODE.Y_POSITIVE,self.microcontroller.y_pos)
+			else:
+				self.microcontroller.set_lim(LIMIT_CODE.Y_NEGATIVE,self.microcontroller.y_pos)
+		self.label_z_limit_pos.setNum(float(self.label_Zpos.text()))
+
+	def clear_x_limits(self):
+		self.microcontroller.set_lim(LIMIT_CODE.X_NEGATIVE,-2147483648)
+		self.microcontroller.set_lim(LIMIT_CODE.X_POSITIVE,2147483647)
+		self.label_x_limit_neg.setText('-inf')
+		self.label_x_limit_pos.setText('+inf')
+
+	def clear_y_limits(self):
+		if TRACKING_CONFIG == 'XY_Z':
+			self.microcontroller.set_lim(LIMIT_CODE.Y_NEGATIVE,-2147483648)
+			self.microcontroller.set_lim(LIMIT_CODE.Y_POSITIVE,2147483647)
+		else: # 'XZ_Y' or 'XTheta_Y'
+			self.microcontroller.set_lim(LIMIT_CODE.Z_NEGATIVE,-2147483648)
+			self.microcontroller.set_lim(LIMIT_CODE.Z_POSITIVE,2147483647)
+		self.label_y_limit_neg.setText('-inf')
+		self.label_y_limit_pos.setText('+inf')
+
+	def clear_z_limits(self):
+		if TRACKING_CONFIG == 'XY_Z':
+			self.microcontroller.set_lim(LIMIT_CODE.Z_NEGATIVE,-2147483648)
+			self.microcontroller.set_lim(LIMIT_CODE.Z_POSITIVE,2147483647)
+		else: # 'XZ_Y'
+			self.microcontroller.set_lim(LIMIT_CODE.Y_NEGATIVE,-2147483648)
+			self.microcontroller.set_lim(LIMIT_CODE.Y_POSITIVE,2147483647)
+		self.label_z_limit_neg.setText('-inf')
+		self.label_z_limit_pos.setText('+inf')
 
 class PID_Group_Widget(QFrame):
 	def __init__(self, trackingController):
