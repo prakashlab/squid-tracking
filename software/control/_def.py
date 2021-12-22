@@ -367,6 +367,26 @@ elif TRACKING_CONFIG == 'XY_Z':
     PLOT_UNITS = {'X':'mm','Y':'mm', 'Z':'mm'}
     PLOT_COLORS = {'X':'r','Y':'g', 'Z':'b', 'Theta':'c'}
     DEFAULT_PLOTS = ['X', 'Y']
+elif TRACKING_CONFIG == 'XZ_Y':
+    INTERNAL_STATE_VARIABLES = ['Time', 'X', 'Y', 'Z', 'X_stage', 'Y_stage','Z_stage', 
+    'X_image', 'Y_image', 'Z_image', 'image_tracking_enabled','enable_image_tracking_from_hardware_button', 'track_focus', 'stage_tracking_enabled', 
+        'Acquisition', 'homing_status',  'Zero_stage', 'optical_path', 
+        'imaging channels', 'Objective', 'basePath', 'experimentID', 'experimentID_and_timestamp']
+    # Based on the number of imaging channels, there will also be 1 or more image names saved.
+    SAVE_DATA = ['Time', 'X_stage', 'Y_stage', 'Z_stage', 'X_image', 
+        'Y_image', 'track_focus', 'stage_tracking_enabled']
+    # MOTION_COMMANDS = ['X_order', 'Y_order', 'Z_order']
+    # SEND_DATA = ['liquidLens_Freq', 'track_focus' , 'image_tracking_enabled' , 'X_order', 'Y_order', 'Z_order', 'Zero_stage']
+    READINGS_FROM_MCU = ['X_stage', 'Y_stage', 'Z_stage']
+    INITIAL_VALUES = {'Time':0, 'X':0, 'Y':0, 'Z':0, 'X_stage':0, 'Y_stage':0,'Z_stage':0, 
+        'X_image':0, 'Y_image':0, 'Z_image':0, 'image_tracking_enabled':False, 'enable_image_tracking_from_hardware_button':False, 'track_focus':False, 
+        'stage_tracking_enabled':True, 'Acquisition':False, 'homing_status': 'not-complete', 'Zero_stage':0, 'optical_path': None, 
+        'imaging channels': list(CAMERAS.keys()),  'Objective':DEFAULT_OBJECTIVE, 'basePath':'/', 'experimentID':'track', 'experimentID_and_timestamp':'track_[time]'}
+    PLOT_VARIABLES = {'X':'X','Y':'Y', 'Z':'Z'}
+    PLOT_UNITS = {'X':'mm','Y':'mm', 'Z':'mm'}
+    PLOT_COLORS = {'X':'r','Y':'g', 'Z':'b', 'Theta':'c'}
+    DEFAULT_PLOTS = ['X', 'Z'] 
+
 # changes 9/12/2021
 # X_objStage -> X
 # Y_objStage -> Y
