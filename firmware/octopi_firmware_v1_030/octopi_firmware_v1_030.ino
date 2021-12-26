@@ -4,7 +4,7 @@
 #include <AccelStepper.h>
 #include <Adafruit_DotStar.h>
 #include <SPI.h>
-#include "def.h"
+#include "def_octopi.h"
 //#include "def_gravitymachine.h"
 //#include "def_squid.h"
 //#include "def_platereader.h"
@@ -184,12 +184,12 @@ bool homing_direction_Z;
  * used as limit switches. Alternatively, add homing_direction_set variables.
  */
 
-long X_POS_LIMIT = X_POS_LIMIT_MM/steps_per_mm_X;
-long X_NEG_LIMIT = X_NEG_LIMIT_MM/steps_per_mm_X;
-long Y_POS_LIMIT = Y_POS_LIMIT_MM/steps_per_mm_Y;
-long Y_NEG_LIMIT = Y_NEG_LIMIT_MM/steps_per_mm_Y;
-long Z_POS_LIMIT = Z_POS_LIMIT_MM/steps_per_mm_Z;
-long Z_NEG_LIMIT = Z_NEG_LIMIT_MM/steps_per_mm_Z;
+long X_POS_LIMIT = X_POS_LIMIT_MM*steps_per_mm_X;
+long X_NEG_LIMIT = X_NEG_LIMIT_MM*steps_per_mm_X;
+long Y_POS_LIMIT = Y_POS_LIMIT_MM*steps_per_mm_Y;
+long Y_NEG_LIMIT = Y_NEG_LIMIT_MM*steps_per_mm_Y;
+long Z_POS_LIMIT = Z_POS_LIMIT_MM*steps_per_mm_Z;
+long Z_NEG_LIMIT = Z_NEG_LIMIT_MM*steps_per_mm_Z;
 
 /***************************************************************************************************/
 /******************************************* joystick **********************************************/
@@ -692,7 +692,7 @@ void loop() {
             case AXIS_X:
             {
               MAX_VELOCITY_X_mm = float(uint16_t(buffer_rx[3])*256+uint16_t(buffer_rx[4]))/100;
-              MAX_ACCELERATION_X_mm = float(uint16_t(buffer_rx[5])*256+uint16_t(buffer_rx[6]))/100;
+              MAX_ACCELERATION_X_mm = float(uint16_t(buffer_rx[5])*256+uint16_t(buffer_rx[6]))/10;
               stepper_X.setMaxSpeed(MAX_VELOCITY_X_mm*steps_per_mm_X);
               stepper_X.setAcceleration(MAX_ACCELERATION_X_mm*steps_per_mm_X);
               break;
@@ -700,7 +700,7 @@ void loop() {
             case AXIS_Y:
             {
               MAX_VELOCITY_Y_mm = float(uint16_t(buffer_rx[3])*256+uint16_t(buffer_rx[4]))/100;
-              MAX_ACCELERATION_Y_mm = float(uint16_t(buffer_rx[5])*256+uint16_t(buffer_rx[6]))/100;
+              MAX_ACCELERATION_Y_mm = float(uint16_t(buffer_rx[5])*256+uint16_t(buffer_rx[6]))/10;
               stepper_Y.setMaxSpeed(MAX_VELOCITY_Y_mm*steps_per_mm_Y);
               stepper_Y.setAcceleration(MAX_ACCELERATION_Y_mm*steps_per_mm_Y);
               break;
@@ -708,7 +708,7 @@ void loop() {
             case AXIS_Z:
             {
               MAX_VELOCITY_Z_mm = float(uint16_t(buffer_rx[3])*256+uint16_t(buffer_rx[4]))/100;
-              MAX_ACCELERATION_Z_mm = float(uint16_t(buffer_rx[5])*256+uint16_t(buffer_rx[6]))/100;
+              MAX_ACCELERATION_Z_mm = float(uint16_t(buffer_rx[5])*256+uint16_t(buffer_rx[6]))/10;
               stepper_Z.setMaxSpeed(MAX_VELOCITY_Z_mm*steps_per_mm_Z);
               stepper_Z.setAcceleration(MAX_ACCELERATION_Z_mm*steps_per_mm_Z);
               break;
@@ -722,19 +722,19 @@ void loop() {
           {
             case AXIS_X:
             {
-              SCREW_PITCH_X_MM = float(uint16_t(buffer_rx[3])*256+uint16_t(buffer_rx[4]))/100;
+              SCREW_PITCH_X_MM = float(uint16_t(buffer_rx[3])*256+uint16_t(buffer_rx[4]))/1000;
               steps_per_mm_X = FULLSTEPS_PER_REV_X*MICROSTEPPING_X/SCREW_PITCH_X_MM;
               break;
             }
             case AXIS_Y:
             {
-              SCREW_PITCH_Y_MM = float(uint16_t(buffer_rx[3])*256+uint16_t(buffer_rx[4]))/100;
+              SCREW_PITCH_Y_MM = float(uint16_t(buffer_rx[3])*256+uint16_t(buffer_rx[4]))/1000;
               steps_per_mm_Y = FULLSTEPS_PER_REV_Y*MICROSTEPPING_Y/SCREW_PITCH_Y_MM;
               break;
             }
             case AXIS_Z:
             {
-              SCREW_PITCH_Z_MM = float(uint16_t(buffer_rx[3])*256+uint16_t(buffer_rx[4]))/100;
+              SCREW_PITCH_Z_MM = float(uint16_t(buffer_rx[3])*256+uint16_t(buffer_rx[4]))/1000;
               steps_per_mm_Z = FULLSTEPS_PER_REV_Z*MICROSTEPPING_Z/SCREW_PITCH_Z_MM;
               break;
             }
@@ -1058,7 +1058,7 @@ void loop() {
     if(!X_commanded_movement_in_progress && !is_homing_X && !is_preparing_for_homing_X) //if(stepper_X.distanceToGo()==0) // only read joystick when computer commanded travel has finished - doens't work
     {
       deltaX = analogRead(joystick_X) - joystick_offset_x;
-      deltaX_float = deltaX;
+      deltaX_float = -deltaX;
       if(abs(deltaX_float)>joystickSensitivity)
       {
         stepper_X.setSpeed(sgn(deltaX_float)*((abs(deltaX_float)-joystickSensitivity)/512.0)*speed_XY_factor*MAX_VELOCITY_X_mm*steps_per_mm_X);
@@ -1085,7 +1085,7 @@ void loop() {
     if(!Y_commanded_movement_in_progress && !is_homing_Y && !is_preparing_for_homing_Y)
     {
       deltaY = analogRead(joystick_Y) - joystick_offset_y;
-      deltaY_float = -deltaY;
+      deltaY_float = deltaY;
       if(abs(deltaY)>joystickSensitivity)
       {
         stepper_Y.setSpeed(sgn(deltaY_float)*((abs(deltaY_float)-joystickSensitivity)/512.0)*speed_XY_factor*MAX_VELOCITY_Y_mm*steps_per_mm_Y);
