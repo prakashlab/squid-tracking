@@ -31,7 +31,7 @@ class GUI(QMainWindow):
 	def __init__(self, simulation = False, *args, **kwargs):
 		super().__init__(*args, **kwargs)
 		
-		self.setWindowTitle('Gravity Machine v3.0')
+		self.setWindowTitle('Squid-tracking v3.0')
 		self.imaging_channels = CAMERAS.keys()
 		print('Available imaging channels: {}'.format(self.imaging_channels))
 
