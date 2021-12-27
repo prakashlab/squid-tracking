@@ -56,3 +56,19 @@ float Z_MOTOR_I_HOLD = 0.5;
 bool X_use_encoder = false;
 bool Y_use_encoder = false;
 bool Z_use_encoder = false;
+
+// signs
+int MOVEMENT_SIGN_X = 1;    // not used for now
+int MOVEMENT_SIGN_Y = 1;    // not used for now
+int MOVEMENT_SIGN_Z = 1;    // not used for now
+int ENCODER_SIGN_X = 1;     // not used for now
+int ENCODER_SIGN_Y = 1;     // not used for now
+int ENCODER_SIGN_Z = 1;     // not used for now
+int JOYSTICK_SIGN_X = 1;
+int JOYSTICK_SIGN_Y = -1;
+int JOYSTICK_SIGN_Z = 1;
+
+// limit switch polarity
+bool LIM_SWITCH_X_ACTIVE_LOW = false;
+bool LIM_SWITCH_Y_ACTIVE_LOW = false;
+bool LIM_SWITCH_Z_ACTIVE_LOW = false;
