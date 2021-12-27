@@ -614,8 +614,8 @@ void loop() {
               Z_NEG_LIMIT = int32_t(uint32_t(buffer_rx[3])*16777216 + uint32_t(buffer_rx[4])*65536 + uint32_t(buffer_rx[5])*256 + uint32_t(buffer_rx[6]));
               break;
             }
-            break;
           }
+          break;
         }
         case SET_LIM_SWITCH_POLARITY:
         {
@@ -625,25 +625,34 @@ void loop() {
             {
               detachInterrupt(digitalPinToInterrupt(X_LIM));
               if(buffer_rx[3]!=DISABLED)
+              {
                 attachInterrupt(digitalPinToInterrupt(X_LIM), ISR_limit_switch_X, buffer_rx[3]==ACTIVE_LOW?FALLING:RISING);
+                LIM_SWITCH_X_ACTIVE_LOW = (buffer_rx[3]==ACTIVE_LOW);
+              }
               break;
             }
             case AXIS_Y:
             {
               detachInterrupt(digitalPinToInterrupt(Y_LIM));
               if(buffer_rx[3]!=DISABLED)
+              {
                 attachInterrupt(digitalPinToInterrupt(Y_LIM), ISR_limit_switch_Y, buffer_rx[3]==ACTIVE_LOW?FALLING:RISING);
+                LIM_SWITCH_Y_ACTIVE_LOW = (buffer_rx[3]==ACTIVE_LOW);
+              }
               break;
             }
             case AXIS_Z:
             {
               detachInterrupt(digitalPinToInterrupt(Z_LIM));
               if(buffer_rx[3]!=DISABLED)
+              {
                 attachInterrupt(digitalPinToInterrupt(Z_LIM), ISR_limit_switch_Z, buffer_rx[3]==ACTIVE_LOW?FALLING:RISING);
+                LIM_SWITCH_Z_ACTIVE_LOW = (buffer_rx[3]==ACTIVE_LOW);
+              }
               break;
             }
-            break;
           }
+          break;
         }
         case CONFIGURE_STEPPER_DRIVER:
         {
@@ -682,8 +691,8 @@ void loop() {
               Z_driver.rms_current(Z_MOTOR_RMS_CURRENT_mA,Z_MOTOR_I_HOLD); //I_run and holdMultiplier
               break;
             }
-            break;
           }
+          break;
         }
         case SET_MAX_VELOCITY_ACCELERATION:
         {
@@ -772,7 +781,7 @@ void loop() {
               case AXIS_X:
                 homing_direction_X = buffer_rx[3];
                 home_X_found = false;
-                if(digitalRead(X_LIM)==HIGH)
+                if(digitalRead(X_LIM)==(LIM_SWITCH_X_ACTIVE_LOW?HIGH:LOW))
                 {
                   is_homing_X = true;
                   runSpeed_flag_X = true;
@@ -795,7 +804,7 @@ void loop() {
               case AXIS_Y:
                 homing_direction_Y = buffer_rx[3];
                 home_Y_found = false;
-                if(digitalRead(Y_LIM)==HIGH)
+                if(digitalRead(Y_LIM)==(LIM_SWITCH_Y_ACTIVE_LOW?HIGH:LOW))
                 {
                   is_homing_Y = true;
                   runSpeed_flag_Y = true;
@@ -818,7 +827,7 @@ void loop() {
               case AXIS_Z:
                 homing_direction_Z = buffer_rx[3];
                 home_Z_found = false;
-                if(digitalRead(Z_LIM)==HIGH)
+                if(digitalRead(Z_LIM)==(LIM_SWITCH_Z_ACTIVE_LOW?HIGH:LOW))
                 {
                   is_homing_Z = true;
                   runSpeed_flag_Z = true;
@@ -844,7 +853,7 @@ void loop() {
                 home_Y_found = false;
                 // homing x 
                 homing_direction_X = buffer_rx[3];
-                if(digitalRead(X_LIM)==HIGH)
+                if(digitalRead(X_LIM)==(LIM_SWITCH_X_ACTIVE_LOW?HIGH:LOW))
                 {
                   is_homing_X = true;
                   runSpeed_flag_X = true;
@@ -865,7 +874,7 @@ void loop() {
                 }
                 // homing y
                 homing_direction_Y = buffer_rx[4];
-                if(digitalRead(Y_LIM)==HIGH)
+                if(digitalRead(Y_LIM)==(LIM_SWITCH_Y_ACTIVE_LOW?HIGH:LOW))
                 {
                   is_homing_Y = true;
                   runSpeed_flag_Y = true;
@@ -936,7 +945,7 @@ void loop() {
   // homing - preparing for homing
   if(is_preparing_for_homing_X)
   {
-    if(digitalRead(X_LIM)==HIGH)
+    if(digitalRead(X_LIM)==(LIM_SWITCH_X_ACTIVE_LOW?HIGH:LOW))
     {
       is_preparing_for_homing_X = false;
       is_homing_X = true;
@@ -949,7 +958,7 @@ void loop() {
   }
   if(is_preparing_for_homing_Y)
   {
-    if(digitalRead(Y_LIM)==HIGH)
+    if(digitalRead(Y_LIM)==(LIM_SWITCH_Y_ACTIVE_LOW?HIGH:LOW))
     {
       is_preparing_for_homing_Y = false;
       is_homing_Y = true;
@@ -962,7 +971,7 @@ void loop() {
   }
   if(is_preparing_for_homing_Z)
   {
-    if(digitalRead(Z_LIM)==HIGH)
+    if(digitalRead(Z_LIM)==(LIM_SWITCH_Z_ACTIVE_LOW?HIGH:LOW))
     {
       is_preparing_for_homing_Z = false;
       is_homing_Z = true;
@@ -1058,7 +1067,7 @@ void loop() {
     if(!X_commanded_movement_in_progress && !is_homing_X && !is_preparing_for_homing_X) //if(stepper_X.distanceToGo()==0) // only read joystick when computer commanded travel has finished - doens't work
     {
       deltaX = analogRead(joystick_X) - joystick_offset_x;
-      deltaX_float = -deltaX;
+      deltaX_float = JOYSTICK_SIGN_X*deltaX;
       if(abs(deltaX_float)>joystickSensitivity)
       {
         stepper_X.setSpeed(sgn(deltaX_float)*((abs(deltaX_float)-joystickSensitivity)/512.0)*speed_XY_factor*MAX_VELOCITY_X_mm*steps_per_mm_X);
@@ -1085,7 +1094,7 @@ void loop() {
     if(!Y_commanded_movement_in_progress && !is_homing_Y && !is_preparing_for_homing_Y)
     {
       deltaY = analogRead(joystick_Y) - joystick_offset_y;
-      deltaY_float = deltaY;
+      deltaY_float = JOYSTICK_SIGN_Y*deltaY;
       if(abs(deltaY)>joystickSensitivity)
       {
         stepper_Y.setSpeed(sgn(deltaY_float)*((abs(deltaY_float)-joystickSensitivity)/512.0)*speed_XY_factor*MAX_VELOCITY_Y_mm*steps_per_mm_Y);
@@ -1111,6 +1120,10 @@ void loop() {
   }
   
   // focus control
+  if(focusPosition > Z_POS_LIMIT)
+    focusPosition = Z_POS_LIMIT;
+  if(focusPosition < Z_NEG_LIMIT)
+    focusPosition = Z_NEG_LIMIT;
   stepper_Z.moveTo(focusPosition);
 
   // send position update to computer
@@ -1263,23 +1276,23 @@ void timer_interruptHandler(){
 void ISR_focusWheel_A(){
   if(digitalRead(focusWheel_B)==1)
   {
-    focusPosition = focusPosition + 1;
+    focusPosition = focusPosition + JOYSTICK_SIGN_Z*1;
     digitalWrite(13,HIGH);
   }
   else
   {
-    focusPosition = focusPosition - 1;
+    focusPosition = focusPosition - JOYSTICK_SIGN_Z*1;
     digitalWrite(13,LOW);
   }
 }
 void ISR_focusWheel_B(){
   if(digitalRead(focusWheel_A)==1)
   {
-    focusPosition = focusPosition - 1;
+    focusPosition = focusPosition - JOYSTICK_SIGN_Z*1;
   }
   else
   {
-    focusPosition = focusPosition + 1;
+    focusPosition = focusPosition + JOYSTICK_SIGN_Z*1;
   }
 }
 
