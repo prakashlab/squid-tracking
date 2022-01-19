@@ -22,6 +22,13 @@ import cv2
 import imutils
 from datetime import datetime
 
+from lxml import etree as ET
+from pathlib import Path
+
+import math
+import json
+import pandas as pd
+
 class StreamHandler(QObject):
     ''' Signals 
     '''
@@ -263,7 +270,7 @@ class StreamHandler(QObject):
 
 class LiveController(QObject):
 
-    def __init__(self,camera,microcontroller):
+    def __init__(self,camera,microcontroller,control_illumination=False):
         QObject.__init__(self)
         self.camera = camera
         self.microcontroller = microcontroller
@@ -273,6 +280,8 @@ class LiveController(QObject):
         self.is_live = False
         self.was_live_before_autofocus = False
         self.was_live_before_multipoint = False
+        self.control_illumination = control_illumination
+        self.illumination_on = False
 
         self.fps_software_trigger = FPS['trigger_software']['default']
         self.timer_software_trigger_interval = (1/self.fps_software_trigger)*1000
@@ -301,6 +310,21 @@ class LiveController(QObject):
     def turn_off_illumination(self):
         pass
 
+    # illumination control
+    def turn_on_illumination(self):
+        self.microcontroller.turn_on_illumination()
+        self.illumination_on = True
+
+    def turn_off_illumination(self):
+        self.microcontroller.turn_off_illumination()
+        self.illumination_on = False
+
+    def set_illumination(self,illumination_source,intensity):
+        if illumination_source < 10: # LED matrix
+            self.microcontroller.set_illumination_led_matrix(illumination_source,r=(intensity/100)*LED_MATRIX_R_FACTOR,g=(intensity/100)*LED_MATRIX_G_FACTOR,b=(intensity/100)*LED_MATRIX_B_FACTOR)
+        else:
+            self.microcontroller.set_illumination(illumination_source,intensity)
+
     def start_live(self):
         self.is_live = True
         self.camera.start_streaming()
@@ -317,7 +341,8 @@ class LiveController(QObject):
 
     # software trigger related
     def trigger_acquisition_software(self):
-        self.turn_on_illumination()
+        if self.control_illumination and self.illumination_on == False:
+            self.turn_on_illumination()
         self.trigger_ID = self.trigger_ID + 1
         self.camera.send_trigger()
         # measure real fps
@@ -407,7 +432,8 @@ class LiveController(QObject):
     # slot
     def on_new_frame(self):
         if self.fps_software_trigger <= 5:
-            self.turn_off_illumination()
+            if self.control_illumination and self.illumination_on == True:
+                self.turn_off_illumination()
 
 
 class NavigationController(QObject):
@@ -428,6 +454,7 @@ class NavigationController(QObject):
         self.y_microstepping = MICROSTEPPING_DEFAULT_Y
         self.z_microstepping = MICROSTEPPING_DEFAULT_Z
         self.theta_microstepping = MICROSTEPPING_DEFAULT_THETA
+        self.enable_joystick_button_action = True
 
     def move_x_usteps(self,usteps):
         self.microcontroller.move_x_usteps(int(usteps))
@@ -464,6 +491,184 @@ class NavigationController(QObject):
 
     def home(self):
         pass
+
+    def set_x_limit_pos_mm(self,value_mm):
+        if STAGE_MOVEMENT_SIGN_X > 0:
+            self.microcontroller.set_lim(LIMIT_CODE.X_POSITIVE,int(value_mm/(SCREW_PITCH_X_MM/(self.x_microstepping*FULLSTEPS_PER_REV_X))))
+        else:
+            self.microcontroller.set_lim(LIMIT_CODE.X_NEGATIVE,STAGE_MOVEMENT_SIGN_X*int(value_mm/(SCREW_PITCH_X_MM/(self.x_microstepping*FULLSTEPS_PER_REV_X))))
+
+    def set_x_limit_neg_mm(self,value_mm):
+        if STAGE_MOVEMENT_SIGN_X > 0:
+            self.microcontroller.set_lim(LIMIT_CODE.X_NEGATIVE,int(value_mm/(SCREW_PITCH_X_MM/(self.x_microstepping*FULLSTEPS_PER_REV_X))))
+        else:
+            self.microcontroller.set_lim(LIMIT_CODE.X_POSITIVE,STAGE_MOVEMENT_SIGN_X*int(value_mm/(SCREW_PITCH_X_MM/(self.x_microstepping*FULLSTEPS_PER_REV_X))))
+
+    def set_y_limit_pos_mm(self,value_mm):
+        if STAGE_MOVEMENT_SIGN_Y > 0:
+            self.microcontroller.set_lim(LIMIT_CODE.Y_POSITIVE,int(value_mm/(SCREW_PITCH_Y_MM/(self.y_microstepping*FULLSTEPS_PER_REV_Y))))
+        else:
+            self.microcontroller.set_lim(LIMIT_CODE.Y_NEGATIVE,STAGE_MOVEMENT_SIGN_Y*int(value_mm/(SCREW_PITCH_Y_MM/(self.y_microstepping*FULLSTEPS_PER_REV_Y))))
+
+    def set_y_limit_neg_mm(self,value_mm):
+        if STAGE_MOVEMENT_SIGN_Y > 0:
+            self.microcontroller.set_lim(LIMIT_CODE.Y_NEGATIVE,int(value_mm/(SCREW_PITCH_Y_MM/(self.y_microstepping*FULLSTEPS_PER_REV_Y))))
+        else:
+            self.microcontroller.set_lim(LIMIT_CODE.Y_POSITIVE,STAGE_MOVEMENT_SIGN_Y*int(value_mm/(SCREW_PITCH_Y_MM/(self.y_microstepping*FULLSTEPS_PER_REV_Y))))
+
+    def set_z_limit_pos_mm(self,value_mm):
+        if STAGE_MOVEMENT_SIGN_Z > 0:
+            self.microcontroller.set_lim(LIMIT_CODE.Z_POSITIVE,int(value_mm/(SCREW_PITCH_Z_MM/(self.z_microstepping*FULLSTEPS_PER_REV_Z))))
+        else:
+            self.microcontroller.set_lim(LIMIT_CODE.Z_NEGATIVE,STAGE_MOVEMENT_SIGN_Z*int(value_mm/(SCREW_PITCH_Z_MM/(self.z_microstepping*FULLSTEPS_PER_REV_Z))))
+
+    def set_z_limit_neg_mm(self,value_mm):
+        if STAGE_MOVEMENT_SIGN_Z > 0:
+            self.microcontroller.set_lim(LIMIT_CODE.Z_NEGATIVE,int(value_mm/(SCREW_PITCH_Z_MM/(self.z_microstepping*FULLSTEPS_PER_REV_Z))))
+        else:
+            self.microcontroller.set_lim(LIMIT_CODE.Z_POSITIVE,STAGE_MOVEMENT_SIGN_Z*int(value_mm/(SCREW_PITCH_Z_MM/(self.z_microstepping*FULLSTEPS_PER_REV_Z))))
+        
+
+class SlidePositionControlWorker(QObject):
+    
+    finished = Signal()
+    signal_stop_live = Signal()
+    signal_resume_live = Signal()
+
+    def __init__(self,slidePositionController,home_x_and_y_separately=False):
+        QObject.__init__(self)
+        self.slidePositionController = slidePositionController
+        self.navigationController = slidePositionController.navigationController
+        self.microcontroller = self.navigationController.microcontroller
+        self.liveController = self.slidePositionController.liveController
+        self.home_x_and_y_separately = home_x_and_y_separately
+
+    def wait_till_operation_is_completed(self,timestamp_start, SLIDE_POTISION_SWITCHING_TIMEOUT_LIMIT_S):
+        while self.microcontroller.is_busy():
+            time.sleep(SLEEP_TIME_S)
+            if time.time() - timestamp_start > SLIDE_POTISION_SWITCHING_TIMEOUT_LIMIT_S:
+                print('Error - slide position switching timeout, the program will exit')
+                self.navigationController.move_x(0)
+                self.navigationController.move_y(0)
+                exit()
+
+    def move_to_slide_loading_position(self):
+        was_live = self.liveController.is_live
+        if was_live:
+            self.signal_stop_live.emit()
+        if self.home_x_and_y_separately:
+            timestamp_start = time.time()
+            self.navigationController.home_x()
+            self.wait_till_operation_is_completed(timestamp_start, SLIDE_POTISION_SWITCHING_TIMEOUT_LIMIT_S)
+            self.navigationController.zero_x()
+            self.navigationController.move_x(SLIDE_POSITION.LOADING_X_MM)
+            self.wait_till_operation_is_completed(timestamp_start, SLIDE_POTISION_SWITCHING_TIMEOUT_LIMIT_S)
+            self.navigationController.home_y()
+            self.wait_till_operation_is_completed(timestamp_start, SLIDE_POTISION_SWITCHING_TIMEOUT_LIMIT_S)
+            self.navigationController.zero_y()
+            self.navigationController.move_y(SLIDE_POSITION.LOADING_Y_MM)
+            self.wait_till_operation_is_completed(timestamp_start, SLIDE_POTISION_SWITCHING_TIMEOUT_LIMIT_S)
+        else:
+            timestamp_start = time.time()
+            self.navigationController.home_xy()
+            self.wait_till_operation_is_completed(timestamp_start, SLIDE_POTISION_SWITCHING_TIMEOUT_LIMIT_S)
+            self.navigationController.zero_x()
+            self.navigationController.zero_y()
+            self.navigationController.move_x(SLIDE_POSITION.LOADING_X_MM)
+            self.wait_till_operation_is_completed(timestamp_start, SLIDE_POTISION_SWITCHING_TIMEOUT_LIMIT_S)
+            self.navigationController.move_y(SLIDE_POSITION.LOADING_Y_MM)
+            self.wait_till_operation_is_completed(timestamp_start, SLIDE_POTISION_SWITCHING_TIMEOUT_LIMIT_S)
+        if was_live:
+            self.signal_resume_live.emit()
+        self.slidePositionController.slide_loading_position_reached = True
+        self.finished.emit()
+
+    def move_to_slide_scanning_position(self):
+        was_live = self.liveController.is_live
+        if was_live:
+            self.signal_stop_live.emit()
+        if self.home_x_and_y_separately:
+            timestamp_start = time.time()
+            self.navigationController.home_y()
+            self.wait_till_operation_is_completed(timestamp_start, SLIDE_POTISION_SWITCHING_TIMEOUT_LIMIT_S)
+            self.navigationController.zero_y()
+            self.navigationController.move_y(SLIDE_POSITION.SCANNING_Y_MM)
+            self.wait_till_operation_is_completed(timestamp_start, SLIDE_POTISION_SWITCHING_TIMEOUT_LIMIT_S)
+            self.navigationController.home_x()
+            self.wait_till_operation_is_completed(timestamp_start, SLIDE_POTISION_SWITCHING_TIMEOUT_LIMIT_S)
+            self.navigationController.zero_x()
+            self.navigationController.move_x(SLIDE_POSITION.SCANNING_X_MM)
+            self.wait_till_operation_is_completed(timestamp_start, SLIDE_POTISION_SWITCHING_TIMEOUT_LIMIT_S)
+        else:
+            timestamp_start = time.time()
+            self.navigationController.home_xy()
+            self.wait_till_operation_is_completed(timestamp_start, SLIDE_POTISION_SWITCHING_TIMEOUT_LIMIT_S)
+            self.navigationController.zero_x()
+            self.navigationController.zero_y()
+            self.navigationController.move_y(SLIDE_POSITION.SCANNING_Y_MM)
+            self.wait_till_operation_is_completed(timestamp_start, SLIDE_POTISION_SWITCHING_TIMEOUT_LIMIT_S)            
+            self.navigationController.move_x(SLIDE_POSITION.SCANNING_X_MM)
+            self.wait_till_operation_is_completed(timestamp_start, SLIDE_POTISION_SWITCHING_TIMEOUT_LIMIT_S)
+        if was_live:
+            self.signal_resume_live.emit()
+        self.slidePositionController.slide_scanning_position_reached = True
+        self.finished.emit()
+
+class SlidePositionController(QObject):
+
+    signal_slide_loading_position_reached = Signal()
+    signal_slide_scanning_position_reached = Signal()
+    signal_clear_slide = Signal()
+
+    def __init__(self,navigationController,liveController):
+        QObject.__init__(self)
+        self.navigationController = navigationController
+        self.liveController = liveController
+        self.slide_loading_position_reached = False
+        self.slide_scanning_position_reached = False
+
+    def move_to_slide_loading_position(self):
+        # create a QThread object
+        self.thread = QThread()
+        # create a worker object
+        self.slidePositionControlWorker = SlidePositionControlWorker(self)
+        # move the worker to the thread
+        self.slidePositionControlWorker.moveToThread(self.thread)
+        # connect signals and slots
+        self.thread.started.connect(self.slidePositionControlWorker.move_to_slide_loading_position)
+        self.slidePositionControlWorker.signal_stop_live.connect(self.slot_stop_live,type=Qt.BlockingQueuedConnection)
+        self.slidePositionControlWorker.signal_resume_live.connect(self.slot_resume_live,type=Qt.BlockingQueuedConnection)
+        self.slidePositionControlWorker.finished.connect(self.signal_slide_loading_position_reached.emit)
+        self.slidePositionControlWorker.finished.connect(self.slidePositionControlWorker.deleteLater)
+        self.slidePositionControlWorker.finished.connect(self.thread.quit)
+        self.thread.finished.connect(self.thread.quit)
+        # start the thread
+        self.thread.start()
+
+    def move_to_slide_scanning_position(self):
+        # create a QThread object
+        self.thread = QThread()
+        # create a worker object
+        self.slidePositionControlWorker = SlidePositionControlWorker(self)
+        # move the worker to the thread
+        self.slidePositionControlWorker.moveToThread(self.thread)
+        # connect signals and slots
+        self.thread.started.connect(self.slidePositionControlWorker.move_to_slide_scanning_position)
+        self.slidePositionControlWorker.signal_stop_live.connect(self.slot_stop_live,type=Qt.BlockingQueuedConnection)
+        self.slidePositionControlWorker.signal_resume_live.connect(self.slot_resume_live,type=Qt.BlockingQueuedConnection)
+        self.slidePositionControlWorker.finished.connect(self.signal_slide_scanning_position_reached.emit)
+        self.slidePositionControlWorker.finished.connect(self.slidePositionControlWorker.deleteLater)
+        self.slidePositionControlWorker.finished.connect(self.thread.quit)
+        self.thread.finished.connect(self.thread.quit)
+        # start the thread
+        self.thread.start()
+        self.signal_clear_slide.emit()
+
+    def slot_stop_live(self):
+        self.liveController.stop_live()
+
+    def slot_resume_live(self):
+        self.liveController.start_live()
 
 
 class ImageDisplay(QObject):

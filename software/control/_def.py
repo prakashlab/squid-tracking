@@ -58,7 +58,7 @@ class Acquisition:
     CROP_WIDTH = 3000
     CROP_HEIGHT = 3000
     NUMBER_OF_FOVS_PER_AF = 3
-    IMAGE_FORMAT = 'png'
+    IMAGE_FORMAT = 'bmp'
     IMAGE_DISPLAY_SCALING_FACTOR = 0.25
     DX = 1
     DY = 1
@@ -76,6 +76,13 @@ class MicrocontrollerDef:
     MSG_LENGTH = 24
     CMD_LENGTH = 8
     N_BYTES_POS = 4
+
+class Microcontroller2Def:
+    MSG_LENGTH = 4
+    CMD_LENGTH = 8
+    N_BYTES_POS = 4
+
+USE_SEPARATE_MCU_FOR_DAC = False
 
 class CMD_SET:
     MOVE_X = 0
@@ -97,6 +104,9 @@ class CMD_SET:
     CONFIGURE_STEPPER_DRIVER = 21
     SET_MAX_VELOCITY_ACCELERATION = 22
     SET_LEAD_SCREW_PITCH = 23
+
+class CMD_SET2:
+    ANALOG_WRITE_DAC8050X = 0
 
 BIT_POS_JOYSTICK_BUTTON = 0
 BIT_POS_SWITCH = 1
@@ -144,6 +154,9 @@ class ILLUMINATION_CODE:
     ILLUMINATION_SOURCE_LED_ARRAY_LEFT_HALF = 1
     ILLUMINATION_SOURCE_LED_ARRAY_RIGHT_HALF = 2
     ILLUMINATION_SOURCE_LED_ARRAY_LEFTB_RIGHTR = 3
+    ILLUMINATION_SOURCE_LED_ARRAY_LOW_NA = 4;
+    ILLUMINATION_SOURCE_LED_ARRAY_LEFT_DOT = 5;
+    ILLUMINATION_SOURCE_LED_ARRAY_RIGHT_DOT = 6;
     ILLUMINATION_SOURCE_LED_EXTERNAL_FET = 20
     ILLUMINATION_SOURCE_405NM = 11
     ILLUMINATION_SOURCE_488NM = 12
@@ -207,9 +220,14 @@ LED_MATRIX_B_FACTOR = 1
 # note that these no longer correspond to the actual axes (starting 12/22/2021)
 # note that here X corresponds to the in-plane axis 1, Y corresponds to the in-plane axis 2, Z corresponds to the focus axis
 
+CAMERA_REVERSE_X = False
+CAMERA_REVERSE_Y = False
+
+# note: XY are the in-plane axes, Z is the focus axis
+
 STAGE_MOVEMENT_SIGN_X = -1
 STAGE_MOVEMENT_SIGN_Y = 1
-STAGE_MOVEMENT_SIGN_Z = 1
+STAGE_MOVEMENT_SIGN_Z = -1
 STAGE_MOVEMENT_SIGN_THETA = 1
 
 STAGE_POS_SIGN_X = STAGE_MOVEMENT_SIGN_X
@@ -305,6 +323,27 @@ DEFAULT_OBJECTIVE = '4x'
 
 # print('-------------------')
 # print(CAMERA_PIXEL_SIZE_UM[CAMERAS['DF1']['sensor']])
+
+class SLIDE_POSITION:
+    LOADING_X_MM = 30
+    LOADING_Y_MM = 55
+    SCANNING_X_MM = 3
+    SCANNING_Y_MM = 3
+
+SLIDE_POTISION_SWITCHING_TIMEOUT_LIMIT_S = 10
+
+class SOFTWARE_POS_LIMIT:
+    X_POSITIVE = 56
+    X_NEGATIVE = -0.5
+    Y_POSITIVE = 56
+    Y_NEGATIVE = -0.5
+
+MULTIPOINT_AUTOFOCUS_CHANNEL = 'BF LED matrix full'
+# MULTIPOINT_AUTOFOCUS_CHANNEL = 'BF LED matrix left half'
+MULTIPOINT_AUTOFOCUS_ENABLE_BY_DEFAULT = True
+MULTIPOINT_BF_SAVING_OPTION = 'Raw'
+# MULTIPOINT_BF_SAVING_OPTION = 'RGB2GRAY'
+# MULTIPOINT_BF_SAVING_OPTION = 'Green Channel Only'
 
 ##########################################################
 #### start of loading machine specific configurations ####
