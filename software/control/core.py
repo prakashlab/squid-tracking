@@ -180,7 +180,6 @@ class StreamHandler(QObject):
             self.fps_display_real = self.counter_display
             self.counter_display = 0
             # print('real display fps is ' + str(self.fps_display_real))
-
             self.signal_fps_display.emit(self.fps_display_real)
 
 
@@ -669,6 +668,7 @@ class SlidePositionController(QObject):
 
     def slot_resume_live(self):
         self.liveController.start_live()
+
 
 
 class ImageDisplay(QObject):
