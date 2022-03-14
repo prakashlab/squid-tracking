@@ -328,6 +328,12 @@ CAMERAS = {'DF1':{'make':'Daheng','serial':'FW0200050063','px_format':(2560,2048
 TUBE_LENS_MM = {'DF1':50,'DF2':50,'volumetric imaging':75}
 DEFAULT_OBJECTIVE = '4x'
 
+class CAMERA:
+    ROI_OFFSET_X_DEFAULT = 0
+    ROI_OFFSET_Y_DEFAULT = 0
+    ROI_WIDTH_DEFAULT = 3000
+    ROI_HEIGHT_DEFAULT = 3000
+
 # print('-------------------')
 # print(CAMERA_PIXEL_SIZE_UM[CAMERAS['DF1']['sensor']])
 
