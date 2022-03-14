@@ -81,7 +81,7 @@ class GUI(QMainWindow):
 			self.streamHandler[key] = core.StreamHandler(camera = self.camera[key], crop_width = CAMERAS[key]['px_format'][0], crop_height= CAMERAS[key]['px_format'][1], imaging_channel = key, 
                 rotate_image_angle = CAMERAS[key]['rotate image angle'], flip_image = CAMERAS[key]['flip image'], is_polarization_camera = is_polarization)
 			# load image saver
-			self.imageSaver[key] = core_tracking.ImageSaver(self.internal_state, imaging_channel = key, image_format = IMAGE_FORMAT, rotate_image_angle = 180)
+			self.imageSaver[key] = core_tracking.ImageSaver(self.internal_state, imaging_channel = key, image_format = IMAGE_FORMAT)
 
 		self.liveController = {key:core.LiveController(self.camera[key],self.microcontroller) for key in self.imaging_channels}
 		self.navigationController = core.NavigationController(self.microcontroller)

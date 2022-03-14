@@ -205,7 +205,7 @@ class TrackingController(QObject):
 				self.microcontroller.move_z_usteps(TRACKING_MOVEMENT_SIGN_Z*z_correction_usteps) # can move to the focus tracking controller
 			elif TRACKING_CONFIG == 'XZ_Y':
 				self.microcontroller.move_x_usteps(TRACKING_MOVEMENT_SIGN_X*x_correction_usteps) # in-plane axis 0
-				self.microcontroller.move_y_usteps(TRACKING_MOVEMENT_SIGN_Z*z_correction_usteps)	# in-plane axis 1
+				self.microcontroller.move_y_usteps(TRACKING_MOVEMENT_SIGN_Z*z_correction_usteps) # in-plane axis 1
 				self.microcontroller.move_z_usteps(TRACKING_MOVEMENT_SIGN_Y*y_correction_usteps) # focus axis - can move to the focus tracking controller
 			elif TRACKING_CONFIG == 'XTheta_Y':
 				self.microcontroller.move_x_usteps(TRACKING_MOVEMENT_SIGN_X*x_correction_usteps) # in-plane axis 0
@@ -398,7 +398,7 @@ class StateUpdater(QObject):
 				# in the next update, to avoid confusion, use axis_1, axis_2 and axis_3 to refer these axes (for different configs)
 				theta_pos_rad = y_pos*ENCODER_SIGN_THETA*ENCODER_STEP_SIZE_THETA/GEAR_RATIO_THETA
 			else:
-				theta_pos_rad = y_pos*STAGE_POS_SIGN_THETA*(2*np.pi)/(FULLSTEPS_PER_REV_THETA*self.navigationController.theta_microstepping*GEAR_RATIO_THETA)
+				theta_pos_rad = y_pos*STAGE_POS_SIGN_Y*(2*np.pi)/(FULLSTEPS_PER_REV_Y*self.navigationController.y_microstepping*GEAR_RATIO_THETA)
 			self.internal_state.data['Theta_stage'] = theta_pos_rad
 			self.navigationController.signal_theta_degree.emit(theta_pos_rad*360/(2*np.pi))
 
@@ -627,8 +627,8 @@ class ImageSaver(QObject):
 		self.image_lock = Lock()
 		self.stop_signal_received = False
 
-		self.rotate_image_angle = rotate_image_angle
-		self.flip_image = flip_image
+		# self.rotate_image_angle = rotate_image_angle 	# to remove
+		# self.flip_image = flip_image					# to remove
 		self.thread = Thread(target=self.process_queue)
 		 # Start a thread for saving images
 		self.thread.start()
@@ -663,6 +663,8 @@ class ImageSaver(QObject):
 				# Emit the image name so DataSaver can save it along with the stage positions
 				self.imageName.emit(self.imaging_channel, image_file_name)
 				
+				# to remove
+				'''
 				# Image rotations
 				if(self.rotate_image_angle != 0):
 					# ROTATE_90_CLOCKWISE
@@ -684,6 +686,7 @@ class ImageSaver(QObject):
 						image = cv2.flip(image, 1)
 					elif(self.flip_image == 'Both'):
 						image = cv2.flip(image, -1)
+				'''
 
 				# Save the image
 				cv2.imwrite(saving_path,image)

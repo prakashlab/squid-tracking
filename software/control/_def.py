@@ -232,16 +232,15 @@ CAMERA_REVERSE_Y = False
 DEFAULT_TRIGGER_MODE = TriggerMode.SOFTWARE
 
 # note: XY are the in-plane axes, Z is the focus axis
-
 STAGE_MOVEMENT_SIGN_X = -1
-STAGE_MOVEMENT_SIGN_Y = 1
+STAGE_MOVEMENT_SIGN_Y = 1     # this is the theta stage for the XTheta-_Y configuration
 STAGE_MOVEMENT_SIGN_Z = -1
-STAGE_MOVEMENT_SIGN_THETA = 1
+STAGE_MOVEMENT_SIGN_THETA = 1 # not used
 
 STAGE_POS_SIGN_X = STAGE_MOVEMENT_SIGN_X
-STAGE_POS_SIGN_Y = STAGE_MOVEMENT_SIGN_Y
+STAGE_POS_SIGN_Y = STAGE_MOVEMENT_SIGN_Y # this is the theta stage for the XTheta-_Y configuration
 STAGE_POS_SIGN_Z = STAGE_MOVEMENT_SIGN_Z
-STAGE_POS_SIGN_THETA = STAGE_MOVEMENT_SIGN_THETA
+STAGE_POS_SIGN_THETA = STAGE_MOVEMENT_SIGN_THETA # not used 
 
 # note that these correspond to the actual axes
 TRACKING_MOVEMENT_SIGN_X = 1
