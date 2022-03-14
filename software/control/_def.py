@@ -130,7 +130,10 @@ class AXIS:
 class PID_parameters:
     MAX_DISTANCE = 2 # Max distance (in mm) for truncating PID command
     STEP_PER_MM_TYPICAL = 200
-    PID_OUTPUT_MAX = MAX_DISTANCE*STEP_PER_MM_TYPICAL*Motion.MAX_MICROSTEPS
+    PID_OUTPUT_MAX = MAX_DISTANCE*STEP_PER_MM_TYPICAL*Motion.MAX_MICROSTEPS # to be modified 3/13/2022
+    P_DEFAULT = 0.04
+    I_DEFAULT = 0
+    D_DEFAULT = 0
 
 class PDAF:
     ROI_ratio_width_default = 2.5
