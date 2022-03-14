@@ -353,6 +353,8 @@ MULTIPOINT_BF_SAVING_OPTION = 'Raw'
 # MULTIPOINT_BF_SAVING_OPTION = 'RGB2GRAY'
 # MULTIPOINT_BF_SAVING_OPTION = 'Green Channel Only'
 
+IMAGE_FORMAT = 'bmp'
+
 ##########################################################
 #### start of loading machine specific configurations ####
 ##########################################################

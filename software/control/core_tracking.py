@@ -613,7 +613,7 @@ class ImageSaver(QObject):
 	Connections
 	imageName -> DataSaver
 	'''
-	def __init__(self, internal_state, imaging_channel = None, image_format='.tif', rotate_image_angle = 0, flip_image = None):
+	def __init__(self, internal_state, imaging_channel = None, image_format='bmp', rotate_image_angle = 0, flip_image = None):
 		QObject.__init__(self)
 		self.internal_state = internal_state
 		# imaging-channel that is using this ImageSaver object
@@ -657,7 +657,7 @@ class ImageSaver(QObject):
 					folder_images = os.path.join(self.base_path, self.experiment_ID_with_timestamp, self.imaging_channel, '{:05d}'.format(folder_ID))
 					os.mkdir(folder_images)
 				
-				image_file_name = '{:07d}'.format(file_ID) + self.image_format
+				image_file_name = '{:07d}'.format(file_ID) + '.' + self.image_format
 				saving_path = os.path.join(folder_images, image_file_name)
 				
 				# Emit the image name so DataSaver can save it along with the stage positions
