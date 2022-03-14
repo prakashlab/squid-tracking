@@ -776,8 +776,8 @@ class PID_Widget(QFrame):
 		super().__init__()
 
 		# Slider Groupe P
-		defaultP = Pmax/10
-		stepP = Pmax/100
+		defaultP = Pmax/50
+		stepP = Pmax/200
 
 		self.labelP = QLabel('P')
 		self.hsliderP = QSlider(Qt.Vertical)
@@ -785,7 +785,7 @@ class PID_Widget(QFrame):
 		self.hsliderP.setValue(int(defaultP*100))
 		self.spinboxP = QDoubleSpinBox()
 		self.spinboxP.setRange(0,round(Pmax,2))
-		self.spinboxP.setSingleStep(round(stepP,2))
+		self.spinboxP.setSingleStep(round(stepP,3))
 		self.spinboxP.setValue(round(defaultP,2))
 		self.hsliderP.valueChanged.connect(self.spinBoxP_setValue)
 		self.spinboxP.valueChanged.connect(self.hsliderP_setValue)
@@ -797,7 +797,7 @@ class PID_Widget(QFrame):
 		group_sliderP.setLayout(sliderP_layout)
 
 		defaultI = 0
-		stepI = Imax/100
+		stepI = Imax/200
 		# Slider Groupe I
 		self.labelI = QLabel('I')
 		self.hsliderI = QSlider(Qt.Vertical)
@@ -817,8 +817,8 @@ class PID_Widget(QFrame):
 		group_sliderI.setLayout(sliderI_layout)
 		
 		# Slider Groupe D
-		defaultD = Dmax/10
-		stepD = Dmax/100
+		defaultD = 0
+		stepD = Dmax/200
 
 		self.labelD = QLabel('D')
 		self.hsliderD = QSlider(Qt.Vertical)
@@ -826,7 +826,7 @@ class PID_Widget(QFrame):
 		self.hsliderD.setValue(int(defaultD*100))
 		self.spinboxD=QDoubleSpinBox()
 		self.spinboxD.setRange(0,int(Dmax))
-		self.spinboxD.setSingleStep(round(stepD,2))
+		self.spinboxD.setSingleStep(round(stepD,3))
 		self.spinboxD.setValue(round(defaultD,2))
 		self.hsliderD.valueChanged.connect(self.spinBoxD_setValue)
 		self.spinboxD.valueChanged.connect(self.hsliderD_setValue)
