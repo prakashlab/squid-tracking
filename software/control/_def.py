@@ -68,7 +68,7 @@ class Tracking:
     SEARCH_AREA_RATIO = 10
     CROPPED_IMG_RATIO = 10
     BBOX_SCALE_FACTOR = 1.2
-    DEFAULT_TRACKER = "csrt"
+    DEFAULT_TRACKER = "daSiamRPN"
     INIT_METHODS = ["threshold", "roi"]
     DEFAULT_INIT_METHOD = "roi"
 
@@ -104,6 +104,9 @@ class CMD_SET:
     CONFIGURE_STEPPER_DRIVER = 21
     SET_MAX_VELOCITY_ACCELERATION = 22
     SET_LEAD_SCREW_PITCH = 23
+    SET_OFFSET_VELOCITY = 24
+    SEND_HARDWARE_TRIGGER = 30
+    SET_STROBE_DELAY = 31
 
 class CMD_SET2:
     ANALOG_WRITE_DAC8050X = 0
@@ -127,7 +130,10 @@ class AXIS:
 class PID_parameters:
     MAX_DISTANCE = 2 # Max distance (in mm) for truncating PID command
     STEP_PER_MM_TYPICAL = 200
-    PID_OUTPUT_MAX = MAX_DISTANCE*STEP_PER_MM_TYPICAL*Motion.MAX_MICROSTEPS
+    PID_OUTPUT_MAX = MAX_DISTANCE*STEP_PER_MM_TYPICAL*Motion.MAX_MICROSTEPS # to be modified 3/13/2022
+    P_DEFAULT = 0.04
+    I_DEFAULT = 0
+    D_DEFAULT = 0
 
 class PDAF:
     ROI_ratio_width_default = 2.5
@@ -174,17 +180,20 @@ if(not os.path.exists(DEFAULT_SAVE_FOLDER)):
 
 WORKING_RES_DEFAULT = 0.5
 TRACKERS = ['nearest-nbr', 'csrt', 'kcf', 'mil', 'tld', 'medianflow','mosse','daSiamRPN']
-DEFAULT_TRACKER = 'csrt'
+DEFAULT_TRACKER = 'daSiamRPN'
 DEFAULT_INIT_METHOD = 'roi'
 CROPPED_IMG_RATIO = 10
 
 CAMERA_PIXEL_SIZE_UM = {'IMX290':2.9,'IMX178':2.4,'IMX226':1.85,'IMX250':3.45,'IMX252':3.45,'IMX273':3.45,'IMX264':3.45,'IMX265':3.45,'IMX571':3.76,'PYTHON300':4.8}
 OBJECTIVES = {'2x':{'magnification':2, 'NA':0.10, 'tube_lens_f_mm':180}, 
                 '4x':{'magnification':4, 'NA':0.13, 'tube_lens_f_mm':180}, 
+                '4x (Nikon)':{'magnification':4, 'NA':0.13, 'tube_lens_f_mm':200}, 
                 '10x':{'magnification':10, 'NA':0.25, 'tube_lens_f_mm':180}, 
+                '10x (Nikon)':{'magnification':10, 'NA':0.3, 'tube_lens_f_mm':200}, 
                 '20x (Boli)':{'magnification':20, 'NA':0.4, 'tube_lens_f_mm':180}, 
                 '20x (Nikon)':{'magnification':20, 'NA':0.45, 'tube_lens_f_mm':200}, 
-                '40x':{'magnification':40, 'NA':0.6, 'tube_lens_f_mm':180}}
+                '40x (Boli)':{'magnification':40, 'NA':0.6, 'tube_lens_f_mm':180},
+                '40x (Nikon)':{'magnification':40, 'NA':0.65, 'tube_lens_f_mm':200}}
 
 TRACKING = 'DF1'
 
@@ -223,17 +232,18 @@ LED_MATRIX_B_FACTOR = 1
 CAMERA_REVERSE_X = False
 CAMERA_REVERSE_Y = False
 
-# note: XY are the in-plane axes, Z is the focus axis
+DEFAULT_TRIGGER_MODE = TriggerMode.SOFTWARE
 
+# note: XY are the in-plane axes, Z is the focus axis
 STAGE_MOVEMENT_SIGN_X = -1
-STAGE_MOVEMENT_SIGN_Y = 1
+STAGE_MOVEMENT_SIGN_Y = 1     # this is the theta stage for the XTheta-_Y configuration
 STAGE_MOVEMENT_SIGN_Z = -1
-STAGE_MOVEMENT_SIGN_THETA = 1
+STAGE_MOVEMENT_SIGN_THETA = 1 # not used
 
 STAGE_POS_SIGN_X = STAGE_MOVEMENT_SIGN_X
-STAGE_POS_SIGN_Y = STAGE_MOVEMENT_SIGN_Y
+STAGE_POS_SIGN_Y = STAGE_MOVEMENT_SIGN_Y # this is the theta stage for the XTheta-_Y configuration
 STAGE_POS_SIGN_Z = STAGE_MOVEMENT_SIGN_Z
-STAGE_POS_SIGN_THETA = STAGE_MOVEMENT_SIGN_THETA
+STAGE_POS_SIGN_THETA = STAGE_MOVEMENT_SIGN_THETA # not used 
 
 # note that these correspond to the actual axes
 TRACKING_MOVEMENT_SIGN_X = 1
@@ -321,6 +331,12 @@ CAMERAS = {'DF1':{'make':'Daheng','serial':'FW0200050063','px_format':(2560,2048
 TUBE_LENS_MM = {'DF1':50,'DF2':50,'volumetric imaging':75}
 DEFAULT_OBJECTIVE = '4x'
 
+class CAMERA:
+    ROI_OFFSET_X_DEFAULT = 0
+    ROI_OFFSET_Y_DEFAULT = 0
+    ROI_WIDTH_DEFAULT = 3000
+    ROI_HEIGHT_DEFAULT = 3000
+
 # print('-------------------')
 # print(CAMERA_PIXEL_SIZE_UM[CAMERAS['DF1']['sensor']])
 
@@ -344,6 +360,8 @@ MULTIPOINT_AUTOFOCUS_ENABLE_BY_DEFAULT = True
 MULTIPOINT_BF_SAVING_OPTION = 'Raw'
 # MULTIPOINT_BF_SAVING_OPTION = 'RGB2GRAY'
 # MULTIPOINT_BF_SAVING_OPTION = 'Green Channel Only'
+
+IMAGE_FORMAT = 'bmp'
 
 ##########################################################
 #### start of loading machine specific configurations ####
