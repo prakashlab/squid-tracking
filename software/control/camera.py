@@ -7,6 +7,7 @@ try:
     import control.gxipy as gx
 except:
     print('gxipy import error')
+from control._def import *
 
 class Camera(object):
 
