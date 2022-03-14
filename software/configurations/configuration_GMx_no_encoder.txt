@@ -1,0 +1,125 @@
+CAMERAS = {
+'DF1':{'make':'Daheng','serial':'FU0190090030','px_format':(3000,3000),'color_format':'GRAY8','fps': 30,'is_color':True,'rotate image angle':0,'flip image':None,'sensor':'IMX226'}}
+
+TUBE_LENS_MM = {'DF1':50,'DF2':50,'volumetric imaging':75}
+
+DEFAULT_OBJECTIVE = '4x'
+
+LIQUID_LENS_FOCUS_TRACKING = False
+TWO_CAMERA_PDAF = False
+PDAF_FLIPUD = False
+PDAF_FLIPLR = False
+PDAF_SHIFT_AXIS = 'X' #'X' or 'Y'
+
+STAGE_MOVEMENT_SIGN_X = 1
+STAGE_MOVEMENT_SIGN_Y = 1
+STAGE_MOVEMENT_SIGN_THETA = 1
+
+X_ENCODER_SIGN = 1
+Y_ENCODER_SIGN = 1
+THETA_ENCODER_SIGN = 1
+
+class Chamber:
+    # Chamber dimensions in mm
+    WIDTH = 5
+    R_I = 85
+    R_O = 110
+    LENGTH = (R_O - R_I)
+    R_HOME = 93 # Gravity Machine 4 Monterey 2021
+
+VOLUMETRIC_IMAGING = False
+USE_SEPARATE_TRIGGER_CONTROLLER = True
+TRIGGERCONTROLLER_SERIAL_NUMBER = '9179400' # '9178980'
+
+TRACKING_MOVEMENT_SIGN_X = 1
+TRACKING_MOVEMENT_SIGN_Y = 1
+TRACKING_MOVEMENT_SIGN_Z = -1
+
+###############################################
+STAGE_POS_SIGN_X = STAGE_MOVEMENT_SIGN_X
+STAGE_POS_SIGN_Y = STAGE_MOVEMENT_SIGN_Y
+STAGE_POS_SIGN_Z = STAGE_MOVEMENT_SIGN_Z
+STAGE_POS_SIGN_THETA = STAGE_MOVEMENT_SIGN_THETA
+
+USE_ENCODER_X = False
+USE_ENCODER_Y = False
+USE_ENCODER_Z = False
+USE_ENCODER_THETA = False
+
+ENCODER_POS_SIGN_X = 1
+ENCODER_POS_SIGN_Y = 1
+ENCODER_POS_SIGN_Z = 1
+ENCODER_POS_SIGN_THETA = 1
+
+ENCODER_STEP_SIZE_X_MM = 1000e-6
+ENCODER_STEP_SIZE_Y_MM = 1000e-6
+ENCODER_STEP_SIZE_Z_MM = 1000e-6
+ENCODER_STEP_SIZE_THETA = 2*np.pi/(300*4)
+
+FULLSTEPS_PER_REV_X = 200
+FULLSTEPS_PER_REV_Y = 200
+FULLSTEPS_PER_REV_Z = 200
+FULLSTEPS_PER_REV_THETA = 200
+
+# beginning of actuator specific configurations
+
+SCREW_PITCH_X_MM = 1 # x
+SCREW_PITCH_Y_MM = 6.98 # theta (2*pi/90)*100, r = 100 mm
+SCREW_PITCH_Z_MM = 1 # y (focus axis)
+
+GEAR_RATIO_THETA = 90
+
+MICROSTEPPING_DEFAULT_X = 64
+MICROSTEPPING_DEFAULT_Y = 256
+MICROSTEPPING_DEFAULT_Z = 64
+
+X_MOTOR_RMS_CURRENT_mA = 1000
+Y_MOTOR_RMS_CURRENT_mA = 1000
+Z_MOTOR_RMS_CURRENT_mA = 1000
+
+X_MOTOR_I_HOLD = 0.25
+Y_MOTOR_I_HOLD = 0.25
+Z_MOTOR_I_HOLD = 0.5
+
+MAX_VELOCITY_X_mm = 10
+MAX_VELOCITY_Y_mm = 10
+MAX_VELOCITY_Z_mm = 10
+
+MAX_ACCELERATION_X_mm = 100
+MAX_ACCELERATION_Y_mm = 100
+MAX_ACCELERATION_Z_mm = 100
+
+# end of actuator specific configurations
+
+SCAN_STABILIZATION_TIME_MS_X = 160
+SCAN_STABILIZATION_TIME_MS_Y = 160
+SCAN_STABILIZATION_TIME_MS_Z = 20
+
+HOMING_ENABLED_X = False
+HOMING_ENABLED_Y = False
+HOMING_ENABLED_Z = False
+HOMING_ENABLED_THETA = False
+
+SLEEP_TIME_S = 0.005
+
+LED_MATRIX_R_FACTOR = 1
+LED_MATRIX_G_FACTOR = 1
+LED_MATRIX_B_FACTOR = 1
+
+class PID_parameters:
+    MAX_DISTANCE = 2 # Max distance (in mm) for truncating PID command
+    STEP_PER_MM_TYPICAL = 200
+    PID_OUTPUT_MAX = MAX_DISTANCE*STEP_PER_MM_TYPICAL*Motion.MAX_MICROSTEPS # to be modified 3/13/2022
+    P_DEFAULT = 0.02
+    I_DEFAULT = 0
+    D_DEFAULT = 0
+
+class PDAF:
+    ROI_ratio_width_default = 2.5
+    ROI_ratio_height_default = 2.5
+    x_offset_default = 0
+    y_offset_default = 198
+    shift_to_distance_um_default = -5.0
+
+print('machine-specific configurations loaded')
+
