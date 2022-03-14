@@ -11,7 +11,7 @@ Created on Thu May 17 12:17:20 2018
 from control._def import *
 
 class PID:
-    def __init__(self, P=0.5, I=0, D=0.5, Output_max = PID_parameters.PID_OUTPUT_MAX, Output_min = -PID_parameters.PID_OUTPUT_MAX):
+    def __init__(self, P=PID_parameters.P_DEFAULT, I=0, D=PID_parameters.D_DEFAULT, Output_max = PID_parameters.PID_OUTPUT_MAX, Output_min = -PID_parameters.PID_OUTPUT_MAX):
         
         #Parameters
         self.Kp=P

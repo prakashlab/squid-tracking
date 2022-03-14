@@ -776,7 +776,7 @@ class PID_Widget(QFrame):
 		super().__init__()
 
 		# Slider Groupe P
-		defaultP = Pmax/50
+		defaultP = PID_parameters.P_DEFAULT
 		stepP = Pmax/200
 
 		self.labelP = QLabel('P')
@@ -796,7 +796,7 @@ class PID_Widget(QFrame):
 		group_sliderP=QWidget()
 		group_sliderP.setLayout(sliderP_layout)
 
-		defaultI = 0
+		defaultI = PID_parameters.I_DEFAULT
 		stepI = Imax/200
 		# Slider Groupe I
 		self.labelI = QLabel('I')
@@ -817,7 +817,7 @@ class PID_Widget(QFrame):
 		group_sliderI.setLayout(sliderI_layout)
 		
 		# Slider Groupe D
-		defaultD = 0
+		defaultD = PID_parameters.D_DEFAULT
 		stepD = Dmax/200
 
 		self.labelD = QLabel('D')
