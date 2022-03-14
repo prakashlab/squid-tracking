@@ -746,6 +746,7 @@ class ImageDisplayWindow(QMainWindow):
         
         ## lock the aspect ratio so pixels are always square
         self.graphics_widget.view.setAspectLocked(True)
+        self.graphics_widget.view.invertY()
         
         ## Create image item
         self.graphics_widget.img = pg.ImageItem(border='w', axisOrder='row-major')
