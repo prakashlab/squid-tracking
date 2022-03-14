@@ -282,12 +282,12 @@ class LiveController(QObject):
         self.control_illumination = control_illumination
         self.illumination_on = False
 
-        self.fps_software_trigger = FPS['trigger_software']['default']
-        self.timer_software_trigger_interval = (1/self.fps_software_trigger)*1000
+        self.fps_trigger = FPS['trigger_software']['default']
+        self.timer_trigger_interval = (1/self.fps_trigger)*1000
 
-        self.timer_software_trigger = QTimer()
-        self.timer_software_trigger.setInterval(self.timer_software_trigger_interval)
-        self.timer_software_trigger.timeout.connect(self.trigger_acquisition_software)
+        self.timer_trigger = QTimer()
+        self.timer_trigger.setInterval(self.timer_trigger_interval)
+        self.timer_trigger.timeout.connect(self.trigger_acquisition)
 
         self.trigger_ID = -1
 
@@ -327,64 +327,74 @@ class LiveController(QObject):
     def start_live(self):
         self.is_live = True
         self.camera.start_streaming()
-        if self.trigger_mode == TriggerMode.SOFTWARE:
-            self._start_software_triggerred_acquisition()
+        if self.trigger_mode == TriggerMode.SOFTWARE or self.trigger_mode == TriggerMode.HARDWARE:
+            self._start_triggerred_acquisition()
 
     def stop_live(self):
         if self.is_live:
             self.is_live = False
             if self.trigger_mode == TriggerMode.SOFTWARE:
-                self._stop_software_triggerred_acquisition()
-            self.camera.stop_streaming()
-            self.turn_off_illumination()
+                self._stop_triggerred_acquisition()
+            if self.trigger_mode == TriggerMode.CONTINUOUS:
+                self.camera.stop_streaming()
+            if self.trigger_mode == TriggerMode.HARDWARE:
+                self._stop_triggerred_acquisition()
+            if self.control_illumination:
+                self.turn_off_illumination()
 
     # software trigger related
-    def trigger_acquisition_software(self):
-        if self.control_illumination and self.illumination_on == False:
-            self.turn_on_illumination()
-        self.trigger_ID = self.trigger_ID + 1
-        self.camera.send_trigger()
-        # measure real fps
-        timestamp_now = round(time.time())
-        if timestamp_now == self.timestamp_last:
-            self.counter = self.counter+1
-        else:
-            self.timestamp_last = timestamp_now
-            self.fps_real = self.counter
-            self.counter = 0
-            # print('real trigger fps is ' + str(self.fps_real))
+    def trigger_acquisition(self):
+        if self.trigger_mode == TriggerMode.SOFTWARE:
+            if self.control_illumination and self.illumination_on == False:
+                self.turn_on_illumination()
+            self.trigger_ID = self.trigger_ID + 1
+            self.camera.send_trigger()
+            # measure real fps
+            timestamp_now = round(time.time())
+            if timestamp_now == self.timestamp_last:
+                self.counter = self.counter+1
+            else:
+                self.timestamp_last = timestamp_now
+                self.fps_real = self.counter
+                self.counter = 0
+                # print('real trigger fps is ' + str(self.fps_real))
+        elif self.trigger_mode == TriggerMode.HARDWARE:
+            self.trigger_ID = self.trigger_ID + 1
+            self.microcontroller.send_hardware_trigger(control_illumination=True,illumination_on_time_us=self.camera.exposure_time*1000)
 
-    def _start_software_triggerred_acquisition(self):
-        self.timer_software_trigger.start()
+    def _start_triggerred_acquisition(self):
+        self.timer_trigger.start()
 
-    def _set_software_trigger_fps(self,fps_software_trigger):
-        self.fps_software_trigger = fps_software_trigger
-        self.timer_software_trigger_interval = (1/self.fps_software_trigger)*1000
-        self.timer_software_trigger.setInterval(self.timer_software_trigger_interval)
+    def _set_trigger_fps(self,fps_trigger):
+        self.fps_trigger = fps_trigger
+        self.timer_trigger_interval = (1/self.fps_trigger)*1000
+        self.timer_trigger.setInterval(self.timer_trigger_interval)
 
-    def _stop_software_triggerred_acquisition(self):
-        self.timer_software_trigger.stop()
+    def _stop_triggerred_acquisition(self):
+        self.timer_trigger.stop()
 
     # trigger mode and settings
     def set_trigger_mode(self, mode):
         if mode == TriggerMode.SOFTWARE:
             self.camera.set_software_triggered_acquisition()
             if self.is_live:
-                self._start_software_triggerred_acquisition()
+                self._start_triggerred_acquisition()
         if mode == TriggerMode.HARDWARE:
             print('Setting camera to hardware trigger')
             if self.trigger_mode == TriggerMode.SOFTWARE:
-                self._stop_software_triggerred_acquisition()
+                self._stop_triggerred_acquisition()
+            # self.camera.reset_camera_acquisition_counter()
             self.camera.set_hardware_triggered_acquisition()
+            self.microcontroller.set_strobe_delay_us(self.camera.strobe_delay_us)
         if mode == TriggerMode.CONTINUOUS: 
             if self.trigger_mode == TriggerMode.SOFTWARE:
-                self._stop_software_triggerred_acquisition()
+                self._stop_triggerred_acquisition()
             self.camera.set_continuous_acquisition()
         self.trigger_mode = mode
 
     def set_trigger_fps(self,fps):
-        if self.trigger_mode == TriggerMode.SOFTWARE:
-            self._set_software_trigger_fps(fps)
+        if self.trigger_mode == TriggerMode.SOFTWARE or self.trigger_mode == TriggerMode.HARDWARE:
+            self._set_trigger_fps(fps)
     
     # set microscope mode
     # @@@ to do: change softwareTriggerGenerator to TriggerGeneratror
@@ -393,7 +403,7 @@ class LiveController(QObject):
         
         # temporarily stop live while changing mode
         if self.is_live is True:
-            self.timer_software_trigger.stop()
+            self.timer_trigger.stop()
             self.turn_off_illumination()
         
         self.mode = mode
@@ -410,7 +420,7 @@ class LiveController(QObject):
         # restart live 
         if self.is_live is True:
             self.turn_on_illumination()
-            self.timer_software_trigger.start()
+            self.timer_trigger.start()
 
     def get_trigger_mode(self):
         return self.trigger_mode
@@ -430,7 +440,7 @@ class LiveController(QObject):
 
     # slot
     def on_new_frame(self):
-        if self.fps_software_trigger <= 5:
+        if self.fps_trigger <= 5:
             if self.control_illumination and self.illumination_on == True:
                 self.turn_off_illumination()
 
