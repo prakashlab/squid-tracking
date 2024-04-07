@@ -186,13 +186,13 @@ CROPPED_IMG_RATIO = 10
 
 CAMERA_PIXEL_SIZE_UM = {'IMX290':2.9,'IMX178':2.4,'IMX226':1.85,'IMX250':3.45,'IMX252':3.45,'IMX273':3.45,'IMX264':3.45,'IMX265':3.45,'IMX571':3.76,'PYTHON300':4.8}
 OBJECTIVES = {'2x':{'magnification':2, 'NA':0.10, 'tube_lens_f_mm':180}, 
-                '4x':{'magnification':4, 'NA':0.13, 'tube_lens_f_mm':180}, 
+                '4x (Olympus)':{'magnification':4, 'NA':0.13, 'tube_lens_f_mm':180}, 
                 '4x (Nikon)':{'magnification':4, 'NA':0.13, 'tube_lens_f_mm':200}, 
-                '10x':{'magnification':10, 'NA':0.25, 'tube_lens_f_mm':180}, 
+                '10x (Olympus)':{'magnification':10, 'NA':0.25, 'tube_lens_f_mm':180}, 
                 '10x (Nikon)':{'magnification':10, 'NA':0.3, 'tube_lens_f_mm':200}, 
-                '20x (Boli)':{'magnification':20, 'NA':0.4, 'tube_lens_f_mm':180}, 
+                '20x (Olympus)':{'magnification':20, 'NA':0.4, 'tube_lens_f_mm':180}, 
                 '20x (Nikon)':{'magnification':20, 'NA':0.45, 'tube_lens_f_mm':200}, 
-                '40x (Boli)':{'magnification':40, 'NA':0.6, 'tube_lens_f_mm':180},
+                '40x (Olympus)':{'magnification':40, 'NA':0.6, 'tube_lens_f_mm':180},
                 '40x (Nikon)':{'magnification':40, 'NA':0.65, 'tube_lens_f_mm':200}}
 
 TRACKING = 'DF1'
