@@ -18,7 +18,6 @@ from control._def import *
 import control.widgets as widgets
 import control.widgets_tracking as widgets_tracking
 import control.widgets_volumetric_imaging as widgets_volumetric_imaging
-import control.camera_TIS as camera_TIS
 import control.camera as camera_Daheng
 import control.core as core
 import control.core_tracking as core_tracking
@@ -58,12 +57,13 @@ class GUI(QMainWindow):
 			self.camera = {}
 			for key in self.imaging_channels:
 				if(CAMERAS[key]['make']=='TIS'):
+					import control.camera_TIS as camera_TIS
 					self.camera[key] = camera_TIS.Camera(serial=CAMERAS[key]['serial'], width = CAMERAS[key]['px_format'][0], 
 						height = CAMERAS[key]['px_format'][1], framerate = CAMERAS[key]['fps'], color = CAMERAS[key]['is_color'])
 				elif (CAMERAS[key]['make']=='Daheng'):
 					self.camera[key] = camera_Daheng.Camera(sn = CAMERAS[key]['serial'])
 				self.camera[key].open()
-			self.microcontroller = microcontroller.Microcontroller()
+			self.microcontroller = microcontroller.Microcontroller(version=CONTROLLER_VERSION)
 
 		self.microcontroller.configure_actuators()
 
@@ -168,11 +168,13 @@ class GUI(QMainWindow):
 			image_display_dockArea.addDock(image_window_docks[channel], 'bottom')
 			image_window_docks[channel].addWidget(self.imageDisplayWindow[channel].widget)
 			last_channel = channel
-
+		
+		'''
 		# Add dock for the thresholded image
 		thresholded_image_dock = dock.Dock('Thresholded', autoOrientation = False)
 		image_display_dockArea.addDock(thresholded_image_dock, 'right', image_window_docks[last_channel])
-		thresholded_image_dock.addWidget(self.imageDisplayWindow_ThresholdedImage.widget)			
+		thresholded_image_dock.addWidget(self.imageDisplayWindow_ThresholdedImage.widget)	
+		'''		
 
 		#-----------------------------------------------------------------------------------------------
 		# PDAF

@@ -179,7 +179,7 @@ if(not os.path.exists(DEFAULT_SAVE_FOLDER)):
     os.makedirs(DEFAULT_SAVE_FOLDER)
 
 WORKING_RES_DEFAULT = 0.5
-TRACKERS = ['nearest-nbr', 'csrt', 'kcf', 'mil', 'tld', 'medianflow','mosse','daSiamRPN']
+TRACKERS = ['csrt','daSiamRPN']
 DEFAULT_TRACKER = 'daSiamRPN'
 DEFAULT_INIT_METHOD = 'roi'
 CROPPED_IMG_RATIO = 10
@@ -362,6 +362,7 @@ MULTIPOINT_BF_SAVING_OPTION = 'Raw'
 # MULTIPOINT_BF_SAVING_OPTION = 'Green Channel Only'
 
 IMAGE_FORMAT = 'bmp'
+CONTROLLER_VERSION = 'Arduino'
 
 ##########################################################
 #### start of loading machine specific configurations ####

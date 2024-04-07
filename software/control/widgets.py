@@ -76,7 +76,7 @@ class CameraSettingsWidget(QFrame):
 		self.entry_triggerFPS.setMinimum(FPS['trigger_software']['min']) 
 		self.entry_triggerFPS.setMaximum(FPS['trigger_software']['max']) 
 		self.entry_triggerFPS.setSingleStep(1)
-		self.entry_triggerFPS.setValue(self.fps_trigger)
+		self.entry_triggerFPS.setValue(int(self.fps_trigger))
 
 		# Trigger FPS actual
 		self.actual_streamFPS = QLCDNumber()
@@ -722,14 +722,14 @@ class LEDMatrixControlWidget(QFrame):
 		self.setLayout(grid)
 
 		# connections
-		self.slider_R.valueChanged.connect(lambda x: self.entry_R.setValue(x/100.0))
-		self.entry_R.valueChanged.connect(lambda x: self.slider_R.setValue(x*100))
+		self.slider_R.valueChanged.connect(lambda x: self.entry_R.setValue(int(x/100.0)))
+		self.entry_R.valueChanged.connect(lambda x: self.slider_R.setValue(int(x*100)))
 		self.entry_R.valueChanged.connect(self.update_illumination)
-		self.slider_G.valueChanged.connect(lambda x: self.entry_G.setValue(x/100.0))
-		self.entry_G.valueChanged.connect(lambda x: self.slider_G.setValue(x*100))
+		self.slider_G.valueChanged.connect(lambda x: self.entry_G.setValue(int(x/100.0)))
+		self.entry_G.valueChanged.connect(lambda x: self.slider_G.setValue(int(x*100)))
 		self.entry_G.valueChanged.connect(self.update_illumination)
-		self.slider_B.valueChanged.connect(lambda x: self.entry_B.setValue(x/100.0))
-		self.entry_B.valueChanged.connect(lambda x: self.slider_B.setValue(x*100))
+		self.slider_B.valueChanged.connect(lambda x: self.entry_B.setValue(int(x/100.0)))
+		self.entry_B.valueChanged.connect(lambda x: self.slider_B.setValue(int(x*100)))
 		self.entry_B.valueChanged.connect(self.update_illumination)
 		self.slider_intensity.valueChanged.connect(self.entry_intensity.setValue)
 		self.entry_intensity.valueChanged.connect(self.slider_intensity.setValue)

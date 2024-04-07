@@ -286,7 +286,7 @@ class LiveController(QObject):
         self.timer_trigger_interval = (1/self.fps_trigger)*1000
 
         self.timer_trigger = QTimer()
-        self.timer_trigger.setInterval(self.timer_trigger_interval)
+        self.timer_trigger.setInterval(int(self.timer_trigger_interval))
         self.timer_trigger.timeout.connect(self.trigger_acquisition)
 
         self.trigger_ID = -1
@@ -368,7 +368,7 @@ class LiveController(QObject):
     def _set_trigger_fps(self,fps_trigger):
         self.fps_trigger = fps_trigger
         self.timer_trigger_interval = (1/self.fps_trigger)*1000
-        self.timer_trigger.setInterval(self.timer_trigger_interval)
+        self.timer_trigger.setInterval(int(self.timer_trigger_interval))
 
     def _stop_triggerred_acquisition(self):
         self.timer_trigger.stop()
@@ -854,5 +854,5 @@ class ImageDisplayWindow(QMainWindow):
         ymin = max(0, self.roi_pos[1])
         # print('Bbox from ImageDisplay: {}'.format([xmin, ymin, width, height]))
 
-        self.roi_bbox.emit(np.array([xmin, ymin, width, height]))
+        self.roi_bbox.emit(np.array([int(xmin), int(ymin), int(width), int(height)]))
         # print('Sent bbox from ImageDisplay: {}'.format([xmin, ymin, width, height]))
