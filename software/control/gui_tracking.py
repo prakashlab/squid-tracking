@@ -62,6 +62,9 @@ class GUI(QMainWindow):
 						height = CAMERAS[key]['px_format'][1], framerate = CAMERAS[key]['fps'], color = CAMERAS[key]['is_color'])
 				elif (CAMERAS[key]['make']=='Daheng'):
 					self.camera[key] = camera_Daheng.Camera(sn = CAMERAS[key]['serial'])
+				elif (CAMERAS[key]['make']=='Toupcam'):
+					import control.camera_toupcam as camera_toupcam
+					self.camera[key] = camera_toupcam.Camera()
 				self.camera[key].open()
 			self.microcontroller = microcontroller.Microcontroller(version=CONTROLLER_VERSION)
 
