@@ -228,7 +228,7 @@ class Camera(object):
             self.set_temperature(20)
 
             self.set_data_format("RAW")
-            self.set_pixel_format("MONO16")  # 'MONO8'
+            self.set_pixel_format("MONO8")  # For tracking
             self.set_auto_exposure(False)
             self.set_blacklevel(3)  # Default blacklevel value
 
@@ -563,7 +563,7 @@ class Camera(object):
             self.camera.Trigger(1)
             self._software_trigger_sent = True
             self._last_software_trigger_timestamp = time.time()
-            print(">>> trigger sent")
+            # print(">>> trigger sent")
         else:
             # TODO(imo): Propagate these errors in some way and handle
             if self.is_streaming == False:
