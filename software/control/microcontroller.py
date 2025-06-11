@@ -70,6 +70,7 @@ class Microcontroller():
         self.serial = serial.Serial(controller_ports[0],2000000)
         time.sleep(0.2)
         print('controller connected')
+        self.initialize_drivers()
 
         self.new_packet_callback_external = None
         self.terminate_reading_received_packet_thread = False
