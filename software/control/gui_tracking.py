@@ -302,6 +302,7 @@ class GUI(QMainWindow):
 			QMessageBox.No, QMessageBox.Yes)
 		if reply == QMessageBox.Yes:
 			self.image_window.close()
+			self.ledMatrixControlWidget.toggle_illumination(False)
 			for key in self.imaging_channels:
 				self.liveController[key].stop_live()
 				self.camera[key].close()

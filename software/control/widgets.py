@@ -639,15 +639,16 @@ class LEDMatrixControlWidget(QFrame):
 	def __init__(self,microcontroller):
 		super().__init__()
 		self.microcontroller = microcontroller
-		self.illumination_source = LED_MATRIX_PATTERN['LED matrix left half']
-		self.add_components()		
+		self.illumination_source = LED_MATRIX_PATTERN['LED matrix full']
+		self.add_components()
 		self.setFrameStyle(QFrame.Panel | QFrame.Raised)
+		self.set_illumination_pattern()
 
 	def add_components(self):
 		self.dropdown_LED_matrix_pattern = QComboBox()
 		for pattern in LED_MATRIX_PATTERN.keys():
 			self.dropdown_LED_matrix_pattern.addItems([pattern])
-		self.dropdown_LED_matrix_pattern.setCurrentText('LED matrix left half')
+		self.dropdown_LED_matrix_pattern.setCurrentText('LED matrix full')
 
 		self.slider_R = QSlider(Qt.Horizontal)
 		self.slider_R.setTickPosition(QSlider.TicksBelow)
@@ -735,6 +736,7 @@ class LEDMatrixControlWidget(QFrame):
 		self.entry_intensity.valueChanged.connect(self.slider_intensity.setValue)
 		self.entry_intensity.valueChanged.connect(self.update_illumination)
 		self.btn_toggle.clicked.connect(self.toggle_illumination)
+		self.dropdown_LED_matrix_pattern.currentIndexChanged.connect(self.set_illumination_pattern)
 
 	def toggle_illumination(self,on):
 		if on == True:
@@ -744,6 +746,7 @@ class LEDMatrixControlWidget(QFrame):
 
 	def set_illumination_pattern(self):
 		self.illumination_source = LED_MATRIX_PATTERN[self.dropdown_LED_matrix_pattern.currentText()]
+		self.update_illumination()
 
 	def update_illumination(self):
 		if self.illumination_source < 10: # LED matrix
