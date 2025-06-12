@@ -557,7 +557,7 @@ class Camera(object):
     def send_trigger(self):
         if self._last_software_trigger_timestamp != None:
             if (time.time() - self._last_software_trigger_timestamp) > (1.5 * self.exposure_time / 1000 * 1.02 + 4):
-                self.log.warning("last software trigger timed out")
+                print("last software trigger timed out")
                 self._software_trigger_sent = False
         if self.is_streaming and (self._software_trigger_sent == False):
             self.camera.Trigger(1)

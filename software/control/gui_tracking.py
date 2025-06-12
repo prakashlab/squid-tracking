@@ -298,6 +298,12 @@ class GUI(QMainWindow):
 			self.camera[channel].start_streaming()
 		self.image_window.show()
 
+		# Use space key to toggle tracking
+		QShortcut(QKeySequence(Qt.Key_Space), self, lambda: (
+			self.trackingControlWidget.btn_track.toggle(),
+			self.trackingControlWidget.do_track_button_tasks()
+		))
+
 	def waitForMicrocontroller(self, timeout=None, error_message=None):
 		start_time = time.time()
 		while self.microcontroller.is_busy():
