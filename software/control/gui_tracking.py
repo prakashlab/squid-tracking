@@ -3,6 +3,7 @@ import os
 import sys
 os.environ["QT_API"] = "pyqt5"
 import qtpy
+import time
 
 # qt libraries
 from qtpy.QtCore import *
@@ -67,6 +68,7 @@ class GUI(QMainWindow):
 					self.camera[key] = camera_toupcam.Camera()
 				self.camera[key].open()
 			self.microcontroller = microcontroller.Microcontroller(version=CONTROLLER_VERSION)
+			self.microcontroller.reset()
 
 		self.microcontroller.configure_actuators()
 
@@ -88,6 +90,20 @@ class GUI(QMainWindow):
 
 		self.liveController = {key:core.LiveController(self.camera[key],self.microcontroller) for key in self.imaging_channels}
 		self.navigationController = core.NavigationController(self.microcontroller)
+		# homing
+		if HOMING_ENABLED_Z:
+			self.navigationController.home_z()
+			self.waitForMicrocontroller(10, 'z homing timeout')
+		if HOMING_ENABLED_X and HOMING_ENABLED_Y:
+			self.navigationController.move_y(20)
+			self.waitForMicrocontroller()
+			self.navigationController.home_x()
+			self.waitForMicrocontroller(10, 'x homing timeout')
+			self.navigationController.move_x(20)
+			self.waitForMicrocontroller()
+			self.navigationController.home_y()
+			self.waitForMicrocontroller(10, 'y homing timeout')
+
 		self.stateUpdater = core_tracking.StateUpdater(self.navigationController, self.internal_state)
 		self.microcontroller.set_callback(self.stateUpdater.read_microcontroller)
 		self.trackingController = core_tracking.TrackingController(self.navigationController,self.microcontroller,self.internal_state)
@@ -281,6 +297,14 @@ class GUI(QMainWindow):
 			self.camera[channel].enable_callback()
 			self.camera[channel].start_streaming()
 		self.image_window.show()
+
+	def waitForMicrocontroller(self, timeout=None, error_message=None):
+		start_time = time.time()
+		while self.microcontroller.is_busy():
+			time.sleep(0.005)
+			if timeout and time.time() - start_time > timeout:
+				print(error_message or 'Microcontroller operation timed out')
+				sys.exit(1)
 
 	# @@@ TO DO
 	def add_status_bar(self):

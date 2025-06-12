@@ -21,7 +21,7 @@ from qtpy.QtGui import *
 
 # to do (7/28/2021) - add functions for configuring the stepper motors
 
-class Microcontroller():    
+class Microcontroller():
     def __init__(self,version='Arduino Due',sn=None,parent=None):
         self.serial = None
         self.platform_name = platform.system()

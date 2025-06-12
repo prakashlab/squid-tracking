@@ -465,6 +465,15 @@ class NavigationController(QObject):
         self.theta_microstepping = MICROSTEPPING_DEFAULT_THETA
         self.enable_joystick_button_action = True
 
+    def get_mm_per_ustep_X(self):
+        return SCREW_PITCH_X_MM/(self.x_microstepping*FULLSTEPS_PER_REV_X)
+
+    def get_mm_per_ustep_Y(self):
+        return SCREW_PITCH_Y_MM/(self.y_microstepping*FULLSTEPS_PER_REV_Y)
+
+    def get_mm_per_ustep_Z(self):
+        return SCREW_PITCH_Z_MM/(self.z_microstepping*FULLSTEPS_PER_REV_Z)
+
     def move_x_usteps(self,usteps):
         self.microcontroller.move_x_usteps(int(usteps))
 
@@ -473,6 +482,24 @@ class NavigationController(QObject):
 
     def move_z_usteps(self,usteps):
         self.microcontroller.move_z_usteps(int(usteps))
+
+    def move_x(self,delta):
+        self.microcontroller.move_x_usteps(int(delta/self.get_mm_per_ustep_X()))
+
+    def move_y(self,delta):
+        self.microcontroller.move_y_usteps(int(delta/self.get_mm_per_ustep_Y()))
+
+    def move_z(self,delta):
+        self.microcontroller.move_z_usteps(int(delta/self.get_mm_per_ustep_Z()))
+
+    def move_x_to(self,delta):
+        self.microcontroller.move_x_to_usteps(STAGE_MOVEMENT_SIGN_X*int(delta/self.get_mm_per_ustep_X()))
+
+    def move_y_to(self,delta):
+        self.microcontroller.move_y_to_usteps(STAGE_MOVEMENT_SIGN_Y*int(delta/self.get_mm_per_ustep_Y()))
+
+    def move_z_to(self,delta):
+        self.microcontroller.move_z_to_usteps(STAGE_MOVEMENT_SIGN_Z*int(delta/self.get_mm_per_ustep_Z()))
 
     def home_x(self):
         self.microcontroller.home_x()
