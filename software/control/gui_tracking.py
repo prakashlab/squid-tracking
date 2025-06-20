@@ -66,6 +66,9 @@ class GUI(QMainWindow):
 				elif (CAMERAS[key]['make']=='Toupcam'):
 					import control.camera_toupcam as camera_toupcam
 					self.camera[key] = camera_toupcam.Camera()
+				elif (CAMERAS[key]['make']=='Hamamatsu'):
+					import control.camera_hamamatsu as camera_hamamatsu
+					self.camera[key] = camera_hamamatsu.Camera()
 				self.camera[key].open()
 			self.microcontroller = microcontroller.Microcontroller(version=CONTROLLER_VERSION)
 			self.microcontroller.reset()
