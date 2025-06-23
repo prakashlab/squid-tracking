@@ -25,7 +25,7 @@ import control.core_tracking as core_tracking
 if VOLUMETRIC_IMAGING:
 	import control.core_volumetric_imaging as core_volumetric_imaging
 import control.microcontroller as microcontroller
-from control.serial_peripherals import XLight, LDI
+from control.serial_peripherals import XLight, LDI, LDI_Simulation
 
 class GUI(QMainWindow):
 
@@ -55,6 +55,13 @@ class GUI(QMainWindow):
 			# Define a camera object for each unique image-stream.
 			self.camera = {key:camera_Daheng.Camera_Simulation() for key in self.imaging_channels}
 			self.microcontroller = microcontroller.Microcontroller_Simulation()
+			if USE_LDI_SERIAL_CONTROL:
+				try:
+					self.ldi = LDI_Simulation()
+					self.ldi.set_intensity_mode(LDI_INTENSITY_MODE)
+					self.ldi.set_shutter_mode(LDI_SHUTTER_MODE)
+				except Exception as e:
+					raise Exception(f"Error initializing LDI: {e}")
 		else:
 			self.camera = {}
 			for key in self.imaging_channels:
@@ -76,6 +83,14 @@ class GUI(QMainWindow):
 			if USE_CICERO:
 				self.xlight = XLight(CICERO_SERIAL_NUMBER)
 				self.xlight.set_disk_motor_state(True)
+			if USE_LDI_SERIAL_CONTROL:
+				try:
+					self.ldi = LDI()
+					self.ldi.run()
+					self.ldi.set_intensity_mode(LDI_INTENSITY_MODE)
+					self.ldi.set_shutter_mode(LDI_SHUTTER_MODE)
+				except Exception as e:
+					raise Exception(f"Error initializing LDI: {e}")
 
 		self.microcontroller.configure_actuators()
 
@@ -127,6 +142,8 @@ class GUI(QMainWindow):
 		self.recordingControlWidget = widgets.RecordingWidget(self.streamHandler,self.imageSaver, self.internal_state, self.trackingDataSaver, self.imaging_channels)			
 		self.plotWidget = widgets.dockAreaPlot(self.internal_state)
 		self.ledMatrixControlWidget = widgets.LEDMatrixControlWidget(self.microcontroller)
+		if USE_LDI_SERIAL_CONTROL:
+			self.ldiControlWidget = widgets.LDIControlWidget(self.ldi, self.microcontroller)
 		
 		self.liveSettings_Tab = QTabWidget()
 		self.liveSettings_Tab.addTab(self.liveControlWidget, 'Live controller')
@@ -274,6 +291,8 @@ class GUI(QMainWindow):
 			self.SettingsTab.addTab(self.volumetricImagingWidget, 'Volumetric Imaging')
 		self.SettingsTab.addTab(self.navigationWidget, 'Stage Control')
 		self.SettingsTab.addTab(self.ledMatrixControlWidget, 'LED Matrix')
+		if USE_LDI_SERIAL_CONTROL:
+			self.SettingsTab.addTab(self.ldiControlWidget, 'LDI Control')
 		self.SettingsTab.addTab(self.plotWidget, 'Plots')
 
 		layout_left = QVBoxLayout()
@@ -346,7 +365,14 @@ class GUI(QMainWindow):
 				self.imageSaver[key].close()
 				self.imageDisplayWindow[key].close()
 			if USE_CICERO:
-				self.xlight.set_disk_motor_state(False)
+				try:
+					self.xlight.set_disk_motor_state(False)
+				except Exception as e:
+					print(f"Error stopping disk motor: {e}")
+			if USE_LDI_SERIAL_CONTROL:
+				for channel in range(11, 16):
+					self.microcontroller.set_illumination(channel, 10)
+					self.microcontroller.turn_off_illumination()
 			if TWO_CAMERA_PDAF:
 				self.imageDisplayWindow['PDAF_image1'].close()
 				self.imageDisplayWindow['PDAF_image2'].close()

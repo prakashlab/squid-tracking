@@ -382,6 +382,10 @@ CONTROLLER_VERSION = 'Arduino'
 USE_CICERO = False
 CICERO_SERIAL_NUMBER = ''
 
+USE_LDI_SERIAL_CONTROL = False
+LDI_INTENSITY_MODE = 'EXT'  # Only support EXT for now
+LDI_SHUTTER_MODE = 'EXT'  # Only support EXT for now
+
 ##########################################################
 #### start of loading machine specific configurations ####
 ##########################################################

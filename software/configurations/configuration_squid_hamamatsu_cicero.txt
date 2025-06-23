@@ -1,0 +1,121 @@
+USE_CICERO = True
+CICERO_SERIAL_NUMBER = ''
+
+CAMERAS = {
+'DF1':{'make':'Hamamatsu','serial':'','px_format':(3000,3000),'color_format':'GRAY8','fps': 120,'is_color':True,'rotate image angle':0,'flip image':'Vertical','sensor':'IMX226'}}
+
+TUBE_LENS_MM = {'DF1':180}
+
+DEFAULT_OBJECTIVE = '20x'
+
+LIQUID_LENS_FOCUS_TRACKING = False
+TWO_CAMERA_PDAF = False
+PDAF_FLIPUD = False
+PDAF_FLIPLR = False
+PDAF_SHIFT_AXIS = 'X' #'X' or 'Y'
+
+# note that these no longer correspond to the actual axes (starting 12/22/2021)
+# note that here X corresponds to the in-plane axis 1, Y corresponds to the in-plane axis 2, Z corresponds to the focus axis
+STAGE_MOVEMENT_SIGN_X = 1
+STAGE_MOVEMENT_SIGN_Z = -1 # this is the focus axis
+STAGE_MOVEMENT_SIGN_Y = 1
+STAGE_MOVEMENT_SIGN_THETA = 1
+
+X_ENCODER_SIGN = 1
+Y_ENCODER_SIGN = 1
+THETA_ENCODER_SIGN = 1
+
+VOLUMETRIC_IMAGING = False
+USE_SEPARATE_TRIGGER_CONTROLLER = True
+TRIGGERCONTROLLER_SERIAL_NUMBER = '9179400' # '9178980'
+
+TRACKING_MOVEMENT_SIGN_X = 1
+TRACKING_MOVEMENT_SIGN_Y = -1
+TRACKING_MOVEMENT_SIGN_Z = 1
+
+CONTROLLER_VERSION = 'Teensy'
+
+USE_CICERO = True
+CICERO_SERIAL_NUMBER = 'AB0PKT2R'
+USE_LDI_SERIAL_CONTROL = True
+LDI_INTENSITY_MODE = 'EXT'
+LDI_SHUTTER_MODE = 'EXT'
+
+###############################################
+STAGE_POS_SIGN_X = 1
+STAGE_POS_SIGN_Y = 1
+STAGE_POS_SIGN_Z = -1
+STAGE_POS_SIGN_THETA = 1
+
+USE_ENCODER_X = True
+USE_ENCODER_Y = True
+USE_ENCODER_Z = True
+USE_ENCODER_THETA = True
+
+ENCODER_POS_SIGN_X = 1
+ENCODER_POS_SIGN_Y = 1
+ENCODER_POS_SIGN_Z = 1
+ENCODER_POS_SIGN_THETA = 1
+
+ENCODER_STEP_SIZE_X_MM = 1000e-6
+ENCODER_STEP_SIZE_Y_MM = 1000e-6
+ENCODER_STEP_SIZE_Z_MM = 1000e-6
+ENCODER_STEP_SIZE_THETA = 2*np.pi/(300*4)
+
+FULLSTEPS_PER_REV_X = 200
+FULLSTEPS_PER_REV_Y = 200
+FULLSTEPS_PER_REV_Z = 200
+FULLSTEPS_PER_REV_THETA = 200
+
+# beginning of actuator specific configurations
+
+SCREW_PITCH_X_MM = 2.54
+SCREW_PITCH_Y_MM = 2.54
+SCREW_PITCH_Z_MM = 0.3
+
+MICROSTEPPING_DEFAULT_X = 16
+MICROSTEPPING_DEFAULT_Y = 16
+MICROSTEPPING_DEFAULT_Z = 16
+
+X_MOTOR_RMS_CURRENT_mA = 1000
+Y_MOTOR_RMS_CURRENT_mA = 1000
+Z_MOTOR_RMS_CURRENT_mA = 500
+
+X_MOTOR_I_HOLD = 0.25
+Y_MOTOR_I_HOLD = 0.25
+Z_MOTOR_I_HOLD = 0.5
+
+MAX_VELOCITY_X_mm = 30
+MAX_VELOCITY_Y_mm = 30
+MAX_VELOCITY_Z_mm = 3.8
+
+MAX_ACCELERATION_X_mm = 500
+MAX_ACCELERATION_Y_mm = 500
+MAX_ACCELERATION_Z_mm = 100
+
+# end of actuator specific configurations
+
+SCAN_STABILIZATION_TIME_MS_X = 160
+SCAN_STABILIZATION_TIME_MS_Y = 160
+SCAN_STABILIZATION_TIME_MS_Z = 20
+
+HOMING_ENABLED_X = True
+HOMING_ENABLED_Y = True
+HOMING_ENABLED_Z = True
+HOMING_ENABLED_THETA = False
+
+SLEEP_TIME_S = 0.005
+
+LED_MATRIX_R_FACTOR = 1
+LED_MATRIX_G_FACTOR = 1
+LED_MATRIX_B_FACTOR = 1
+
+class PDAF:
+    ROI_ratio_width_default = 2.5
+    ROI_ratio_height_default = 2.5
+    x_offset_default = 0
+    y_offset_default = 198
+    shift_to_distance_um_default = -5.0
+
+print('machine-specific configurations loaded')
+

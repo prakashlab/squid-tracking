@@ -399,3 +399,39 @@ class LDI:
         state = str(state)
         print('shutter:'+channel+'='+state+'\r')
         self.serial_connection.write_and_check('shutter:'+channel+'='+state+'\r',"ok")
+
+class LDI_Simulation:
+    """Minimal simulation wrapper for LDI device functionality"""
+    def __init__(self):
+        self.intensity_mode = 'PC'
+        self.shutter_mode = 'PC'
+        self.active_channel = None
+        self.channel_intensities = {i: 0.0 for i in range(1, 16)}
+        self.channel_shutters = {i: 0 for i in range(1, 16)}
+    
+    def run(self):
+        pass
+
+    def set_shutter_mode(self, mode):
+        if mode in ['EXT', 'PC']:
+            self.shutter_mode = mode
+
+    def set_intensity_mode(self, mode):
+        if mode in ['EXT', 'PC']:
+            self.intensity_mode = mode
+
+    def set_intensity(self, channel, intensity):
+        self.channel_intensities[int(channel)] = float(intensity)
+    
+    def set_shutter(self, channel, state):
+        self.channel_shutters[int(channel)] = int(state)
+
+    def get_shutter_state(self):
+        return self.channel_shutters
+
+    def set_active_channel(self, channel):
+        self.active_channel = int(channel)
+
+    def set_active_channel_shutter(self, state):
+        if self.active_channel is not None:
+            self.channel_shutters[self.active_channel] = int(state)
