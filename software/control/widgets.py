@@ -635,6 +635,13 @@ class PlotWidget(pg.GraphicsLayoutWidget):
 		self.curve.setData(self.Abs,self.Ord)
 
 class LEDMatrixControlWidget(QFrame):
+	CHANNEL_MAP = {
+		'405 nm': 11,
+		'470 nm': 12,
+		'555 nm': 14,
+		'640 nm': 13,
+		'730 nm': 15
+	}
 
 	def __init__(self,microcontroller):
 		super().__init__()
@@ -648,6 +655,8 @@ class LEDMatrixControlWidget(QFrame):
 		self.dropdown_LED_matrix_pattern = QComboBox()
 		for pattern in LED_MATRIX_PATTERN.keys():
 			self.dropdown_LED_matrix_pattern.addItems([pattern])
+		for wavelength in self.CHANNEL_MAP.keys():
+			self.dropdown_LED_matrix_pattern.addItems([wavelength])
 		self.dropdown_LED_matrix_pattern.setCurrentText('LED matrix full')
 
 		self.slider_R = QSlider(Qt.Horizontal)
@@ -698,20 +707,23 @@ class LEDMatrixControlWidget(QFrame):
 		self.entry_intensity.setSingleStep(1)
 		self.entry_intensity.setValue(10)
 
-		self.btn_toggle = QPushButton('LED Matrix On/Off')
+		self.btn_toggle = QPushButton('Illumination On/Off')
 		self.btn_toggle.setCheckable(True)
 		self.btn_toggle.setDefault(False)
 
 		grid = QGridLayout()
 		grid.addWidget(QLabel('LED matrix pattern'),0,0)
 		grid.addWidget(self.dropdown_LED_matrix_pattern,0,1,1,2)
-		grid.addWidget(QLabel('LED matrix R'),1,0)
+		self.r_label = QLabel('LED matrix R')
+		self.g_label = QLabel('LED matrix G')
+		self.b_label = QLabel('LED matrix B')
+		grid.addWidget(self.r_label,1,0)
 		grid.addWidget(self.slider_R,1,1)
 		grid.addWidget(self.entry_R,1,2)
-		grid.addWidget(QLabel('LED matrix G'),2,0)
+		grid.addWidget(self.g_label,2,0)
 		grid.addWidget(self.slider_G,2,1)
 		grid.addWidget(self.entry_G,2,2)
-		grid.addWidget(QLabel('LED matrix B'),3,0)
+		grid.addWidget(self.b_label,3,0)
 		grid.addWidget(self.slider_B,3,1)
 		grid.addWidget(self.entry_B,3,2)
 		grid.addWidget(QLabel('Intensity'),4,0)
@@ -745,8 +757,24 @@ class LEDMatrixControlWidget(QFrame):
 			self.microcontroller.turn_off_illumination()
 
 	def set_illumination_pattern(self):
-		self.illumination_source = LED_MATRIX_PATTERN[self.dropdown_LED_matrix_pattern.currentText()]
+		if self.dropdown_LED_matrix_pattern.currentText() in LED_MATRIX_PATTERN.keys():
+			self.illumination_source = LED_MATRIX_PATTERN[self.dropdown_LED_matrix_pattern.currentText()]
+			self._hide_show_RGB_controls(True)
+		else:
+			self.illumination_source = self.CHANNEL_MAP[self.dropdown_LED_matrix_pattern.currentText()]
+			self._hide_show_RGB_controls(False)
 		self.update_illumination()
+
+	def _hide_show_RGB_controls(self, show):
+		self.r_label.setVisible(show)
+		self.g_label.setVisible(show)
+		self.b_label.setVisible(show)
+		self.slider_R.setVisible(show)
+		self.entry_R.setVisible(show)
+		self.slider_G.setVisible(show)
+		self.entry_G.setVisible(show)
+		self.slider_B.setVisible(show)
+		self.entry_B.setVisible(show)
 
 	def update_illumination(self):
 		if self.illumination_source < 10: # LED matrix
@@ -755,105 +783,4 @@ class LEDMatrixControlWidget(QFrame):
 				g=(self.entry_intensity.value()/100.0)*(self.entry_G.value()),
 				b=(self.entry_intensity.value()/100.0)*(self.entry_B.value()))
 		else:
-			self.microcontroller.set_illumination(self.illumination_source,self.intensity)
-
-class LDIControlWidget(QFrame):
-
-    def __init__(self, ldi, microcontroller):
-        super().__init__()
-        self.ldi = ldi
-        self.microcontroller = microcontroller
-        self.wavelengths = ['405 nm', '470 nm', '555 nm', '640 nm', '730 nm']
-        self.channel_map = {
-            '405 nm': 11,
-            '470 nm': 12, 
-            '555 nm': 14,
-            '640 nm': 13,
-            '730 nm': 15
-        }
-        
-        self.sliders = {}
-        self.toggle_buttons = {}
-        
-        self.add_components()
-        self.setFrameStyle(QFrame.Panel | QFrame.Raised)
-        
-    def add_components(self):
-        grid = QGridLayout()
-        
-        # Header
-        grid.addWidget(QLabel('Wavelength'), 0, 0)
-        grid.addWidget(QLabel('Intensity (%)'), 0, 1)
-        grid.addWidget(QLabel('On/Off'), 0, 2)
-        
-        # Create sliders and buttons for each wavelength
-        for i, wavelength in enumerate(self.wavelengths):
-            row = i + 1
-            
-            # Wavelength label
-            label = QLabel(wavelength)
-            grid.addWidget(label, row, 0)
-            
-            # Intensity slider
-            slider = QSlider(Qt.Horizontal)
-            slider.setTickPosition(QSlider.TicksBelow)
-            slider.setMinimum(0)
-            slider.setMaximum(100)
-            slider.setSingleStep(1)
-            slider.setValue(0)
-            self.sliders[wavelength] = slider
-            grid.addWidget(slider, row, 1)
-            
-            # Toggle button
-            button = QPushButton('OFF')
-            button.setCheckable(True)
-            button.setChecked(False)
-            button.setDefault(False)
-            button.setFixedWidth(60)
-            self.toggle_buttons[wavelength] = button
-            grid.addWidget(button, row, 2)
-            
-            # Connect signals
-            slider.valueChanged.connect(lambda value, wl=wavelength: self.update_intensity(wl, value))
-            button.clicked.connect(lambda checked, wl=wavelength: self.toggle_channel(wl, checked))
-        
-        # Add stretch to push everything to the top
-        grid.setRowStretch(grid.rowCount(), 1)
-        
-        self.setLayout(grid)
-        
-    def update_intensity(self, wavelength, value):
-        """Update the intensity for a specific wavelength channel"""
-        channel = self.channel_map[wavelength]
-        
-        try:
-            # Set intensity on the LDI device (assuming intensity is 0-100%)
-            self.microcontroller.set_illumination(channel, value)
-            print(f"Set {wavelength} intensity to {value}%")
-        except Exception as e:
-            print(f"Error setting intensity for {wavelength}: {e}")
-            
-    def toggle_channel(self, wavelength, is_on):
-        """Toggle a specific wavelength channel on/off"""
-        channel = self.channel_map[wavelength]
-        button = self.toggle_buttons[wavelength]
-        
-        try:
-            if is_on:
-                # Turn on the channel
-                self.microcontroller.set_illumination(channel, self.sliders[wavelength].value())
-                self.microcontroller.turn_on_illumination()
-                button.setText('ON')
-                button.setStyleSheet("QPushButton { background-color: #90EE90; }")
-                print(f"Turned ON {wavelength}")
-            else:
-                # Turn off the channel
-                self.microcontroller.set_illumination(channel, self.sliders[wavelength].value())
-                self.microcontroller.turn_off_illumination()
-                button.setText('OFF')
-                button.setStyleSheet("")
-                print(f"Turned OFF {wavelength}")
-        except Exception as e:
-            print(f"Error toggling {wavelength}: {e}")
-            # Reset button state on error
-            button.setChecked(not is_on)
+			self.microcontroller.set_illumination(self.illumination_source,self.entry_intensity.value())

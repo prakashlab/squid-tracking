@@ -120,7 +120,7 @@ class StreamHandler(QObject):
         self.fps_save = fps
         print(self.fps_save)
 
-    def set_crop(self,crop_width,height):
+    def set_crop(self,crop_width,crop_height):
         self.crop_width = crop_width
         self.crop_height = crop_height
 
