@@ -822,6 +822,7 @@ class ImageDisplayWindow(QMainWindow):
             image_layout.addWidget(self.graphics_widget.view)
             self.btn_toggle_auto_levels = QPushButton('Autolevel')
             self.btn_toggle_auto_levels.setCheckable(True)
+            self.btn_toggle_auto_levels.setChecked(self.autoLevels)
             image_layout.addWidget(self.btn_toggle_auto_levels)
             self.btn_toggle_auto_levels.clicked.connect(self.toggle_auto_levels)
         else:
