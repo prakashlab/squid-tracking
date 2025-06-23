@@ -41,7 +41,7 @@ class GUI(QMainWindow):
 		#------------------------------------------------------------------
 		self.imageDisplayWindow = {}
 		for key in self.imaging_channels:
-			self.imageDisplayWindow[key] = core.ImageDisplayWindow(key + ' Display', DrawCrossHairs = True)
+			self.imageDisplayWindow[key] = core.ImageDisplayWindow(key + ' Display', DrawCrossHairs = True, show_LUT=SHOW_LUT, autoLevels=AUTO_LEVELS)
 			if key == TRACKING:
 				self.imageDisplayWindow[key].toggle_ROI_selector(True)
 		self.imageDisplayWindow_ThresholdedImage = core.ImageDisplayWindow('Thresholded Image')

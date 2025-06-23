@@ -761,14 +761,17 @@ class ImageDisplayWindow(QMainWindow):
 
     roi_bbox = Signal(np.ndarray)
 
-    def __init__(self, window_title='', DrawCrossHairs = False):
+    def __init__(self, window_title='', DrawCrossHairs = False,  show_LUT=False, autoLevels=False):
         super().__init__()
         self.setWindowTitle(window_title)
         self.setWindowFlags(self.windowFlags() | Qt.CustomizeWindowHint)
         self.setWindowFlags(self.windowFlags() & ~Qt.WindowCloseButtonHint)
         self.widget = QWidget()
+        self.show_LUT = show_LUT
+        self.autoLevels = autoLevels
 
         self.graphics_widget = pg.GraphicsLayoutWidget()
+        self.graphics_widget.setMinimumSize(800, 600)
         self.graphics_widget.view = self.graphics_widget.addViewBox()
         
         ## lock the aspect ratio so pixels are always square
@@ -776,8 +779,16 @@ class ImageDisplayWindow(QMainWindow):
         self.graphics_widget.view.invertY()
         
         ## Create image item
-        self.graphics_widget.img = pg.ImageItem(border='w', axisOrder='row-major')
-        self.graphics_widget.view.addItem(self.graphics_widget.img)
+        if self.show_LUT:
+            self.graphics_widget.view = pg.ImageView()
+            self.graphics_widget.img = self.graphics_widget.view.getImageItem()
+            self.graphics_widget.img.setBorder("w")
+            self.graphics_widget.view.ui.roiBtn.hide()
+            self.graphics_widget.view.ui.menuBtn.hide()
+            self.LUTWidget = self.graphics_widget.view.getHistogramWidget()
+        else:
+            self.graphics_widget.img = pg.ImageItem(border="w")
+            self.graphics_widget.view.addItem(self.graphics_widget.img)
 
         self.image_width = None
         self.image_height = None
@@ -806,10 +817,14 @@ class ImageDisplayWindow(QMainWindow):
         self.DrawCrossHairs = DrawCrossHairs
         self.image_offset = np.array([0, 0])
 
-        layout = QGridLayout()
-        layout.addWidget(self.graphics_widget, 0, 0) 
-        self.widget.setLayout(layout)
+        image_layout = QVBoxLayout()
+        if self.show_LUT:
+            image_layout.addWidget(self.graphics_widget.view)
+        else:
+            image_layout.addWidget(self.graphics_widget)
+        self.widget.setLayout(image_layout)
         self.setCentralWidget(self.widget)
+        self.widget.setMinimumSize(800, 600)
 
     def display_image(self,image, imaging_channel = TRACKING):    
         image = np.copy(image) # Avoid overwriting the source image
@@ -830,7 +845,7 @@ class ImageDisplayWindow(QMainWindow):
                 cv2.line(image, self.horLine_pt1, self.horLine_pt2, (255,255,255), thickness=3, lineType=8, shift=0) 
                 cv2.line(image, self.verLine_pt1, self.verLine_pt2, (255,255,255), thickness=3, lineType=8, shift=0) 
 
-        self.graphics_widget.img.setImage(image, autoLevels=False)
+        self.graphics_widget.img.setImage(image, autoLevels=self.autoLevels)
         # print('In ImageDisplayWindow display image')
     
     def draw_rectangle(self, pts):

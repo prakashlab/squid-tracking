@@ -378,6 +378,9 @@ MULTIPOINT_BF_SAVING_OPTION = 'Raw'
 IMAGE_FORMAT = 'bmp'
 CONTROLLER_VERSION = 'Arduino'
 
+SHOW_LUT = False
+AUTO_LEVELS = False
+
 # Spinning disk confocal
 USE_CICERO = False
 CICERO_SERIAL_NUMBER = ''
