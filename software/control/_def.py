@@ -378,6 +378,10 @@ MULTIPOINT_BF_SAVING_OPTION = 'Raw'
 IMAGE_FORMAT = 'bmp'
 CONTROLLER_VERSION = 'Arduino'
 
+# Spinning disk confocal
+USE_CICERO = False
+CICERO_SERIAL_NUMBER = ''
+
 ##########################################################
 #### start of loading machine specific configurations ####
 ##########################################################

@@ -25,6 +25,7 @@ import control.core_tracking as core_tracking
 if VOLUMETRIC_IMAGING:
 	import control.core_volumetric_imaging as core_volumetric_imaging
 import control.microcontroller as microcontroller
+from control.serial_peripherals import XLight, LDI
 
 class GUI(QMainWindow):
 
@@ -72,6 +73,9 @@ class GUI(QMainWindow):
 				self.camera[key].open()
 			self.microcontroller = microcontroller.Microcontroller(version=CONTROLLER_VERSION)
 			self.microcontroller.reset()
+			if USE_CICERO:
+				self.xlight = XLight(CICERO_SERIAL_NUMBER)
+				self.xlight.set_disk_motor_status(True)
 
 		self.microcontroller.configure_actuators()
 
@@ -341,6 +345,8 @@ class GUI(QMainWindow):
 				self.camera[key].close()
 				self.imageSaver[key].close()
 				self.imageDisplayWindow[key].close()
+			if USE_CICERO:
+				self.xlight.set_disk_motor_state(False)
 			if TWO_CAMERA_PDAF:
 				self.imageDisplayWindow['PDAF_image1'].close()
 				self.imageDisplayWindow['PDAF_image2'].close()
