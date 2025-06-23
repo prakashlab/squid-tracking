@@ -820,6 +820,10 @@ class ImageDisplayWindow(QMainWindow):
         image_layout = QVBoxLayout()
         if self.show_LUT:
             image_layout.addWidget(self.graphics_widget.view)
+            self.btn_toggle_auto_levels = QPushButton('Autolevel')
+            self.btn_toggle_auto_levels.setCheckable(True)
+            image_layout.addWidget(self.btn_toggle_auto_levels)
+            self.btn_toggle_auto_levels.clicked.connect(self.toggle_auto_levels)
         else:
             image_layout.addWidget(self.graphics_widget)
         self.widget.setLayout(image_layout)
@@ -848,6 +852,9 @@ class ImageDisplayWindow(QMainWindow):
         self.graphics_widget.img.setImage(image, autoLevels=self.autoLevels)
         # print('In ImageDisplayWindow display image')
     
+    def toggle_auto_levels(self):
+        self.autoLevels = self.btn_toggle_auto_levels.isChecked()
+
     def draw_rectangle(self, pts):
         # Connected to Signal from Tracking object
         self.DrawRect=True
