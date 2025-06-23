@@ -75,7 +75,7 @@ class GUI(QMainWindow):
 			self.microcontroller.reset()
 			if USE_CICERO:
 				self.xlight = XLight(CICERO_SERIAL_NUMBER)
-				self.xlight.set_disk_motor_status(True)
+				self.xlight.set_disk_motor_state(True)
 
 		self.microcontroller.configure_actuators()
 
