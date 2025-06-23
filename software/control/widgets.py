@@ -655,8 +655,9 @@ class LEDMatrixControlWidget(QFrame):
 		self.dropdown_LED_matrix_pattern = QComboBox()
 		for pattern in LED_MATRIX_PATTERN.keys():
 			self.dropdown_LED_matrix_pattern.addItems([pattern])
-		for wavelength in self.CHANNEL_MAP.keys():
-			self.dropdown_LED_matrix_pattern.addItems([wavelength])
+		if USE_LDI_SERIAL_CONTROL:
+			for wavelength in self.CHANNEL_MAP.keys():
+				self.dropdown_LED_matrix_pattern.addItems([wavelength])
 		self.dropdown_LED_matrix_pattern.setCurrentText('LED matrix full')
 
 		self.slider_R = QSlider(Qt.Horizontal)

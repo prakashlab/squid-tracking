@@ -2,7 +2,7 @@ USE_CICERO = True
 CICERO_SERIAL_NUMBER = ''
 
 CAMERAS = {
-'DF1':{'make':'Hamamatsu','serial':'','px_format':(3000,3000),'color_format':'GRAY8','fps': 120,'is_color':True,'rotate image angle':0,'flip image':'Vertical','sensor':'IMX226'}}
+'DF1':{'make':'Hamamatsu','serial':'','px_format':(2304,2304),'color_format':'GRAY8','fps': 120,'is_color':True,'rotate image angle':0,'flip image':'Vertical','sensor':'IMX226'}}
 
 TUBE_LENS_MM = {'DF1':180}
 
