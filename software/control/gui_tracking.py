@@ -78,6 +78,7 @@ class GUI(QMainWindow):
 					import control.camera_hamamatsu as camera_hamamatsu
 					self.camera[key] = camera_hamamatsu.Camera()
 				self.camera[key].open()
+				self.camera[key].set_software_triggered_acquisition()
 			self.microcontroller = microcontroller.Microcontroller(version=CONTROLLER_VERSION)
 			self.microcontroller.reset()
 			if USE_CICERO:
