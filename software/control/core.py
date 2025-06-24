@@ -783,11 +783,12 @@ class ImageDisplayWindow(QMainWindow):
             self.graphics_widget.view = pg.ImageView()
             self.graphics_widget.img = self.graphics_widget.view.getImageItem()
             self.graphics_widget.img.setBorder("w")
+            self.graphics_widget.img.setOpts(axisOrder='row-major')
             self.graphics_widget.view.ui.roiBtn.hide()
             self.graphics_widget.view.ui.menuBtn.hide()
             self.LUTWidget = self.graphics_widget.view.getHistogramWidget()
         else:
-            self.graphics_widget.img = pg.ImageItem(border="w")
+            self.graphics_widget.img = pg.ImageItem(border="w", axisOrder='row-major')
             self.graphics_widget.view.addItem(self.graphics_widget.img)
 
         self.image_width = None
@@ -836,7 +837,7 @@ class ImageDisplayWindow(QMainWindow):
         if(imaging_channel == TRACKING):
             self.image_height, self.image_width = image_processing.get_image_height_width(image)
             if(self.DrawRect):
-                cv2.rectangle(image, self.ptRect1, self.ptRect2,(255,255,255) , 4) #cv2.rectangle(img, (20,20), (300,300),(0,0,255) , 2)#
+                cv2.rectangle(image, self.ptRect1, self.ptRect2,(65535,65535,65535) , 4) #cv2.rectangle(img, (20,20), (300,300),(0,0,255) , 2)#
                 self.DrawRect=False
 
             if(self.DrawCirc):

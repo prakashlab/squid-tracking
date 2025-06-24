@@ -200,14 +200,12 @@ CROPPED_IMG_RATIO = 10
 
 CAMERA_PIXEL_SIZE_UM = {'IMX290':2.9,'IMX178':2.4,'IMX226':1.85,'IMX250':3.45,'IMX252':3.45,'IMX273':3.45,'IMX264':3.45,'IMX265':3.45,'IMX571':3.76,'PYTHON300':4.8}
 OBJECTIVES = {'2x':{'magnification':2, 'NA':0.10, 'tube_lens_f_mm':180}, 
-                '4x (Olympus)':{'magnification':4, 'NA':0.13, 'tube_lens_f_mm':180}, 
-                '4x (Nikon)':{'magnification':4, 'NA':0.13, 'tube_lens_f_mm':200}, 
-                '10x (Olympus)':{'magnification':10, 'NA':0.25, 'tube_lens_f_mm':180}, 
-                '10x (Nikon)':{'magnification':10, 'NA':0.3, 'tube_lens_f_mm':200}, 
-                '20x (Olympus)':{'magnification':20, 'NA':0.4, 'tube_lens_f_mm':180}, 
-                '20x (Nikon)':{'magnification':20, 'NA':0.45, 'tube_lens_f_mm':200}, 
-                '40x (Olympus)':{'magnification':40, 'NA':0.6, 'tube_lens_f_mm':180},
-                '40x (Nikon)':{'magnification':40, 'NA':0.65, 'tube_lens_f_mm':200}}
+                '4x':{'magnification':4, 'NA':0.13, 'tube_lens_f_mm':180}, 
+                '10x':{'magnification':10, 'NA':0.25, 'tube_lens_f_mm':180}, 
+                '20x':{'magnification':20, 'NA':0.4, 'tube_lens_f_mm':180}, 
+                '40x':{'magnification':40, 'NA':0.6, 'tube_lens_f_mm':180},
+                '60x':{'magnification':60, 'NA':0.6, 'tube_lens_f_mm':180},
+                '100x':{'magnification':100, 'NA':0.6, 'tube_lens_f_mm':180}}
 
 TRACKING = 'DF1'
 
@@ -342,7 +340,7 @@ TRIGGERCONTROLLER_SERIAL_NUMBER = None
 CAMERAS = {'DF1':{'make':'Daheng','serial':'FW0200050063','px_format':(2560,2048),'color_format':'GRAY8','fps': 60,'is_color':False,'rotate image angle':0,'flip image':'Horizental','sensor':'IMX226'},\
            'DF2':{'make':'Daheng','serial':'FW0200050068','px_format':(2560,2048),'color_format':'GRAY8','fps': 60,'is_color':False,'rotate image angle':0,'flip image':'Horizental','sensor':'IMX226'}, \
            'volumetric imaging':{'make':'Daheng','serial':'FW0200050061','px_format':(600,600),'color_format':'GRAY8','fps':30,'is_color':False,'rotate image angle':0,'flip image':'Horizental','sensor':'PYTHON300'}}
-TUBE_LENS_MM = {'DF1':50,'DF2':50,'volumetric imaging':75}
+TUBE_LENS_MM = {'DF1':180,'DF2':180,'volumetric imaging':180}
 DEFAULT_OBJECTIVE = '4x'
 
 class CAMERA:
@@ -409,7 +407,7 @@ else:
 FPS = {'display':{'min':1, 'max':30, 'default':15}, 
         'trigger_hardware':{'min':1, 'max':CAMERAS[TRACKING]['fps'], 
             'default':50}, 
-        'trigger_software':{'min':1, 'max':120, 'default':15}, 
+        'trigger_software':{'min':1, 'max':120, 'default':5}, 
         'save':{'min':1, 'max':100, 'default':10}}
 
 if TRACKING_CONFIG == 'XTheta_Y':

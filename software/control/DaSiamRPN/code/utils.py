@@ -18,6 +18,18 @@ def to_numpy(tensor):
 
 
 def to_torch(ndarray):
+    if ndarray.dtype == np.uint16:
+        # Scale from 16-bit to 8-bit range
+        # Method 1: Simple bit shift (fastest, loses precision)
+        # ndarray = (ndarray >> 8).astype(np.uint8)
+
+        # Method 2: Scale based on actual data range (preserves contrast)
+        min_val = ndarray.min()
+        max_val = ndarray.max()
+        if max_val > min_val:
+            ndarray = ((ndarray - min_val) * 255.0 / (max_val - min_val)).astype(np.uint8)
+        else:
+            ndarray = np.zeros_like(ndarray, dtype=np.uint8)
     if type(ndarray).__module__ == 'numpy':
         return torch.from_numpy(ndarray)
     elif not torch.is_tensor(ndarray):
