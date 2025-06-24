@@ -185,6 +185,7 @@ class TrackingControllerWidget(QFrame):
 		if self.btn_track.isChecked():
 			self.internal_state.data['image_tracking_enabled'] = True
 			self.ImageDisplayWindow.btn_toggle_auto_levels.setChecked(False)
+			self.ImageDisplayWindow.toggle_auto_levels()
 			if(self.tracking_init_roi.isChecked()):
 				self.trackingController.update_roi_bbox()
 			self.trackingController.reset_track()
