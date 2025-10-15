@@ -613,6 +613,8 @@ class Microcontroller():
 
     def read_received_packet(self):
         while self.terminate_reading_received_packet_thread == False:
+            if self.serial.in_waiting == 4095:
+                self.serial.reset_input_buffer()
             # wait to receive data
             if self.serial.in_waiting==0:
                 continue
