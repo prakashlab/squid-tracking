@@ -30,8 +30,15 @@ class CSV_Register():
         self.writer.writerows(self.header)
         
     def write_line(self,data):
-        self.writer.writerows(data)
+        if self.writer is not None:
+            self.writer.writerows(data)
+            self.currFile.flush()
+        else:
+            print('Writer is not initialized')
         
     def close(self):
         if(self.currFile is not None):
+            self.currFile.flush()
             self.currFile.close()
+            self.writer = None
+            self.currFile = None

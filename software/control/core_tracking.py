@@ -545,7 +545,7 @@ class TrackingDataSaver(QObject):
 			self.create_metadata_file()
 		# reset the counter
 		self.track_counter = 0
-		self.start_new_track()
+		#self.start_new_track()
 
 	def update_experiment_ID(self,experiment_ID):
 		# temporary solution for the volumetric recording to use the experiment ID entered in the GUI
