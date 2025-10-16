@@ -199,7 +199,7 @@ class TrackingControllerWidget(QFrame):
 	def slot_start_tracking(self):
 		# called after start recording is pressed
 		if self.btn_track.isChecked():
-			pass
+			self.trackingDataSaver.start_new_track()
 		else:
 			self.btn_track.setChecked(True)
 			self.do_track_button_tasks()
